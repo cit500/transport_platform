@@ -1,0 +1,21 @@
+{
+    "name": "transport-resilience-platform",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "build:single": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "chart.js": "^4.4.1",
+        "echarts": "^6.1.0",
+        "leaflet": "^1.9.4"
+    },
+    "devDependencies": {
+        "vite": "^5.4.0",
+        "vite-plugin-singlefile": "^2.3.3"
+    }
+}

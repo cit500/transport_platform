@@ -1,0 +1,306 @@
+{
+  "generated_at": "2026-07-05 18:57:28",
+  "data_dir": "data\\chongqing_roadnet",
+  "overall_status": "PASS",
+  "thresholds": {
+    "max_missing_district_rate": 0.01,
+    "max_invalid_geometry_rate": 0.001,
+    "max_empty_geometry_rate": 0.0,
+    "min_largest_weak_component_ratio": 0.7,
+    "min_district_count": 30,
+    "min_total_length_km": 1000.0,
+    "max_midpoint_outside_district_rate": 0.03
+  },
+  "metrics": {
+    "edges_geometry": {
+      "total": 11742,
+      "empty_count": 0,
+      "na_count": 0,
+      "invalid_count": 0,
+      "empty_rate": 0.0,
+      "na_rate": 0.0,
+      "invalid_rate": 0.0,
+      "geom_types": {
+        "LineString": 11742
+      }
+    },
+    "nodes_geometry": {
+      "total": 8488,
+      "empty_count": 0,
+      "na_count": 0,
+      "invalid_count": 0,
+      "empty_rate": 0.0,
+      "na_rate": 0.0,
+      "invalid_rate": 0.0,
+      "geom_types": {
+        "Point": 8488
+      }
+    },
+    "districts_geometry": {
+      "total": 154,
+      "empty_count": 0,
+      "na_count": 0,
+      "invalid_count": 0,
+      "empty_rate": 0.0,
+      "na_rate": 0.0,
+      "invalid_rate": 0.0,
+      "geom_types": {
+        "Polygon": 147,
+        "MultiPolygon": 7
+      }
+    },
+    "edge_count": 11742,
+    "node_count": 8488,
+    "district_count": 154,
+    "length_attr_km": 24904.917872593476,
+    "length_geom_km": 28779.63248795288,
+    "length_diff_rate": 0.13463391573819974,
+    "missing_district_count": 6,
+    "missing_district_rate": 0.000510986203372509,
+    "grid_district_count": 0,
+    "midpoint_outside_rate": 0.0005,
+    "mismatch_sample_count": null,
+    "unexpected_highway_count": 0,
+    "unexpected_highway_rate": 0.0,
+    "motorway_series_count": 6994,
+    "trunk_series_count": 4748,
+    "graph_loaded": true,
+    "graph_nodes": 8488,
+    "graph_edges": 11742,
+    "weak_component_count": 20,
+    "largest_weak_component_ratio": 0.9891611687087654
+  },
+  "checks": [
+    {
+      "item": "文件存在性：graphml",
+      "status": "PASS",
+      "value": "data\\chongqing_roadnet\\chongqing_expressway.graphml | 12.84 MB",
+      "standard": "文件必须存在且大小大于 0",
+      "suggestion": "如果失败，先重新运行 download_chongqing_expressway.py"
+    },
+    {
+      "item": "文件存在性：gpkg",
+      "status": "PASS",
+      "value": "data\\chongqing_roadnet\\chongqing_expressway.gpkg | 10.22 MB",
+      "standard": "文件必须存在且大小大于 0",
+      "suggestion": "如果失败，先重新运行 download_chongqing_expressway.py"
+    },
+    {
+      "item": "文件存在性：edges",
+      "status": "PASS",
+      "value": "data\\chongqing_roadnet\\chongqing_expressway_edges.geojson | 13.41 MB",
+      "standard": "文件必须存在且大小大于 0",
+      "suggestion": "如果失败，先重新运行 download_chongqing_expressway.py"
+    },
+    {
+      "item": "文件存在性：nodes",
+      "status": "PASS",
+      "value": "data\\chongqing_roadnet\\chongqing_expressway_nodes.geojson | 1.56 MB",
+      "standard": "文件必须存在且大小大于 0",
+      "suggestion": "如果失败，先重新运行 download_chongqing_expressway.py"
+    },
+    {
+      "item": "文件存在性：districts",
+      "status": "PASS",
+      "value": "data\\chongqing_roadnet\\chongqing_districts.geojson | 1.98 MB",
+      "standard": "文件必须存在且大小大于 0",
+      "suggestion": "如果失败，先重新运行 download_chongqing_expressway.py"
+    },
+    {
+      "item": "文件存在性：html",
+      "status": "PASS",
+      "value": "data\\chongqing_roadnet\\verify_chongqing_expressway.html | 15.78 MB",
+      "standard": "文件必须存在且大小大于 0",
+      "suggestion": "如果失败，先重新运行 download_chongqing_expressway.py"
+    },
+    {
+      "item": "edges 字段完整性",
+      "status": "PASS",
+      "value": "缺失：无",
+      "standard": "应包含 u/v/key/osmid/name/highway/ref/length/district_name 等核心字段",
+      "suggestion": "如果失败，检查下载脚本 keep_useful_edge_columns() 是否被修改"
+    },
+    {
+      "item": "nodes 字段完整性",
+      "status": "PASS",
+      "value": "缺失：无",
+      "standard": "应包含 osmid/x/y/street_count 等核心字段",
+      "suggestion": "如果失败，检查下载脚本 keep_useful_node_columns() 是否被修改"
+    },
+    {
+      "item": "districts 字段完整性",
+      "status": "PASS",
+      "value": "缺失：无",
+      "standard": "应包含 district_name/district_adcode",
+      "suggestion": "如果失败，检查区县边界清洗逻辑"
+    },
+    {
+      "item": "edges 坐标系",
+      "status": "PASS",
+      "value": "EPSG:4326",
+      "standard": "前端 Leaflet 使用建议为 EPSG:4326 / WGS84 / CRS84",
+      "suggestion": "如果不是 WGS84，请在导出 GeoJSON 前统一 to_crs('EPSG:4326')"
+    },
+    {
+      "item": "nodes 坐标系",
+      "status": "PASS",
+      "value": "EPSG:4326",
+      "standard": "前端 Leaflet 使用建议为 EPSG:4326 / WGS84 / CRS84",
+      "suggestion": "如果不是 WGS84，请在导出 GeoJSON 前统一 to_crs('EPSG:4326')"
+    },
+    {
+      "item": "districts 坐标系",
+      "status": "PASS",
+      "value": "EPSG:4326",
+      "standard": "前端 Leaflet 使用建议为 EPSG:4326 / WGS84 / CRS84",
+      "suggestion": "如果不是 WGS84，请在导出 GeoJSON 前统一 to_crs('EPSG:4326')"
+    },
+    {
+      "item": "edges 空几何",
+      "status": "PASS",
+      "value": "empty=0, null=0, total=11742",
+      "standard": "正常应为 0",
+      "suggestion": "如果失败，删除空几何或回到下载阶段检查 OSM 要素"
+    },
+    {
+      "item": "edges 无效几何",
+      "status": "PASS",
+      "value": "invalid=0, rate=0.0000%",
+      "standard": "建议低于 0.10%",
+      "suggestion": "少量无效几何可用 make_valid 修复；大量无效说明数据清洗有问题"
+    },
+    {
+      "item": "edges 几何类型",
+      "status": "PASS",
+      "value": {
+        "LineString": 11742
+      },
+      "standard": "期望类型：LineString, MultiLineString",
+      "suggestion": "如果出现 GeometryCollection 或其他类型，正式接入前建议过滤或拆分"
+    },
+    {
+      "item": "nodes 空几何",
+      "status": "PASS",
+      "value": "empty=0, null=0, total=8488",
+      "standard": "正常应为 0",
+      "suggestion": "如果失败，删除空几何或回到下载阶段检查 OSM 要素"
+    },
+    {
+      "item": "nodes 无效几何",
+      "status": "PASS",
+      "value": "invalid=0, rate=0.0000%",
+      "standard": "建议低于 0.10%",
+      "suggestion": "少量无效几何可用 make_valid 修复；大量无效说明数据清洗有问题"
+    },
+    {
+      "item": "nodes 几何类型",
+      "status": "PASS",
+      "value": {
+        "Point": 8488
+      },
+      "standard": "期望类型：Point",
+      "suggestion": "如果出现 GeometryCollection 或其他类型，正式接入前建议过滤或拆分"
+    },
+    {
+      "item": "districts 空几何",
+      "status": "PASS",
+      "value": "empty=0, null=0, total=154",
+      "standard": "正常应为 0",
+      "suggestion": "如果失败，删除空几何或回到下载阶段检查 OSM 要素"
+    },
+    {
+      "item": "districts 无效几何",
+      "status": "PASS",
+      "value": "invalid=0, rate=0.0000%",
+      "standard": "建议低于 0.10%",
+      "suggestion": "少量无效几何可用 make_valid 修复；大量无效说明数据清洗有问题"
+    },
+    {
+      "item": "districts 几何类型",
+      "status": "PASS",
+      "value": {
+        "Polygon": 147,
+        "MultiPolygon": 7
+      },
+      "standard": "期望类型：Polygon, MultiPolygon",
+      "suggestion": "如果出现 GeometryCollection 或其他类型，正式接入前建议过滤或拆分"
+    },
+    {
+      "item": "路网边数量",
+      "status": "PASS",
+      "value": 11742,
+      "standard": "edges 数量必须大于 0",
+      "suggestion": "如果为 0，说明路网未成功下载或 GeoJSON 读取失败"
+    },
+    {
+      "item": "路网节点数量",
+      "status": "PASS",
+      "value": 8488,
+      "standard": "nodes 数量必须大于 0",
+      "suggestion": "如果为 0，说明节点文件未成功导出"
+    },
+    {
+      "item": "区县数量",
+      "status": "PASS",
+      "value": 154,
+      "standard": "建议不少于 30 个；真实区县边界通常接近 38，网格备用通常接近 36",
+      "suggestion": "如果显著偏少，说明 Overpass 行政边界下载或清洗过滤有问题"
+    },
+    {
+      "item": "路网总里程",
+      "status": "PASS",
+      "value": "length字段=24904.92 km, 几何估算=28779.63 km, 差异=13.46%",
+      "standard": "用于排除明显下载失败，建议高于 1000.0 km",
+      "suggestion": "若远低于预期，检查 ROAD_FILTER 是否只保留了极少道路"
+    },
+    {
+      "item": "道路区县归属缺失率",
+      "status": "PASS",
+      "value": "6/11742 = 0.05%",
+      "standard": "建议低于 1.00%",
+      "suggestion": "如果偏高，优先检查区县边界是否使用了网格备用、坐标系是否一致、道路是否位于边界外"
+    },
+    {
+      "item": "区县边界是否为真实行政区",
+      "status": "PASS",
+      "value": "网格区县数量=0",
+      "standard": "正式平台接入前建议使用真实区县边界，不建议用网格备用方案",
+      "suggestion": "如果出现网格_，说明下载脚本使用了备用网格方案，需要重新下载真实区县边界"
+    },
+    {
+      "item": "道路中点落入区县边界抽样检查",
+      "status": "PASS",
+      "value": "1/2000 = 0.05%",
+      "standard": "建议低于 3.00%",
+      "suggestion": "如果偏高，说明区县边界覆盖不完整或道路边界外截断较多"
+    },
+    {
+      "item": "道路等级过滤结果",
+      "status": "PASS",
+      "value": "非 motorway/trunk 系列边数=0/11742 = 0.00%",
+      "standard": "当前下载目标应主要为 motorway/motorway_link/trunk/trunk_link",
+      "suggestion": "如果非目标等级偏多，检查 ROAD_FILTER 或 highway 字段字符串化结果"
+    },
+    {
+      "item": "高速与快速路分层可用性",
+      "status": "PASS",
+      "value": "motorway系列=6994, trunk系列=4748",
+      "standard": "如果平台要区分高速与快速路，两类最好都有数据；只做严格高速则 trunk 为 0 也可以",
+      "suggestion": "后续接入 Plant_v2 时建议 motorway 与 trunk 做成两个逻辑图层"
+    },
+    {
+      "item": "GraphML 与 GeoJSON 数量对照",
+      "status": "PASS",
+      "value": "GraphML nodes=8488, edges=11742 | GeoJSON nodes=8488, edges=11742",
+      "standard": "GraphML 和 GeoJSON 数量不必完全一致，但不能为空",
+      "suggestion": "如果差异极大，检查导出逻辑是否发生过滤"
+    },
+    {
+      "item": "路网弱连通性",
+      "status": "PASS",
+      "value": "连通分量数=20, 最大分量节点占比=98.92%, Top5=[8396, 50, 8, 2, 2]",
+      "standard": "建议最大弱连通子图占比高于 70%",
+      "suggestion": "如果偏低，可能是路网被过度截断、仅保留高速导致多孤立组件，路径规划需只在最大连通子图或分区图中执行"
+    }
+  ]
+}

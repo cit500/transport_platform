@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>交通网络安全韧性评估及可视化决策平台</title>
+    <link href="http://127.0.0.1:9000/bigemap.js/v2.1.0/bigemap.css" rel="stylesheet" />
+    <script src="http://127.0.0.1:9000/bigemap.js/v2.1.0/bigemap.js"></script>
+    <link rel="stylesheet" href="/src/style.css" />
+</head>
+
+<body>
+    <div id="app">
+        <!-- ===== Map ===== -->
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div id="admin-division-layer" class="admin-division-layer"></div>
+
+        <!-- ===== Header ===== -->
+        <header id="header">
+            <div class="header-left">
+                <div class="header-left-row" style="display:flex;align-items:center;gap:8px;">
+                    <span class="header-time" id="header-time">--:--:--</span>
+                </div>
+                <div class="header-left-row">
+                    <span class="header-weather">
+                        🌧️ <span id="header-weather-text">小雨 22℃ 东北风3级</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="header-title">
+                <span>交通网络安全韧性评估及可视化决策平台</span>
+            </div>
+
+            <div class="header-right">
+                <span class="data-source-badge" id="data-source-badge">📡 检测中...</span>
+
+                <button class="header-location">
+                    📍 重庆市 ▼
+                </button>
+
+                <div class="header-user" id="header-user">
+                    <span class="user-avatar">👤</span>
+                    <span class="user-name">管理员</span>
+                    <span class="user-arrow">▼</span>
+
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="dropdown-item">👤 个人中心</div>
+                        <div class="dropdown-item">🔑 修改密码</div>
+                        <div class="dropdown-item">🔄 切换用户</div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" style="color:var(--accent-red);">🚪 安全退出</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== Search Bar ===== -->
+        <div id="search-bar">
+            <input type="text" id="search-input" placeholder="搜索桥梁名称/道路编码..." />
+            <button id="search-btn">🔍 定位</button>
+        </div>
+
+        <!-- ===== Layer Drawer ===== -->
+        <div id="layer-drawer" class="glass-panel">
+            <div class="layer-drawer-title">🗺️ 图层控制</div>
+            <div class="layer-item" data-layer="base"><span class="layer-toggle"></span><span
+                    class="layer-dot base"></span><span>暗色底图</span></div>
+            <div class="layer-item" data-layer="satellite"><span class="layer-toggle"></span><span
+                    class="layer-dot base"></span><span>卫星影像</span></div>
+            <div class="layer-item" data-layer="bigemap-electronic"><span class="layer-toggle"></span><span
+                    class="layer-dot base"></span><span>电子地图</span></div>
+            <div class="layer-item" data-layer="bigemap-satellite"><span class="layer-toggle"></span><span
+                    class="layer-dot base"></span><span>卫星地图</span></div>
+            <div class="layer-item" data-layer="admin-division"><span class="layer-toggle active"></span><span
+                    class="layer-dot admin"></span><span>行政区划</span></div>
+
+            <div class="layer-divider"></div>
+
+            <div class="layer-item" data-layer="road"><span class="layer-toggle active"></span><span
+                    class="layer-dot road"></span><span>高速/快速路网</span></div>
+            <div class="layer-item" data-layer="bridge"><span class="layer-toggle active"></span><span
+                    class="layer-dot bridge"></span><span>桥隧显隐</span></div>
+            <div class="layer-item" data-layer="heat"><span class="layer-toggle active"></span><span
+                    class="layer-dot heat"></span><span>分析结果云图</span></div>
+        </div>
+
+        <!-- ===== Map Controls ===== -->
+        <div id="map-controls">
+            <button class="map-ctrl-btn" id="btn-zoom-in" title="放大">＋</button>
+            <button class="map-ctrl-btn" id="btn-zoom-out" title="缩小">−</button>
+            <div class="map-ctrl-divider"></div>
+            <button class="map-ctrl-btn" id="btn-layer-control" title="图层控制中枢">🗺️</button>
+        </div>
+
+        <!-- ===== LEFT TWIN DOCK ===== -->
+        <div class="twin-dock left-twin-dock">
+            <!-- 块1: 区域总览（固定 80px） -->
+            <div class="sub-block-card" id="left-block-1">
+                <div class="block-header">
+                    <span>区域总览</span>
+                    <span style="font-size:13px;color:var(--text-muted);font-weight:400;">重庆市</span>
+                </div>
+                <div class="asset-grid" id="asset-grid"></div>
+            </div>
+            <!-- 块2: 重车通行状态（固定 160px） -->
+            <div class="sub-block-card" id="left-block-2">
+                <div class="block-header">重车通行状态概括</div>
+                <div id="truck-overview"></div>
+            </div>
+            <!-- 块3: 关键风险对象（动态 flex:1，min 200px） -->
+            <div class="sub-block-card scrollable-card" id="left-block-3">
+                <div class="block-header sticky-header">关键风险事件</div>
+                <div class="scrollable-list" id="weakness-list"></div>
+            </div>
+            <!-- 块4: 区县概况（动态 flex:1.2，min 220px） -->
+            <div class="sub-block-card scrollable-card" id="left-block-4">
+                <div class="block-header sticky-header">区县概况</div>
+                <div class="scrollable-list" id="county-bridge-list"></div>
+            </div>
+        </div>
+
+        <!-- ===== RIGHT TWIN DOCK ===== -->
+        <div class="twin-dock right-twin-dock">
+            <!-- 块1: 核心分析模块（固定 110px，置顶） -->
+            <div class="sub-block-card" id="right-block-1">
+                <div class="block-header">核心分析模块</div>
+                <div id="module-buttons"></div>
+            </div>
+            <!-- 块2: 韧性核心指标（固定 160px） -->
+            <div class="sub-block-card" id="right-block-2">
+                <div class="block-header">
+                    <span>韧性指标</span>
+                    <span id="gauge-city-label" style="font-size:14px;color:var(--text-muted);font-weight:400;">重庆市 / 全市平均</span>
+                </div>
+                <div id="gauge-value"></div>
+            </div>
+            <!-- 块3: 区县韧性与通行概况（动态 flex:1，min 220px） -->
+            <div class="sub-block-card scrollable-card" id="right-block-3">
+                <div class="block-header sticky-header">区县韧性与通行概况</div>
+                <div class="scrollable-list" id="county-resilience-list"></div>
+            </div>
+        </div>
+
+        <!-- ===== Modal / Bridge / Toast ===== -->
+        <div id="modal-container"></div>
+        <div id="bridge-detail-container"></div>
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- ===== 底部全省实时预警大表格 ===== -->
+        <div id="bottom-alert-table" class="glass-panel">
+            <div class="alert-table-header">
+                <span class="alert-table-title">📋 平台任务与评估日志</span>
+                <div class="alert-table-actions">
+                    <span class="alert-badge" style="background:rgba(74,222,128,0.12);color:#4ADE80;">● 已完成 14</span>
+                    <span class="alert-badge" style="background:rgba(251,191,36,0.12);color:#FBBF24;">● 进行中 3</span>
+                    <span class="alert-badge" style="background:rgba(248,113,113,0.12);color:#F87171;">● 待处理 2</span>
+                </div>
+            </div>
+            <div class="alert-table-scroll">
+                <table class="data-table" id="alert-table">
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>任务类型</th>
+                            <th>桥隧名称</th>
+                            <th>所属区域</th>
+                            <th>灾害风险率</th>
+                            <th>韧性评分</th>
+                            <th>通行保障率</th>
+                            <th>任务状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alert-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
