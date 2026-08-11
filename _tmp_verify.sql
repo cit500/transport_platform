@@ -1,0 +1,1 @@
+SELECT canonical_name FROM administrative_divisions ORDER BY id

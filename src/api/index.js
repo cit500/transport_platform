@@ -96,6 +96,8 @@ async function fetchWithFallback(url, options = {}, fallback = null, timeout = 3
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+            // 4xx/5xx 是服务端响应，说明后端在线，只是该接口不存在
+            // 只有超时和网络错误才标记后端离线
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
@@ -108,12 +110,16 @@ async function fetchWithFallback(url, options = {}, fallback = null, timeout = 3
 
         if (err.name === 'AbortError') {
             console.warn(`[API] ${url} 请求超时(${effectiveTimeout}ms)，降级到 mock 数据`);
+            // 超时 = 后端真正不可达
+            _backendAvailable = false;
+        } else if (err.message && err.message.startsWith('Failed to fetch')) {
+            console.warn(`[API] ${url} 网络错误: ${err.message}，降级到 mock 数据`);
+            // 网络错误 = 后端不可达
+            _backendAvailable = false;
         } else {
             console.warn(`[API] ${url} 请求失败: ${err.message}，降级到 mock 数据`);
+            // 4xx/5xx 不标记离线，后端仍然在线
         }
-
-        // 标记后端离线（超时或连接失败）
-        _backendAvailable = false;
 
         if (fallback) {
             return fallback();
@@ -254,9 +260,31 @@ const api = {
         });
     },
 
-    // ---- 路网业务属性 ----
+    // ---- 路网业务属性 (V1.3D: 改用 MySQL road_edges API) ----
     async getRoadnetEdges() {
-        return fetchWithFallback('/data-mgmt/roadnet/edges', {}, () => getMock('roadnetBusinessAttributes'));
+        // V1.3D: 从 MySQL road_edges 分页查询
+        return fetchWithFallback('/road-network/edges?size=500', {}, () => []);
+    },
+    async searchRoadEdges(params) {
+        // V1.3D: 分页筛选查询
+        var query = new URLSearchParams();
+        if (params.page !== undefined) query.set('page', params.page);
+        if (params.size) query.set('size', params.size);
+        if (params.keyword) query.set('keyword', params.keyword);
+        if (params.divisionId) query.set('divisionId', params.divisionId);
+        if (params.highway) query.set('highway', params.highway);
+        if (params.isBridge) query.set('isBridge', 'true');
+        if (params.isTunnel) query.set('isTunnel', 'true');
+        return fetchWithFallback('/road-network/edges?' + query.toString(), {}, () => ({ content: [], totalElements: 0 }));
+    },
+    async getRoadEdgeDetail(id) {
+        return fetchWithFallback('/road-network/edges/' + id, {}, () => null);
+    },
+    async getRoadNetworkGeoJson() {
+        return fetchWithFallback('/road-network/geojson', {}, () => ({ type: 'FeatureCollection', features: [] }));
+    },
+    async getRoadNetworkSummary() {
+        return fetchWithFallback('/road-network/summary', {}, () => ({}));
     },
     async updateRoadnetEdge(edgeId, data) {
         return fetchWithFallback('/data-mgmt/roadnet/edges/' + edgeId, { method: 'PUT', body: JSON.stringify(data) }, () => {
@@ -280,7 +308,248 @@ const api = {
         });
     },
 
-    // ---- 区县区域指标 ----
+    // ==================== V1.4B 正式资产 API ====================
+
+    /**
+     * 分页查询正式资产列表
+     * @param {object} params - { page, size, assetType, divisionId, keyword, sourceType, bindingStatus }
+     */
+    async searchAssets(params) {
+        var query = new URLSearchParams();
+        if (params.page !== undefined) query.set('page', params.page);
+        if (params.size) query.set('size', params.size);
+        if (params.assetType) query.set('assetType', params.assetType);
+        if (params.divisionId) query.set('divisionId', params.divisionId);
+        if (params.keyword) query.set('keyword', params.keyword);
+        if (params.sourceType) query.set('sourceType', params.sourceType);
+        if (params.bindingStatus) query.set('bindingStatus', params.bindingStatus);
+        return fetchWithFallback('/assets?' + query.toString(), {}, () => ({ content: [], totalElements: 0 }));
+    },
+
+    /**
+     * 获取资产详情
+     * @param {number} id - 资产 ID
+     */
+    async getAssetDetail(id) {
+        return fetchWithFallback('/assets/' + id, {}, () => null);
+    },
+
+    /**
+     * 获取资产统计摘要
+     */
+    async getAssetSummary() {
+        return fetchWithFallback('/assets/summary', {}, () => ({}));
+    },
+
+    /**
+     * 获取正式资产 GeoJSON FeatureCollection
+     * V1.4E: 地图可视化用
+     * 只返回有 Geometry 的 active 正式 Asset
+     */
+    async getAssetsGeoJson() {
+        return fetchWithFallback('/assets/geojson', {}, () => ({ type: 'FeatureCollection', features: [] }));
+    },
+
+    /**
+     * 查询待审核候选
+     */
+    async searchCandidates(params) {
+        var query = new URLSearchParams();
+        if (params.status) query.set('status', params.status);
+        if (params.candidateType) query.set('candidateType', params.candidateType);
+        if (params.page !== undefined) query.set('page', params.page);
+        if (params.size) query.set('size', params.size);
+        return fetchWithFallback('/assets/candidates?' + query.toString(), {}, () => ({ content: [], totalElements: 0 }));
+    },
+
+    // ==================== V1.4C 新增/更新 API ====================
+
+    /**
+     * 创建资产
+     * @param {object} data - 资产数据
+     */
+    async createAsset(data) {
+        return fetchWithFallback('/assets', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
+     * 更新资产
+     * @param {number} id - 资产 ID
+     * @param {object} data - 资产数据
+     */
+    async updateAsset(id, data) {
+        return fetchWithFallback('/assets/' + id, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
+     * 更新资产绑定的道路
+     * @param {number} id - 资产 ID
+     * @param {Array} edgeIds - 道路 Edge ID 列表
+     */
+    async updateAssetEdges(id, edgeIds) {
+        return fetchWithFallback('/assets/' + id + '/edges', {
+            method: 'PUT',
+            body: JSON.stringify({ edgeIds: edgeIds })
+        });
+    },
+
+    /**
+     * 获取资产绑定的道路
+     * @param {number} id - 资产 ID
+     */
+    async getAssetEdges(id) {
+        return fetchWithFallback('/assets/' + id + '/edges', {}, () => []);
+    },
+
+    // ==================== V1.4F: 按 Road Edge 查询正式 Asset ====================
+
+    /**
+     * 按 Road Edge ID 列表查询关联的正式资产
+     * @param {Array} edgeIds - 道路 Edge ID 列表
+     * @returns {Promise<Array>} 去重后的 active 正式 Asset 列表
+     */
+    async getAssetsByRoadEdges(edgeIds) {
+        return fetchWithFallback('/assets/by-road-edges', {
+            method: 'POST',
+            body: JSON.stringify({ edgeIds: edgeIds })
+        }, () => []);
+    },
+
+    // ==================== V1.4F: 软删除/恢复/查重 API ====================
+
+    /**
+     * 软删除资产（设置 is_active = false）
+     * @param {number} id - 资产 ID
+     */
+    async deleteAsset(id) {
+        return fetchWithFallback('/assets/' + id, {
+            method: 'DELETE'
+        });
+    },
+
+    /**
+     * 恢复已停用的资产
+     * @param {number} id - 资产 ID
+     */
+    async restoreAsset(id) {
+        return fetchWithFallback('/assets/' + id + '/restore', {
+            method: 'POST'
+        });
+    },
+
+    // HOME-2: 上传资产图片
+    async uploadAssetImage(assetId, file) {
+        var formData = new FormData();
+        formData.append('file', file);
+        
+        // 使用原生fetch（不使用fetchWithFallback，因为需要multipart/form-data）
+        if (_backendAvailable === false) {
+            throw new Error('后端离线，无法上传图片');
+        }
+        
+        // 确保 assetId 是数字类型
+        var numericAssetId = Number(assetId);
+        if (!numericAssetId || isNaN(numericAssetId)) {
+            throw new Error('无效的资产ID: ' + assetId);
+        }
+        
+        try {
+            var response = await fetch(API_BASE + '/assets/' + numericAssetId + '/image', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                var errorData = await response.json().catch(function() { return {}; });
+                throw new Error(errorData.error || '上传失败');
+            }
+            
+            _backendAvailable = true;
+            return await response.json();
+        } catch (err) {
+            if (err.message && err.message.includes('Failed to fetch')) {
+                _backendAvailable = false;
+            }
+            throw err;
+        }
+    },
+
+    /**
+     * V1.4F: 检查同类型同名资产是否存在
+     * @param {string} assetType - 资产类型
+     * @param {string} assetName - 资产名称
+     */
+    async checkDuplicateAsset(assetType, assetName) {
+        return fetchWithFallback('/assets/check-duplicate?assetType=' + encodeURIComponent(assetType) + '&assetName=' + encodeURIComponent(assetName), {}, () => ({ exists: false }));
+    },
+
+    // ==================== V1.4D 候选提取 API ====================
+
+    /**
+     * 提取候选
+     * @param {object} params - { candidateType, divisionId?, roadRef? }
+     */
+    async extractCandidates(params) {
+        return fetchWithFallback('/assets/candidates/extract', {
+            method: 'POST',
+            body: JSON.stringify(params)
+        });
+    },
+
+    /**
+     * 获取候选详情
+     * @param {number} id - 候选 ID
+     */
+    async getCandidateDetail(id) {
+        return fetchWithFallback('/assets/candidates/' + id, {}, () => null);
+    },
+
+    /**
+     * 确认候选 → 创建正式 Asset
+     * @param {number} id - 候选 ID
+     * @param {object} data - AssetCreateDTO 数据
+     */
+    async confirmCandidate(id, data) {
+        return fetchWithFallback('/assets/candidates/' + id + '/confirm', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
+     * 忽略候选
+     * @param {number} id - 候选 ID
+     */
+    async ignoreCandidate(id) {
+        return fetchWithFallback('/assets/candidates/' + id + '/ignore', {
+            method: 'POST'
+        });
+    },
+
+    // ==================== 行政区 Overview API ====================
+
+    /**
+     * 获取所有行政区 Overview（一次返回 37 区完整数据）
+     */
+    async getDivisionOverviews() {
+        // V1.2A: 不 fallback 到 mockData，API 不可用时返回空数组
+        return fetchWithFallback('/administrative-divisions/overview', {}, () => []);
+    },
+
+    /**
+     * 获取单个行政区 Overview
+     */
+    async getDivisionOverview(id) {
+        return fetchWithFallback('/administrative-divisions/' + id + '/overview', {}, () => null);
+    },
+
+    // ---- 区县区域指标 (Legacy) ----
     async getDistrictMetrics() {
         return fetchWithFallback('/data-mgmt/districts', {}, () => getMock('districtMetrics'));
     },
@@ -328,7 +597,8 @@ const api = {
 
     // ---- 风险排序 ----
     async getRiskRankings() {
-        return fetchWithFallback('/data-mgmt/risk-rankings', {}, () => getMock('riskRankingItems'));
+        // V1.4 HOME-1A: 不再 fallback 到 mockData，API 不可用时返回空数组
+        return fetchWithFallback('/data-mgmt/risk-rankings', {}, () => []);
     },
     async updateRiskRanking(rankId, data) {
         return fetchWithFallback('/data-mgmt/risk-rankings/' + rankId, { method: 'PUT', body: JSON.stringify(data) }, () => {

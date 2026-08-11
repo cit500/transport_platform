@@ -17,7 +17,8 @@ import lombok.NoArgsConstructor;
 public class WeakRanking {
 
     @Id
-    private Integer rank;
+    @Column(name = "ranking")
+    private Integer ranking;
 
     @Column(length = 200)
     private String name;

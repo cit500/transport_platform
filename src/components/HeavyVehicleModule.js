@@ -45,7 +45,8 @@ var hvState = {
   schemeStatus: '未评估',  // 未评估 / 已评估 / 已保存
   editDialogOpen: false,
   detailFilter: 'all',     // 明细筛选: all/pass/restricted/forbidden/unknown
-  detailTypeFilter: 'all'  // 类型筛选: all/bridge/tunnel
+  detailTypeFilter: 'all', // 类型筛选: all/bridge/tunnel
+  routeEdgeIds: []         // V1.4F: 路线关联的 Road Edge ID 列表
 };
 
 // 保存原始地图容器父节点，用于关闭时恢复
@@ -371,6 +372,21 @@ function renderInputStrip() {
   // 车辆参数事件绑定
   bindVehicleEvents();
 
+  // V1.4F: 路线 Edge IDs 输入事件
+  var edgeIdsInput = document.getElementById('hv-route-edge-ids');
+  if (edgeIdsInput) {
+    edgeIdsInput.addEventListener('change', function() {
+      var edgeIdsStr = this.value.trim();
+      if (edgeIdsStr) {
+        var edgeIds = edgeIdsStr.split(',').map(function(s) { return parseInt(s.trim()); }).filter(function(n) { return !isNaN(n); });
+        hvState.routeEdgeIds = edgeIds;
+        loadFacilitiesFromRoadEdges(edgeIds);
+      } else {
+        hvState.routeEdgeIds = [];
+      }
+    });
+  }
+
   // 暴露函数到全局
   window.__hvAddFromRoadnet = function() {
     var input = document.getElementById('hv-facility-search');
@@ -612,11 +628,11 @@ function buildRouteForm() {
   return ''
     + '<div class="hv-form-group">'
     + '  <label class="hv-form-label">起点</label>'
-    + '  <input class="hv-form-input" id="hv-route-start" value="" placeholder="输入起点名称（占位）" />'
+    + '  <input class="hv-form-input" id="hv-route-start" value="" placeholder="输入起点名称" />'
     + '</div>'
     + '<div class="hv-form-group">'
     + '  <label class="hv-form-label">终点</label>'
-    + '  <input class="hv-form-input" id="hv-route-end" value="" placeholder="输入终点名称（占位）" />'
+    + '  <input class="hv-form-input" id="hv-route-end" value="" placeholder="输入终点名称" />'
     + '</div>'
     + '<div class="hv-form-row">'
     + '  <div class="hv-form-group">'
@@ -632,9 +648,13 @@ function buildRouteForm() {
     + '  <label class="hv-form-label">所属区县</label>'
     + '  <input class="hv-form-input" id="hv-route-district" value="" placeholder="如：万州区" />'
     + '</div>'
+    + '<div class="hv-form-group">'
+    + '  <label class="hv-form-label">路线 Edge ID 列表</label>'
+    + '  <input class="hv-form-input" id="hv-route-edge-ids" value="" placeholder="如：1234,5678 (逗号分隔)" />'
+    + '</div>'
     + '<div style="font-size:10px;color:var(--text-muted);margin-top:4px;padding:4px 8px;background:rgba(56,189,248,0.03);border-radius:3px;">'
-    + '  💡 当前阶段起终点只作为方案信息保存，不触发真实路径搜索。<br>'
-    + '  请通过搜索或手动添加方式管理沿途桥隧清单。'
+    + '  💡 输入 Road Edge ID 后，系统将自动查询沿线正式桥隧资产。<br>'
+    + '  也可通过搜索或手动添加方式管理沿途桥隧清单。'
     + '</div>';
 }
 
@@ -982,6 +1002,81 @@ function addRoadnetCandidate(data) {
   showToast('✅ 已添加「' + facility.name + '」', 'success');
 }
 
+// ============================================================
+// V1.4F: 从 Road Edge ID 查询正式 Asset
+// ============================================================
+
+async function loadFacilitiesFromRoadEdges(edgeIds) {
+  if (!edgeIds || edgeIds.length === 0) return;
+
+  showToast('🔍 正在查询沿线正式桥隧资产...', 'info');
+
+  try {
+    var assets = await api.getAssetsByRoadEdges(edgeIds);
+    if (!assets || assets.length === 0) {
+      showToast('ℹ️ 未找到关联的正式桥隧资产', 'info');
+      return;
+    }
+
+    // 将正式 Asset 转换为 hvState.facilities 格式
+    var addedCount = 0;
+    assets.forEach(function(asset) {
+      // 检查是否已存在
+      var exists = hvState.facilities.some(function(f) {
+        return f.assetId === asset.assetId;
+      });
+      if (exists) return;
+
+      var facility = {
+        facilityId: 'RF_' + Date.now() + '_' + asset.assetId,
+        assetId: asset.assetId,  // V1.4F: 关联正式 Asset ID
+        source: 'formal_asset',
+        sourceEdgeIds: asset.roadEdgeIds || [],
+        facilityType: asset.assetType === 'BRIDGE' ? 'bridge' : 'tunnel',
+        name: asset.assetName || '未命名',
+        assetCode: asset.assetCode || '',
+        roadName: '',
+        roadRef: '',
+        districtName: '',
+        longitude: asset.longitude,
+        latitude: asset.latitude,
+        lengthM: null,
+        // V1.4F: 使用正式 Asset 的当前限制参数
+        limitWeightT: asset.currentLoadLimitT ? parseFloat(asset.currentLoadLimitT) : null,
+        limitHeightM: asset.currentHeightLimitM ? parseFloat(asset.currentHeightLimitM) : null,
+        limitWidthM: asset.currentWidthLimitM ? parseFloat(asset.currentWidthLimitM) : null,
+        maxspeed: null,
+        lanes: null,
+        bridge: null,
+        tunnel: null,
+        structureType: '',
+        technicalCondition: '',
+        riskLevel: asset.riskLevel || 'medium',
+        // V1.4F: 从正式 Asset 获取通行状态
+        passStatus: asset.passStatus || 'UNKNOWN',
+        healthScore: asset.healthScore,
+        remark: ''
+      };
+
+      hvState.facilities.push(facility);
+      addedCount++;
+    });
+
+    if (addedCount > 0) {
+      hvState.assessmentResults = null;
+      hvState.schemeStatus = '未评估';
+      updateStatusBadge();
+      refreshAllUI();
+      showToast('✅ 已从正式资产添加 ' + addedCount + ' 个桥隧对象', 'success');
+    } else {
+      showToast('ℹ️ 所有关联资产已在清单中', 'info');
+    }
+  } catch (e) {
+    console.error('[HV] 查询正式资产失败:', e);
+    showToast('❌ 查询正式资产失败: ' + e.message, 'error');
+  }
+}
+
 function getCoordsFromFeature(data) {
   if (data.longitude && data.latitude) {
     return { lng: parseFloat(data.longitude), lat: parseFloat(data.latitude) };
@@ -1053,6 +1148,8 @@ function runAssessment() {
     var results = [];
     hvState.facilities.forEach(function(f) {
       var result = evaluateFacility(f, hvState.vehicle);
+      // V1.4F: 传递 assetId 到结果
+      result.assetId = f.assetId || null;
       results.push(result);
       // 更新设施状态
       f.assessmentStatus = result.assessmentStatus;
@@ -1093,7 +1190,13 @@ function runAssessment() {
 }
 
 /**
- * 占位评估规则
+ * V1.4F: 通行评估规则 (使用正式 Asset Current Status)
+ * 
+ * 优先级：
+ * 1. passStatus = CLOSED/BLOCKED → 不可通行
+ * 2. passStatus = RESTRICTED → 结合当前限制参数判断
+ * 3. passStatus = OPEN/NORMAL → 如果存在明确当前限制参数则检查
+ * 4. UNKNOWN → 标记需人工确认
  */
 function evaluateFacility(facility, vehicle) {
   var result = {
@@ -1118,14 +1221,47 @@ function evaluateFacility(facility, vehicle) {
     exceedItems: []
   };
 
+  // V1.4F: 优先检查 passStatus
+  var passStatus = facility.passStatus || 'UNKNOWN';
+
+  // 1. CLOSED/BLOCKED → 不可通行
+  if (passStatus === 'CLOSED' || passStatus === 'BLOCKED') {
+    result.assessmentStatus = 'forbidden';
+    result.reason = '该设施当前状态为' + (passStatus === 'CLOSED' ? '封闭' : '阻断') + '，不可通行';
+    result.suggestion = '请绕行或等待设施恢复';
+    result.assessmentScore = 0;
+    return result;
+  }
+
+  // 2. UNKNOWN → 标记需人工确认
+  if (passStatus === 'UNKNOWN') {
+    result.assessmentStatus = 'unknown';
+    result.reason = '该设施通行状态未知，需人工确认';
+    result.suggestion = '请补充设施通行状态数据';
+    result.assessmentScore = 0;
+    return result;
+  }
+
+  // 3. RESTRICTED → 结合当前限制参数判断
+  if (passStatus === 'RESTRICTED') {
+    result.assessmentStatus = 'restricted';
+    result.reason = '该设施当前状态为限制通行';
+    result.suggestion = '请根据具体限制参数判断';
+    result.assessmentScore = 60;
+  }
+
+  // 4. 根据设施类型和当前限制参数进行详细评估
   if (facility.facilityType === 'bridge') {
-    // 桥梁评估：基于限重
+    // 桥梁评估：基于 currentLoadLimitT
     var limitW = facility.limitWeightT;
     if (!limitW || limitW <= 0) {
-      result.assessmentStatus = 'unknown';
-      result.reason = '缺少桥梁限重数据';
-      result.suggestion = '请补充桥梁限重参数';
-      result.assessmentScore = 0;
+      // 没有明确限重数据
+      if (result.assessmentStatus !== 'restricted') {
+        result.assessmentStatus = 'unknown';
+        result.reason = '暂无当前限制数据（限重）';
+        result.suggestion = '请补充桥梁限重参数';
+        result.assessmentScore = 0;
+      }
     } else if (vehicle.totalWeightT <= limitW) {
       result.assessmentStatus = 'pass';
       result.reason = '车辆总重 ' + vehicle.totalWeightT + 't 未超过桥梁限重 ' + limitW + 't';
@@ -1145,15 +1281,18 @@ function evaluateFacility(facility, vehicle) {
       result.assessmentScore = Math.max(10, 30 - ((vehicle.totalWeightT / limitW - 1) * 20));
     }
   } else if (facility.facilityType === 'tunnel') {
-    // 隧道评估：基于限高+限宽
+    // 隧道评估：基于 currentHeightLimitM + currentWidthLimitM
     var limitH = facility.limitHeightM;
     var limitW = facility.limitWidthM;
 
     if ((!limitH || limitH <= 0) && (!limitW || limitW <= 0)) {
-      result.assessmentStatus = 'unknown';
-      result.reason = '缺少隧道限高/限宽数据';
-      result.suggestion = '请补充隧道限高和限宽参数';
-      result.assessmentScore = 0;
+      // 没有明确限高限宽数据
+      if (result.assessmentStatus !== 'restricted') {
+        result.assessmentStatus = 'unknown';
+        result.reason = '暂无当前限制数据（限高/限宽）';
+        result.suggestion = '请补充隧道限高和限宽参数';
+        result.assessmentScore = 0;
+      }
     } else {
       var heightOk = true;
       var widthOk = true;
@@ -1216,15 +1355,33 @@ function calculateSummary(results) {
     restrictedCount: 0,
     forbiddenCount: 0,
     unknownCount: 0,
-    overallStatus: 'unknown'
+    overallStatus: 'unknown',
+    // V1.4F: 不可通行资产和 Edge 映射
+    blockedAssetIds: [],
+    blockedEdgeIds: []
   };
 
   results.forEach(function(r) {
     if (r.assessmentStatus === 'pass') summary.passCount++;
     else if (r.assessmentStatus === 'restricted') summary.restrictedCount++;
-    else if (r.assessmentStatus === 'forbidden') summary.forbiddenCount++;
+    else if (r.assessmentStatus === 'forbidden') {
+      summary.forbiddenCount++;
+      // V1.4F: 记录不可通行资产 ID
+      if (r.assetId) {
+        summary.blockedAssetIds.push(r.assetId);
+      }
+    }
     else summary.unknownCount++;
   });
+
+  // V1.4F: 收集不可通行资产关联的 Edge IDs
+  hvState.facilities.forEach(function(f) {
+    if (f.assessmentStatus === 'forbidden' && f.sourceEdgeIds) {
+      summary.blockedEdgeIds = summary.blockedEdgeIds.concat(f.sourceEdgeIds);
+    }
+  });
+  // 去重
+  summary.blockedEdgeIds = [...new Set(summary.blockedEdgeIds)];
 
   // 总体结论
   if (summary.forbiddenCount > 0) {

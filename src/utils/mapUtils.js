@@ -2,8 +2,7 @@
  * Leaflet 地图工具函数
  */
 
-import chongqingRoadnetGeoJsonRaw from '../../gaosu/data/chongqing_roadnet/chongqing_expressway_edges_district_fixed.geojson?raw';
-const chongqingRoadnetGeoJson = JSON.parse(chongqingRoadnetGeoJsonRaw);
+import api from '../api/index.js';
 
 let map = null;
 let currentLayer = null;
@@ -11,10 +10,14 @@ let markersLayer = null;
 let routeLayer = null;
 let heatLayer = null;
 let highlightLayer = null;
+let formalAssetLayer = null; // V1.4E: 正式资产图层
+let formalAssetLoading = false;
+let formalAssetGeoJson = null;
 
-// 重庆高速/快速路网缓存
+// 重庆高速/快速路网缓存（V1.3D: 从 API 加载）
 let chongqingRoadnetLayer = null;
 let chongqingRoadnetLoading = false;
+let chongqingRoadnetGeoJson = null;
 
 // BIGEMAP 底图配置
 const BIGEMAP_SERVER_URL = 'http://127.0.0.1:9000';
@@ -149,13 +152,15 @@ export function initMap(containerId, center, zoom) {
     routeLayer = L.layerGroup().addTo(map);
     heatLayer = L.layerGroup().addTo(map);
     highlightLayer = L.layerGroup().addTo(map);
+    formalAssetLayer = L.layerGroup(); // V1.4E: 正式资产图层（默认隐藏）
 
     // 创建覆盖层对象
     overlays = {
         '桥梁': markersLayer,
         '路网': routeLayer,
         '热力图': heatLayer,
-        '高亮': highlightLayer
+        '高亮': highlightLayer,
+        '正式资产': formalAssetLayer // V1.4E: 添加正式资产图层
     };
 
     return map;
@@ -299,6 +304,12 @@ export function toggleOverlayByName(name, visible) {
         return;
     }
 
+    // V1.4E: 正式资产图层
+    if (name === 'formalAsset' || name === 'formal') {
+        toggleFormalAssetLayer(map, visible);
+        return;
+    }
+
     var layerMap = { bridge: markersLayer, heat: heatLayer };
     var layer = layerMap[name];
     if (!layer) return;
@@ -339,27 +350,100 @@ function getRoadStyle(feature) {
 }
 
 /**
- * 格式化道路弹窗 HTML
+ * 格式化道路弹窗 HTML (HOME-2: 增加行政区、长度、Road→Asset按钮)
  */
 function formatRoadPopup(properties) {
     properties = properties || {};
-    var length = Number(properties.length || 0);
 
-    return '<div class="road-popup">' +
-        '<div class="road-popup-title">' + (properties.name || properties.ref || '未命名道路') + '</div>' +
-        '<div>道路编号：' + (properties.ref || '-') + '</div>' +
-        '<div>道路等级：' + (properties.highway || '-') + '</div>' +
-        '<div>所属区县：' + (properties.district_name || '-') + '</div>' +
-        '<div>长度：' + (length ? length.toFixed(1) + ' m' : '-') + '</div>' +
-        '<div>限速：' + (properties.maxspeed || '-') + '</div>' +
-        '<div>车道数：' + (properties.lanes || '-') + '</div>' +
-        '<div>桥梁属性：' + (properties.bridge || '-') + '</div>' +
-        '<div>隧道属性：' + (properties.tunnel || '-') + '</div>' +
+    // V1.3D: 从 API 返回的 properties 格式
+    var title = properties.name || properties.ref || '未命名道路';
+    var ref = properties.ref || '-';
+    var highway = properties.highway || '-';
+    var edgeId = properties.edgeId || '-';
+    var divisionName = properties.divisionName || '-';
+    var divisionId = properties.divisionId || null;
+    var lengthM = properties.lengthM || properties.length_m || 0;
+    var isBridge = properties.isBridge || false;
+    var isTunnel = properties.isTunnel || false;
+
+    // 格式化长度
+    var lengthDisplay = '';
+    if (lengthM > 0) {
+        if (lengthM < 1000) {
+            lengthDisplay = lengthM.toFixed(0) + ' m';
+        } else {
+            lengthDisplay = (lengthM / 1000).toFixed(2) + ' km';
+        }
+    } else {
+        lengthDisplay = '--';
+    }
+
+    // 获取当前点击位置（用于Road→Asset）
+    var lat = properties._clickLat || '';
+    var lng = properties._clickLng || '';
+
+    return '<div class="road-popup" style="font-family:\'Segoe UI\',\'PingFang SC\',sans-serif;min-width:220px;">' +
+        '<div style="font-size:14px;font-weight:600;color:#38BDF8;margin-bottom:6px;border-bottom:1px solid rgba(56,189,248,0.2);padding-bottom:4px;">' + title + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px;"><span style="color:#94A3B8;">Edge ID：</span>' + edgeId + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px;"><span style="color:#94A3B8;">道路编号：</span>' + ref + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px;"><span style="color:#94A3B8;">道路等级：</span>' + highway + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px;"><span style="color:#94A3B8;">行政区：</span>' + divisionName + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px;"><span style="color:#94A3B8;">长度：</span>' + lengthDisplay + '</div>' +
+        '<div style="font-size:12px;margin-bottom:3px;"><span style="color:#94A3B8;">桥梁路段：</span>' + (isBridge ? '<span style="color:#4ADE80;">是</span>' : '否') + '</div>' +
+        '<div style="font-size:12px;margin-bottom:8px;"><span style="color:#94A3B8;">隧道路段：</span>' + (isTunnel ? '<span style="color:#A78BFA;">是</span>' : '否') + '</div>' +
+        '<div style="display:flex;gap:6px;border-top:1px solid rgba(56,189,248,0.15);padding-top:6px;">' +
+        '<button onclick="window.__roadToAsset(\'' + edgeId + '\', \'' + divisionId + '\', ' + lat + ', ' + lng + ', \'BRIDGE\')" style="flex:1;padding:4px 8px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:4px;color:#4ADE80;cursor:pointer;font-size:11px;font-weight:600;">添加为桥梁</button>' +
+        '<button onclick="window.__roadToAsset(\'' + edgeId + '\', \'' + divisionId + '\', ' + lat + ', ' + lng + ', \'TUNNEL\')" style="flex:1;padding:4px 8px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:4px;color:#A78BFA;cursor:pointer;font-size:11px;font-weight:600;">添加为隧道</button>' +
+        '</div>' +
         '</div>';
 }
 
+// ============================================================
+// HOME-2: Road→Asset 全局函数
+// ============================================================
+window.__roadToAsset = function(edgeId, divisionId, lat, lng, assetType) {
+    console.log('[Road→Asset] edgeId:', edgeId, 'divisionId:', divisionId, 'type:', assetType);
+    
+    // 关闭Popup
+    if (map) {
+        map.closePopup();
+    }
+    
+    // 打开DataManagement的Asset创建表单，并预填数据
+    import('../components/DataManagementModule.js').then(function(mod) {
+        if (mod && typeof mod.openDataManagementWithAssetForm === 'function') {
+            mod.openDataManagementWithAssetForm({
+                assetType: assetType,
+                edgeIds: edgeId ? [parseInt(edgeId)] : [],
+                divisionId: divisionId ? parseInt(divisionId) : null,
+                latitude: lat || null,
+                longitude: lng || null,
+                source: 'road-map'
+            });
+        } else {
+            // 回退：打开DataManagement并dispatch事件
+            mod.openDataManagement();
+            setTimeout(function() {
+                window.dispatchEvent(new CustomEvent('asset-create-request', {
+                    detail: {
+                        assetType: assetType,
+                        edgeIds: edgeId ? [parseInt(edgeId)] : [],
+                        divisionId: divisionId ? parseInt(divisionId) : null,
+                        latitude: lat || null,
+                        longitude: lng || null,
+                        source: 'road-map'
+                    }
+                }));
+            }, 500);
+        }
+    }).catch(function(err) {
+        console.error('[Road→Asset] 打开DataManagement失败:', err);
+        window.showToast('打开数据管理失败', 'error');
+    });
+};
+
 /**
- * 加载重庆高速/快速路网图层（懒加载）
+ * 加载重庆高速/快速路网图层（懒加载，V1.3D: 从 API 加载）
  * 只在第一次调用时 fetch，之后返回缓存
  */
 export async function loadChongqingRoadnetLayer(map) {
@@ -377,31 +461,40 @@ export async function loadChongqingRoadnetLayer(map) {
     chongqingRoadnetLoading = true;
 
     try {
-        var geojson = chongqingRoadnetGeoJson;
+        // V1.3D: 从 API 加载 GeoJSON
+        if (!chongqingRoadnetGeoJson) {
+            console.log('[Roadnet] 正在从 API 加载路网数据...');
+            chongqingRoadnetGeoJson = await api.getRoadNetworkGeoJson();
+        }
 
-        if (!geojson || !geojson.features) {
+        if (!chongqingRoadnetGeoJson || !chongqingRoadnetGeoJson.features) {
             throw new Error('路网 GeoJSON 数据为空');
         }
 
-        chongqingRoadnetLayer = L.geoJSON(geojson, {
+        chongqingRoadnetLayer = L.geoJSON(chongqingRoadnetGeoJson, {
             pane: 'roadPane',
             style: getRoadStyleWithStatus,
             onEachFeature: function (feature, layer) {
                 var properties = feature.properties || {};
-                // 自动生成 edge_id
-                if (!properties.edge_id) {
-                    properties.edge_id = (properties.u || '') + '_' + (properties.v || '') + '_' + (properties.key || 0);
-                }
                 layer.bindPopup(formatRoadPopup(properties));
+
+                // V1.3D: 点击触发 road-edge-selected 事件
+                layer.on('click', function () {
+                    window.dispatchEvent(new CustomEvent('road-edge-selected', {
+                        detail: { edgeId: properties.edgeId, source: 'map' }
+                    }));
+                });
             }
         });
 
         chongqingRoadnetLayer.addTo(map);
         chongqingRoadnetLayer.bringToFront();
-        console.log('[Roadnet] 重庆高速/快速路网加载完成，共 ' + (geojson.features ? geojson.features.length : 0) + ' 条道路');
+        console.log('[Roadnet] 重庆高速/快速路网加载完成，共 ' + chongqingRoadnetGeoJson.features.length + ' 条道路');
         return chongqingRoadnetLayer;
     } catch (error) {
         console.error('[Roadnet] 重庆高速/快速路网加载失败：', error);
+        // V1.3D: 显示错误状态，不 fallback 到本地 GeoJSON
+        chongqingRoadnetGeoJson = null;
         return null;
     } finally {
         chongqingRoadnetLoading = false;
@@ -428,6 +521,159 @@ export function toggleChongqingRoadnetLayer(map, visible) {
 
     removeChongqingRoadnetLayer(map);
     return null;
+}
+
+// ============================================================
+// V1.4E: 正式桥隧资产图层
+// ============================================================
+
+/**
+ * 正式资产图标映射
+ */
+const formalAssetIconMap = {
+    BRIDGE: L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="width:16px;height:16px;border-radius:50%;background:#38BDF8;border:2px solid rgba(56,189,248,0.6);box-shadow:0 0 10px rgba(56,189,248,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;">🌉</div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    }),
+    TUNNEL: L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="width:16px;height:16px;border-radius:50%;background:#A78BFA;border:2px solid rgba(167,139,250,0.6);box-shadow:0 0 10px rgba(167,139,250,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;">🚇</div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    })
+};
+
+/**
+ * 加载正式资产图层 (HOME-2: 支持无参数调用)
+ */
+export async function loadFormalAssetLayer(mapParam) {
+    var mapInstance = mapParam || map;
+    if (!mapInstance) return null;
+    
+    if (formalAssetLayer && mapInstance.hasLayer(formalAssetLayer)) {
+        return formalAssetLayer;
+    }
+
+    if (formalAssetLoading) {
+        return null;
+    }
+
+    formalAssetLoading = true;
+
+    try {
+        // 从 API 加载 GeoJSON
+        if (!formalAssetGeoJson) {
+            console.log('[FormalAsset] 正在从 API 加载正式资产数据...');
+            formalAssetGeoJson = await api.getAssetsGeoJson();
+        }
+
+        if (!formalAssetGeoJson || !formalAssetGeoJson.features) {
+            throw new Error('正式资产 GeoJSON 数据为空');
+        }
+
+        // 清空旧数据
+        formalAssetLayer.clearLayers();
+
+        // 添加新数据
+        L.geoJSON(formalAssetGeoJson, {
+            pointToLayer: function (feature, latlng) {
+                var properties = feature.properties || {};
+                var assetType = properties.assetType || 'BRIDGE';
+                var icon = formalAssetIconMap[assetType] || formalAssetIconMap.BRIDGE;
+                return L.marker(latlng, { icon });
+            },
+            onEachFeature: function (feature, layer) {
+                var properties = feature.properties || {};
+                
+                // 构建 Tooltip
+                var typeIcon = properties.assetType === 'BRIDGE' ? '🌉' : '🚇';
+                var typeName = properties.assetType === 'BRIDGE' ? '桥梁' : '隧道';
+                var riskColor = { LOW: '#4ADE80', MEDIUM: '#FBBF24', HIGH: '#F87171', EXTREME: '#EF4444' }[properties.riskLevel] || '#94A3B8';
+                var passColor = { NORMAL: '#4ADE80', RESTRICTED: '#FBBF24', BLOCKED: '#F87171', UNKNOWN: '#94A3B8' }[properties.passStatus] || '#94A3B8';
+
+                var popupContent = `
+                <div style="font-family:'Segoe UI','PingFang SC',sans-serif;min-width:200px;">
+                    <div style="font-size:13px;font-weight:600;color:#38BDF8;margin-bottom:4px;">${typeIcon} ${properties.assetName || '未命名'}</div>
+                    <div style="font-size:11px;color:#94A3B8;margin-bottom:4px;">${properties.assetCode || ''} | ${typeName}</div>
+                    <div style="font-size:11px;color:#94A3B8;margin-bottom:4px;">行政区: ${properties.divisionName || '-'}</div>
+                    <div style="font-size:11px;margin-bottom:4px;">
+                        <span style="color:${riskColor};">风险: ${properties.riskLevel || '-'}</span> | 
+                        <span style="color:${passColor};">通行: ${properties.passStatus || '-'}</span>
+                    </div>
+                    <div style="font-size:11px;color:#94A3B8;margin-bottom:8px;">健康分: ${properties.healthScore ? properties.healthScore.toFixed(2) : '-'}</div>
+                    <button onclick="window.openAssetDetail(${properties.assetId})" style="padding:4px 12px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);border-radius:4px;color:#38BDF8;cursor:pointer;font-size:11px;">查看详情 →</button>
+                </div>
+                `;
+                layer.bindPopup(popupContent, { minWidth: 200, maxWidth: 300 });
+
+                // 点击触发 asset-selected 事件
+                layer.on('click', function () {
+                    window.dispatchEvent(new CustomEvent('asset-selected', {
+                        detail: { 
+                            assetId: properties.assetId, 
+                            source: 'map',
+                            lat: feature.geometry?.coordinates?.[1],
+                            lng: feature.geometry?.coordinates?.[0]
+                        }
+                    }));
+                });
+            }
+        }).addTo(formalAssetLayer);
+
+        formalAssetLayer.addTo(mapInstance);
+        console.log('[FormalAsset] 正式资产图层加载完成，共 ' + formalAssetGeoJson.features.length + ' 个资产');
+        return formalAssetLayer;
+    } catch (error) {
+        console.error('[FormalAsset] 正式资产图层加载失败：', error);
+        formalAssetGeoJson = null;
+        return null;
+    } finally {
+        formalAssetLoading = false;
+    }
+}
+
+/**
+ * 清空正式资产图层缓存 (HOME-2)
+ */
+export function clearFormalAssetLayer() {
+    formalAssetGeoJson = null;
+    if (formalAssetLayer && map && map.hasLayer(formalAssetLayer)) {
+        formalAssetLayer.clearLayers();
+    }
+}
+
+/**
+ * 移除正式资产图层
+ */
+export function removeFormalAssetLayer(mapParam) {
+    var mapInstance = mapParam || map;
+    if (formalAssetLayer && mapInstance && mapInstance.hasLayer(formalAssetLayer)) {
+        mapInstance.removeLayer(formalAssetLayer);
+    }
+}
+
+/**
+ * 切换正式资产图层显隐
+ */
+export function toggleFormalAssetLayer(map, visible) {
+    if (visible) {
+        return loadFormalAssetLayer(map);
+    }
+
+    removeFormalAssetLayer(map);
+    return null;
+}
+
+/**
+ * 刷新正式资产图层缓存
+ */
+export function refreshFormalAssetLayer() {
+    formalAssetGeoJson = null;
+    if (formalAssetLayer && map && map.hasLayer(formalAssetLayer)) {
+        loadFormalAssetLayer(map);
+    }
 }
 
 /**
@@ -475,6 +721,18 @@ export function flyTo(lat, lng, zoom = 12) {
 }
 // 全局暴露，供后台管理模块使用
 window.__flyTo = flyTo;
+
+/**
+ * 打开资产详情窗口 (V1.4E)
+ * 由 Marker 点击调用
+ */
+window.openAssetDetail = function(assetId) {
+    import('../components/AssetDetailWindow.js').then(module => {
+        module.openAssetDetail(assetId);
+    }).catch(err => {
+        console.error('[AssetDetail] 加载模块失败:', err);
+    });
+};
 
 /**
  * 添加桥梁标记
@@ -804,8 +1062,8 @@ export function highlightRoadEdge(edgeId) {
         chongqingRoadnetLayer.eachLayer(function(layer) {
             if (layer.feature && layer.feature.properties) {
                 var props = layer.feature.properties;
-                var id = props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0));
-                if (id === edgeId) {
+                var id = props.edgeId || props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0));
+                if (String(id) === String(edgeId)) {
                     // 复制几何并高亮
                     var coords = layer.getLatLngs();
                     if (coords && coords.length > 0) {
@@ -861,8 +1119,8 @@ export function flyToRoadEdge(edgeId) {
     chongqingRoadnetLayer.eachLayer(function(layer) {
         if (layer.feature && layer.feature.properties) {
             var props = layer.feature.properties;
-            var id = props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0));
-            if (id === edgeId) {
+            var id = props.edgeId || props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0));
+            if (String(id) === String(edgeId)) {
                 var bounds = layer.getBounds();
                 if (bounds && bounds.isValid()) {
                     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
@@ -899,8 +1157,8 @@ export function updateRoadnetFeatureProperties(edgeId, properties) {
     chongqingRoadnetLayer.eachLayer(function(layer) {
         if (layer.feature && layer.feature.properties) {
             var props = layer.feature.properties;
-            var id = props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0));
-            if (id === edgeId) {
+            var id = props.edgeId || props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0));
+            if (String(id) === String(edgeId)) {
                 Object.assign(props, properties);
                 layer.setStyle(getRoadStyleWithStatus(layer.feature));
                 // 更新弹窗
@@ -1128,7 +1386,7 @@ export function bindAddToHvAssessmentAction(layer) {
         var event = new CustomEvent('hv-add-facility', {
             detail: {
                 source: 'map_click',
-                sourceEdgeId: props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0)),
+                sourceEdgeId: props.edgeId || props.edge_id || (props.u + '_' + props.v + '_' + (props.key || 0)),
                 facilityType: type,
                 name: props.name || props.ref || '未命名道路段',
                 roadName: props.name || '',

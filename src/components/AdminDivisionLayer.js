@@ -2,9 +2,13 @@
  * AdminDivisionLayer.js
  * ECharts 动态行政区划图层 — 重庆区县
  * 作为独立覆盖层叠加在 Leaflet 地图之上
+ *
+ * V1.2: 指标数据从 Overview API 获取，不再读取 mockData
+ *        Polygon 仍从本地 GeoJSON 加载
  */
 
 import chongqingDistrictsGeoJsonRaw from '../../gaosu/data/chongqing_roadnet/chongqing_districts_county_fixed.geojson?raw';
+import api from '../api/index.js';
 
 let chart = null;
 let geoJsonCache = null;
@@ -13,6 +17,9 @@ let currentMode = 'overlay';
 let tooltipCarouselTimer = null;
 let tooltipIndex = 0;
 let lastHighlightedName = null;
+
+// V1.2: 从 Overview API 获取的指标缓存（divisionKey → data）
+let overviewCache = null;
 
 /**
  * 初始化动态行政区划图层
@@ -93,22 +100,41 @@ function getFeatureCenter(feature) {
     });
     return [(minX + maxX) / 2, (minY + maxY) / 2];
 }
+/**
+ * V1.2: 从 Overview API 加载指标数据
+ * 返回 { displayName → overviewData } 映射
+ */
+async function loadOverviewData() {
+    if (overviewCache) return overviewCache;
+    try {
+        var overviews = await api.getDivisionOverviews();
+        if (!overviews || !overviews.length) {
+            console.warn('[AdminDivisionLayer] Overview API 返回空数据');
+            overviewCache = {};
+            return overviewCache;
+        }
+        var map = {};
+        overviews.forEach(function(o) {
+            if (o.displayName) map[o.displayName] = o;
+            if (o.canonicalName && o.canonicalName !== o.displayName) {
+                map[o.canonicalName] = o;
+            }
+        });
+        overviewCache = map;
+        return overviewCache;
+    } catch (e) {
+        console.error('[AdminDivisionLayer] Overview API 调用失败:', e);
+        overviewCache = {};
+        return overviewCache;
+    }
+}
+
+/**
+ * V1.2: 同步获取已缓存的指标数据（renderChart 调用时使用）
+ * 不再直接读取 window.__mockData
+ */
 function getDistrictMetricsMap() {
-    var metrics = window.__mockData && window.__mockData.districtMetrics;
-    if (!metrics || !metrics.length) return {};
-    var map = {};
-    metrics.forEach(function(m) {
-        map[m.district_name] = m;
-        var short = m.district_name.replace(/^重庆市/, '');
-        if (short !== m.district_name) {
-            map[short] = m;
-        }
-        var normalized = normalizeDistrictName(m.district_name);
-        if (normalized !== m.district_name && !map[normalized]) {
-            map[normalized] = m;
-        }
-    });
-    return map;
+    return overviewCache || {};
 }
 function buildData(geoJson) {
     var features = geoJson.features || [];
@@ -116,44 +142,41 @@ function buildData(geoJson) {
     var mapData = features.map(function(f, i) {
         var name = getFeatureName(f);
         var m = metricsMap[name];
-        var resilience, bridgeCount, tunnelCount, disasterRisk, trafficGuarantee, roadLength, riskAssetCount;
+        // V1.2: 指标数据从 Overview API 获取，不再生成随机 fallback
+        var resilience = null;
+        var disasterRisk = null;
+        var trafficGuarantee = null;
+        var riskLevel = null;
+        var totalAssetCount = 0;
         if (m) {
-            // 使用真实数据（来自数据库/model）
-            resilience = m.resilience_score || 0;
-            bridgeCount = m.bridge_count || 0;
-            tunnelCount = m.tunnel_count || 0;
-            disasterRisk = m.disaster_risk_rate || 0;
-            trafficGuarantee = m.traffic_guarantee_rate || 0;
-            roadLength = m.road_length_km || 0;
-            riskAssetCount = m.high_risk_asset_count || 0;
-        } else {
-            // 数据缺失时使用占位值（保证演示不影响）
-            var seed = name.split('').reduce(function(s, c, j) { return s + c.charCodeAt(0) * (j + 1); }, i);
-            resilience = 62 + (seed % 36);
-            bridgeCount = 15 + (seed % 120);
-            tunnelCount = 2 + (seed % 30);
-            disasterRisk = 5 + (seed % 30);
-            trafficGuarantee = 60 + (seed % 38);
-            roadLength = 50 + (seed % 300);
-            riskAssetCount = 0 + (seed % 10);
+            resilience = m.resilienceScore;
+            disasterRisk = m.disasterRiskRate;
+            trafficGuarantee = m.trafficGuaranteeRate;
+            riskLevel = m.riskLevel;
+            // HOME-2: 获取桥隧总数
+            if (m.assetSummary) {
+                totalAssetCount = m.assetSummary.totalAssetCount || 0;
+            }
         }
         return {
             name: name,
             value: resilience,
-            bridgeCount: bridgeCount,
-            tunnelCount: tunnelCount,
+            divisionId: m ? m.divisionId : null,
+            divisionKey: m ? m.divisionKey : null,
             disasterRisk: disasterRisk,
             trafficGuarantee: trafficGuarantee,
-            roadLength: roadLength,
-            riskAssetCount: riskAssetCount,
+            riskLevel: riskLevel,
+            totalAssetCount: totalAssetCount,
+            sourceType: m ? m.sourceType : null,
             center: getFeatureCenter(f)
         };
     });
     return { mapData: mapData };
 }
 
-function renderChart() {
+async function renderChart() {
     if (!chart || !geoJsonCache) return;
+    await loadOverviewData();
     var d = buildData(geoJsonCache);
 
     console.log('[AdminDivisionLayer] 注册的 GeoJSON 名称列表:');
@@ -182,14 +205,17 @@ function renderChart() {
             textStyle: { color: '#e2e8f0' },
             formatter: function(params) {
                 var data = params.data || {};
+                var fmt = function(v) { return v != null ? v : '--'; };
+                var riskColor = { low: '#4ADE80', medium: '#FBBF24', high: '#FB923C', extreme: '#F87171' };
+                var riskText = data.riskLevel ? (data.riskLevel === 'low' ? '低' : data.riskLevel === 'medium' ? '中' : data.riskLevel === 'high' ? '高' : '极高') : '--';
+                // HOME-2: 增加桥隧总数显示
+                var assetCount = data.totalAssetCount != null ? data.totalAssetCount : 0;
                 return '<b style="font-size:13px;">' + params.name + '</b><br/>' +
-                    '韧性评分：<span style="color:#4ADE80;">' + (data.value || '--') + '</span><br/>' +
-                    '灾害风险率：<span style="color:#FBBF24;">' + (data.disasterRisk || '--') + '%</span><br/>' +
-                    '通行保障率：<span style="color:#38BDF8;">' + (data.trafficGuarantee || '--') + '%</span><br/>' +
-                    '桥梁数：<span style="color:#4ADE80;">' + (data.bridgeCount || '--') + '</span><br/>' +
-                    '隧道数：<span style="color:#38BDF8;">' + (data.tunnelCount || '--') + '</span><br/>' +
-                    '路网里程：<span style="color:#FBBF24;">' + (data.roadLength || '--') + ' km</span><br/>' +
-                    '风险对象数：<span style="color:#F87171;">' + (data.riskAssetCount || '--') + '</span>';
+                    '桥隧总数：<span style="color:#FBBF24;">' + assetCount + '</span><br/>' +
+                    '灾害风险率：<span style="color:#FBBF24;">' + fmt(data.disasterRisk) + '%</span><br/>' +
+                    '韧性评分：<span style="color:#4ADE80;">' + fmt(data.value) + '</span><br/>' +
+                    '通行保障率：<span style="color:#38BDF8;">' + fmt(data.trafficGuarantee) + '%</span><br/>' +
+                    '风险等级：<span style="color:' + (riskColor[data.riskLevel] || '#94A3B8') + ';">' + riskText + '</span>';
             }
         },
         visualMap: { show: false, min: 60, max: 100, inRange: { color: ['rgba(16,40,75,0.30)','rgba(20,80,140,0.35)','rgba(30,140,200,0.40)','rgba(40,200,240,0.45)'] } },
@@ -231,7 +257,16 @@ function renderChart() {
     chart.off('click');
     chart.on('click', function(params) {
         if (!params.name) return;
-        window.dispatchEvent(new CustomEvent('district-selected', { detail: { name: params.name, data: params.data || null } }));
+        var data = params.data || {};
+        // V1.2: 统一 district-selected 事件结构
+        window.dispatchEvent(new CustomEvent('district-selected', {
+            detail: {
+                divisionId: data.divisionId || null,
+                divisionKey: data.divisionKey || null,
+                displayName: params.name,
+                source: 'map'
+            }
+        }));
         window.showToast?.('已选中行政区：' + params.name, 'info');
     });
 }
@@ -256,11 +291,12 @@ export function showAdminDivisionLayer(mode) {
     chart.resize({ width: window.innerWidth, height: window.innerHeight });
     // 注册 resize 监听
     window.addEventListener('resize', resizeLayer);
-    renderChart();
     resizeLayer();
 
-    // 启动自动轮播
-    startTooltipCarousel();
+    // V1.2: renderChart 是异步的（需要加载 Overview 数据），等待完成后启动轮播
+    renderChart().then(function() {
+        startTooltipCarousel();
+    });
 
     // 鼠标干预暂停机制：滑入暂停，滑出恢复
     if (!chart.__mouseListenersAttached) {

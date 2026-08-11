@@ -1,6 +1,8 @@
 /**
  * 交通网络安全韧性评估及可视化决策平台 - 主入口
  * 
+ * HOME-2: 首页总览与空间态势大屏重构
+ * 
  * 数据流转架构:
  *  前端 <-> API 层 <-> Spring Boot <-> MySQL <-> Python 算法
  *              ↕ (自动降级)
@@ -15,12 +17,15 @@ window.L = L;
 window.Chart = Chart;
 window.echarts = echarts;
 
-import { initMap, addAllBridgeMarkers, flyTo, getMap, toggleBaseMap, toggleOverlayByName, highlightRoadEdge, updateRoadnetFeatureProperties, refreshRoadnetLayer } from './utils/mapUtils.js';
+import { initMap, addAllBridgeMarkers, flyTo, getMap, toggleBaseMap, toggleOverlayByName, highlightRoadEdge, flyToRoadEdge, updateRoadnetFeatureProperties, refreshRoadnetLayer, loadFormalAssetLayer, clearFormalAssetLayer } from './utils/mapUtils.js';
 import { initHeader } from './components/Header.js';
-import { initLeftPanel } from './components/LeftPanel.js';
-import { initRightPanel } from './components/RightPanel.js';
+import { initLeftPanel, refreshLeftPanel } from './components/LeftPanel.js';
+import { initRightPanel, refreshRightPanel } from './components/RightPanel.js';
 import { openHeavyVehicleModule, isHeavyVehicleActive, closeHeavyVehicleModule } from './components/HeavyVehicleModule.js';
+import { openHeavyVehicleAssessmentModule, isHeavyVehicleAssessmentActive, closeHeavyVehicleAssessmentModule } from './components/HeavyVehicleAssessmentModule.js';
 import { openDebrisResilienceModule, isDebrisResilienceActive, closeDebrisResilienceModule } from './components/DebrisResilienceModule.js';
+import { openDisasterRiskAssessmentModule, isDisasterRiskAssessmentActive, closeDisasterRiskAssessmentModule } from './components/DisasterRiskAssessmentModule.js';
+import { openRoadNetworkResilienceModule, isRoadNetworkResilienceActive, closeRoadNetworkResilienceModule } from './components/RoadNetworkResilienceModule.js';
 import { openDataManagement } from './components/DataManagementModule.js';
 import { openBridgeDetail } from './components/BridgeDetailWindow.js';
 import { initAdminDivisionLayer, toggleAdminDivisionLayer, showAdminDivisionLayer, hideAdminDivisionLayer } from './components/AdminDivisionLayer.js';
@@ -50,11 +55,11 @@ async function detectBackendAndShowSource() {
         if (online) {
             updateDataSourceBadge('online', '🟢 后端 MySQL');
         } else {
-            updateDataSourceBadge('offline', '🟡 本地 Mock 数据');
+            updateDataSourceBadge('offline', '🟡 后端数据服务离线');
         }
         return online;
     } catch (e) {
-        updateDataSourceBadge('offline', '🟡 本地 Mock 数据');
+        updateDataSourceBadge('offline', '🟡 后端数据服务离线');
         return false;
     }
 }
@@ -75,6 +80,19 @@ window.showToast = function (message, type = 'info') {
         toast.style.transition = 'all 0.3s ease';
         setTimeout(() => toast.remove(), 300);
     }, 3500);
+};
+
+// ============================================================
+// HOME-2: 首页数据刷新函数
+// ============================================================
+window.refreshDashboardData = function() {
+    console.log('[Dashboard] 刷新首页数据...');
+    refreshLeftPanel();
+    refreshRightPanel();
+    // 刷新地图上的正式Asset图层
+    loadFormalAssetLayer();
+    // 刷新行政区划图层
+    initAdminDivisionLayer();
 };
 
 // ============================================================
@@ -108,14 +126,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('✅ Leaflet 地图已初始化');
 
         // ==================== 第三步：渲染地图要素 ====================
-        addAllBridgeMarkers(bridges, (bridge) => {
-            openBridgeDetail(bridge.uuid);
-        });
-        console.log('✅ 地图要素已渲染');
+        // HOME-2B: 不再使用 Legacy Marker，仅使用正式资产图层
+        // addAllBridgeMarkers(bridges, (bridge) => {
+        //     openBridgeDetail(bridge.uuid);
+        // });
+        console.log('✅ 地图要素已渲染 (Legacy Marker 已禁用)');
 
         // 3.1 初始化 ECharts 动态行政区划图层
         await initAdminDivisionLayer();
         console.log('✅ 动态行政区划图层已初始化');
+
+        // 3.2 加载正式资产图层 (HOME-2B: 首页默认显示)
+        await loadFormalAssetLayer(map);
+        console.log('✅ 正式资产图层已加载');
 
         // ==================== 第四步：初始化 UI 组件 ====================
         initHeader();
@@ -134,6 +157,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 7. 绑定搜索栏
         initSearchBar();
+
+        // 8. 初始化任务日志折叠Panel
+        initTaskLogPanel();
+
+        // 9. 窗口resize处理
+        window.addEventListener('resize', function() {
+            var map = getMap();
+            if (map) {
+                map.invalidateSize();
+            }
+        });
 
         console.log('🎉 平台启动完成');
         showToast('🏗️ 交通网络安全韧性评估平台已就绪', 'success');
@@ -327,46 +361,76 @@ function activateDefaultLayer(name) {
 }
 
 // ============================================================
-// 底部评估日志与任务记录表格
+// HOME-2: 任务日志折叠Panel
 // ============================================================
-function initAlertTable() {
-    var tbody = document.getElementById('alert-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    // 从 API 获取评估任务日志（自动降级到 mockData）
-    api.getAssessmentTaskLogs().then(function(data) {
-        var statusColorMap = {
-            '已完成': '#4ADE80',
-            '已归档': '#38BDF8',
-            '计算中': '#FBBF24',
-            '待处理': '#F87171',
-            '失败': '#94A3B8',
-            '限制通行': '#FBBF24'
-        };
+function initTaskLogPanel() {
+    var header = document.getElementById('task-panel-header');
+    var content = document.getElementById('task-panel-content');
+    var panel = document.getElementById('bottom-task-panel');
+    var toggle = document.getElementById('task-panel-toggle');
+    
+    if (!header || !content || !toggle) return;
 
-        data.forEach(function (row) {
-            var tr = document.createElement('tr');
-            var statusColor = statusColorMap[row.status] || '#94A3B8';
-            var statusLabel = row.status || '未知';
+    // 展开高度
+    var EXPANDED_H = 220;
 
-            tr.innerHTML =
-                '<td style="font-size:11px;color:var(--text-muted);font-family:monospace;">' + row.time + '</td>' +
-                '<td style="font-size:11px;">' + row.task_type + '</td>' +
-                '<td style="font-weight:500;font-size:11px;">' + (row.asset_name || '-') + '</td>' +
-                '<td style="font-size:11px;color:var(--text-secondary);">' + (row.district_name || '-') + '</td>' +
-                '<td style="text-align:center;font-size:11px;">' + (row.disaster_risk_rate !== null ? row.disaster_risk_rate + '%' : '-') + '</td>' +
-                '<td style="text-align:center;font-size:11px;">' + (row.resilience_score !== null ? row.resilience_score : '-') + '</td>' +
-                '<td style="text-align:center;font-size:11px;">' + (row.traffic_guarantee_rate !== null ? row.traffic_guarantee_rate + '%' : '-') + '</td>' +
-                '<td><span class="status-badge" style="color:' + statusColor + ';background:' + statusColor + '15;">' + statusLabel + '</span></td>';
-            tbody.appendChild(tr);
-        });
+    function setTaskPanelHeight(h) {
+        document.documentElement.style.setProperty('--task-panel-h', h + 'px');
+    }
 
-        if (!data || data.length === 0) {
-            var tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="8" style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">暂无评估任务日志</td>';
-            tbody.appendChild(tr);
+    // 默认展开
+    content.style.display = 'block';
+    toggle.textContent = '▼';
+    setTaskPanelHeight(EXPANDED_H);
+    if (panel) {
+        panel.style.height = EXPANDED_H + 'px';
+    }
+    var isOpen = true;
+
+    header.addEventListener('click', function() {
+        isOpen = !isOpen;
+        content.style.display = isOpen ? 'block' : 'none';
+        toggle.textContent = isOpen ? '▼' : '▲';
+        
+        // 更新CSS变量让中间地图区域和搜索栏/地图按钮同步调整
+        // --task-panel-h 表示面板总高度（包含标题栏），收起时36px，展开时EXPANDED_H
+        var targetH = isOpen ? EXPANDED_H : 36;
+        setTaskPanelHeight(targetH);
+        if (panel) {
+            panel.style.height = targetH + 'px';
+        }
+
+        // 展开/收起后调整地图尺寸
+        var map = getMap();
+        if (map) {
+            setTimeout(function() {
+                map.invalidateSize();
+            }, 350);
         }
     });
+
+    // 初始化Tab切换
+    var tabBtns = document.querySelectorAll('[data-task-tab]');
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            tabBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            // 当前阶段所有Tab默认显示"暂无任务"
+            var listContent = document.getElementById('task-list-content');
+            if (listContent) {
+                listContent.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">暂无任务</div>';
+            }
+        });
+    });
+}
+
+// ============================================================
+// 底部评估日志与任务记录表格 (旧版保留但不再使用)
+// ============================================================
+function initAlertTable() {
+    // HOME-2: 不再使用旧的预设任务表格
+    // 保留函数以兼容旧代码调用
+    console.log('[AlertTable] HOME-2: 任务日志已迁移到折叠Panel');
 }
 
 
@@ -377,13 +441,15 @@ function initBusinessButtons() {
     // 重车通行安全评估
     document.getElementById('btn-heavy-vehicle')?.addEventListener('click', () => {
         if (isDebrisResilienceActive()) closeDebrisResilienceModule();
-        openHeavyVehicleModule();
+        if (isHeavyVehicleActive()) closeHeavyVehicleModule();
+        openHeavyVehicleAssessmentModule();
     });
 
     // 灾害韧性评估
     document.getElementById('btn-debris-resilience')?.addEventListener('click', () => {
         if (isHeavyVehicleActive()) closeHeavyVehicleModule();
-        openDebrisResilienceModule();
+        if (isHeavyVehicleAssessmentActive()) closeHeavyVehicleAssessmentModule();
+        openDisasterRiskAssessmentModule();
     });
 
     // 数据管理
@@ -438,64 +504,57 @@ window.addEventListener('dataAssetUpdated', function (event) {
 
     console.log('[数据同步] 收到 dataAssetUpdated 事件:', type, detail.action);
 
-    switch (type) {
-        case 'bridge':
-            // 刷新桥梁标记
-            api.getBridges().then(function (data) {
-                if (data && data.length > 0) {
-                    window.__bridges = data;
-                    addAllBridgeMarkers(data, function (bridge) {
-                        openBridgeDetail(bridge.uuid);
-                    });
-                }
-            });
-            break;
+    // HOME-2: 统一使用 refreshDashboardData
+    window.refreshDashboardData();
+});
 
-        case 'roadnet':
-            // 刷新路网样式
-            if (detail.action === 'update' && detail.payload && detail.payload.edge_id) {
-                if (detail.payload._highlight) {
-                    highlightRoadEdge(detail.payload.edge_id);
-                }
-                updateRoadnetFeatureProperties(detail.payload.edge_id, detail.payload);
-            } else if (detail.action === 'refresh' || detail.action === 'import') {
-                refreshRoadnetLayer();
-            }
-            break;
+// ============================================================
+// V1.3D: 路网 Edge 联动事件
+// ============================================================
+window.addEventListener('road-edge-selected', function (event) {
+    var detail = event.detail || {};
+    var edgeId = detail.edgeId;
+    var source = detail.source || 'unknown';
 
-        case 'district':
-            // 刷新左侧区县桥隧数量、右侧区县韧性指数
-            initLeftPanel();
-            initRightPanel();
-            break;
+    console.log('[路网联动] road-edge-selected:', edgeId, '来源:', source);
 
-        case 'metric':
-            // 刷新右侧指标卡片
-            initRightPanel();
-            break;
+    if (!edgeId) return;
 
-        case 'risk':
-            // 刷新左侧风险排序
-            initLeftPanel();
-            break;
+    // 地图高亮 + 定位
+    if (typeof highlightRoadEdge === 'function') {
+        highlightRoadEdge(String(edgeId));
+    }
+    if (typeof flyToRoadEdge === 'function') {
+        flyToRoadEdge(String(edgeId));
+    }
+});
 
-        case 'alert':
-            // 刷新底部预警表格
-            initAlertTable();
-            break;
+// ============================================================
+// V1.4E: 正式资产联动事件
+// ============================================================
+window.addEventListener('asset-selected', function (event) {
+    var detail = event.detail || {};
+    var assetId = detail.assetId;
+    var source = detail.source || 'unknown';
+    var lat = detail.lat;
+    var lng = detail.lng;
 
-        case 'module':
-            // 刷新模块按钮
-            initRightPanel();
-            break;
+    console.log('[资产联动] asset-selected:', assetId, '来源:', source);
 
+    if (!assetId) return;
 
-        default:
-            // 全量刷新
-            initLeftPanel();
-            initRightPanel();
-            initAlertTable();
-            break;
+    // 如果有坐标，飞行到该位置
+    if (lat && lng && typeof flyTo === 'function') {
+        flyTo(lat, lng, 12);
+    }
+
+    // 如果来自 DataManagement，打开资产详情窗口
+    if (source === 'data-management') {
+        import('./components/AssetDetailWindow.js').then(module => {
+            module.openAssetDetail(assetId);
+        }).catch(err => {
+            console.error('[资产联动] 加载详情窗口失败:', err);
+        });
     }
 });
 

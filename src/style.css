@@ -6,6 +6,10 @@
 :root {
     --bg-primary: #060B18;
     --bg-secondary: rgba(10, 20, 40, 0.65);
+    /* HOME-2: 主主题色 #142E66 */
+    --primary-color: #142E66;
+    --primary-light: #1a3a7a;
+    --primary-glow: rgba(20, 46, 102, 0.6);
     --accent-blue: #38BDF8;
     --accent-cyan: #22D3EE;
     --accent-green: #4ADE80;
@@ -27,14 +31,15 @@
     /* 面板透明度恢复 */
     --panel-bg: rgba(3, 16, 30, 0.75);
     --card-bg: rgba(3, 16, 30, 0.75);
-    --panel-border: rgba(0, 200, 255, 0.32);
+    --panel-border: rgba(20, 46, 102, 0.5);
     --glass-border: var(--panel-border);
 
     --radius-panel: 8px;
     --radius-card: 6px;
     --radius-button: 6px;
 
-    --bottom-alert-h: clamp(110px, 24vh, 250px);
+    --bottom-alert-h: 36px;
+    --task-panel-h: 36px;
 }
 
 /* --- Reset & Global --- */
@@ -287,8 +292,8 @@ body {
     font-size: clamp(24px, 2.1vw, 32px);
     font-weight: 800;
     letter-spacing: 0.12em;
-    color: #35e8ff;
-    text-shadow: 0 0 12px rgba(53, 232, 255, 0.45);
+    color: #FFFFFF;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
     white-space: nowrap;
     background: linear-gradient(90deg,
             rgba(0, 180, 255, 0.02),
@@ -414,9 +419,10 @@ body {
     position: fixed;
     left: calc(var(--page-pad-x) + var(--side-w) + var(--panel-gap));
     right: calc(var(--page-pad-x) + var(--side-w) + var(--panel-gap));
-    top: calc(var(--header-h) + 2vh);
-    bottom: calc(var(--page-pad-y) + var(--bottom-alert-h) + 8px);
+    top: calc(var(--header-h) + 1.5vh);
+    bottom: calc(var(--bottom-alert-h) + var(--task-panel-h));
     z-index: 0;
+    transition: bottom 0.3s ease;
 }
 
 #map {
@@ -481,15 +487,14 @@ body {
 .twin-dock {
     position: fixed;
     left: var(--page-pad-x);
-    top: calc(var(--header-h) + 2.5vh);
+    top: calc(var(--header-h) + 1.5vh);
     width: var(--side-w);
-    height: calc(100vh - var(--header-h) - var(--bottom-alert-h) - var(--page-pad-y) - 2.5vh);
+    height: calc(100vh - var(--header-h) - var(--bottom-alert-h));
     z-index: 500;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     pointer-events: none;
-    /* background: transparent !important; */
 }
 
 .twin-dock>* {
@@ -513,7 +518,8 @@ body {
     box-shadow: 0 0 18px rgba(0, 195, 255, 0.15);
     padding: 12px;
     overflow-y: auto;
-    flex-shrink: 0;
+    flex-shrink: 1;
+    min-height: 0;
 }
 /* .sub-block-card {
     background: rgba(3, 16, 30, 0.3) !important;
@@ -525,52 +531,71 @@ body {
     /* 移除 backdrop-filter，直接使用透明背景 */
 
 #left-block-1 {
-    flex: 0 0 145px;
+    flex: 0.9;
+    min-height: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+}
+
+#left-block-1 .block-header {
+    margin-bottom: 6px;
+}
+
+#left-block-1 .asset-grid {
+    flex: 1;
+    min-height: 0;
 }
 
 #left-block-2 {
-    flex: 0 0 130px;
+    flex: 1.4;
+    min-height: 120px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 #left-block-3 {
-    flex: 0 0 300px;
+    flex: 1.3;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 #left-block-4 {
-    flex: 1;
-    min-height: 300px;
+    flex: 1.2;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 #right-block-1 {
-    flex: 0 0 120px;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 
 #right-block-2 {
-    flex: 0 0 110px;
+    flex: 1.5;
+    min-height: 0;
     overflow: hidden;
 }
 
 #right-block-3 {
-    flex: 1;
-    min-height: 650px;
+    flex: 1.8;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .block-header {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    color: #37e6ff;
+    color: #38BDF8;
     height: 20px;
     line-height: 20px;
     margin-bottom: 10px;
@@ -590,7 +615,7 @@ body {
     top: 4px;
     width: 4px;
     height: 16px;
-    background: #20d8ff;
+    background: #142E66;
     border-radius: 5px;
 }
 
@@ -787,7 +812,8 @@ body {
 /* ============================================================
    Component D: Asset Cards
    ============================================================ */
-.asset-grid {
+
+   /* .asset-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
@@ -828,7 +854,7 @@ body {
     font-size: 11px;
     color: var(--text-secondary);
     margin-top: 4px;
-}
+} */
 
 /* ============================================================
    Component E: Weakness Ranking
@@ -1040,11 +1066,12 @@ body {
 #search-bar {
     position: fixed;
     left: calc(var(--page-pad-x) + var(--side-w) + 12px);
-    bottom: calc(var(--page-pad-y) + var(--bottom-alert-h) + 14px);
+    bottom: calc(var(--bottom-alert-h) + var(--task-panel-h) + 8px);
     z-index: 900;
     display: flex;
     align-items: center;
     gap: 0;
+    transition: bottom 0.3s ease;
 }
 
 #search-input {
@@ -1082,12 +1109,13 @@ body {
 #map-controls {
     position: fixed;
     right: calc(var(--page-pad-x) + var(--side-w) + var(--panel-gap) + 1vw);
-    bottom: calc(var(--page-pad-y) + var(--bottom-alert-h) + 10px);
+    bottom: calc(var(--bottom-alert-h) + var(--task-panel-h) + 8px);
     z-index: 900;
     display: flex;
     flex-direction: column;
     gap: 6px;
     align-items: flex-end;
+    transition: bottom 0.3s ease;
 }
 
 .map-ctrl-btn {
@@ -1117,13 +1145,28 @@ body {
     position: fixed;
     right: calc(var(--page-pad-x) + var(--side-w) + var(--panel-gap) + 1vw);
     top: calc(50% - 140px);
-    z-index: 899;
+    z-index: 10000;
     width: clamp(180px, 15vw, 220px);
     padding: 12px 14px;
     transform: translateX(calc(100% + 8px));
     opacity: 0;
     pointer-events: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 重车评估模块中的图层抽屉位置 */
+body.hv-assessment-active #layer-drawer {
+    right: calc(var(--page-pad-x) + 20px);
+}
+
+/* 灾害评估模块中的图层抽屉位置 */
+body.disaster-assessment-active #layer-drawer {
+    right: calc(var(--page-pad-x) + 20px);
+}
+
+/* 路网韧性评估模块中的图层抽屉位置 */
+body.resilience-assessment-active #layer-drawer {
+    right: calc(var(--page-pad-x) + 20px);
 }
 
 #layer-drawer.open {
@@ -1819,19 +1862,36 @@ body {
     border-left: 3px solid var(--accent-blue);
 }
 
-#bottom-alert-table {
+#bottom-task-panel {
     position: fixed;
     left: calc(var(--page-pad-x) + var(--side-w) + var(--panel-gap));
     right: calc(var(--page-pad-x) + var(--side-w) + var(--panel-gap));
-    bottom: var(--page-pad-y);
-    height: var(--bottom-alert-h);
+    bottom: var(--bottom-alert-h);
     z-index: 500;
-    border-radius: var(--radius-panel);
+    height: 36px;
+    border-radius: var(--radius-panel) var(--radius-panel) 0 0;
     overflow: hidden;
     background: var(--panel-bg);
     backdrop-filter: blur(6px);
     border: 1px solid var(--panel-border);
+    border-bottom: none;
     box-shadow: 0 0 18px rgba(0, 195, 255, 0.15);
+    transition: height 0.3s ease;
+}
+
+#task-panel-header {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    border-bottom: 1px solid rgba(20, 46, 102, 0.3);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#task-panel-header:hover {
+    background: rgba(20, 46, 102, 0.15);
 }
 
 .alert-table-header {
@@ -1844,9 +1904,9 @@ body {
 }
 
 .alert-table-title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: var(--accent-blue);
+    color: #38BDF8;
     letter-spacing: 0.5px;
 }
 
@@ -1923,7 +1983,7 @@ body.admin-division-overlay #map {
     :root {
         --side-w: clamp(280px, 22vw, 320px);
         --panel-gap: 10px;
-        --bottom-alert-h: clamp(140px, 20vh, 175px);
+        --bottom-alert-h: 36px;
     }
 
     .header-title {
@@ -1941,7 +2001,7 @@ body.admin-division-overlay #map {
     :root {
         --side-w: 280px;
         --page-pad-x: 10px;
-        --bottom-alert-h: 145px;
+        --bottom-alert-h: 36px;
     }
 
     .header-title {
@@ -3986,6 +4046,597 @@ body.debris-active .toast-container {
         max-height: 40vh;
     }
     .debris-right-panel {
+        max-height: 40vh;
+    }
+}
+
+/* ============================================================
+   重车通行评估模块样式
+   ============================================================ */
+
+/* --- 顶部标题栏 --- */
+#hv-assess-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 var(--page-pad-x);
+    height: var(--header-h);
+    background: rgba(6, 11, 24, 0.95);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.hv-assess-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hv-assess-back-btn {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: var(--accent-blue);
+    padding: 6px 12px;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.hv-assess-back-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+}
+
+.hv-assess-header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.hv-assess-status-badge {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.hv-assess-header-right {
+    display: flex;
+    gap: 10px;
+}
+
+.hv-assess-header-btn {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    color: var(--accent-blue);
+    padding: 6px 14px;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.hv-assess-header-btn:hover {
+    background: rgba(56, 189, 248, 0.15);
+}
+
+/* --- 主体区域 --- */
+#hv-assess-body {
+    display: grid;
+    grid-template-columns: var(--side-w) 1fr var(--side-w);
+    gap: var(--panel-gap);
+    height: calc(100vh - var(--header-h));
+    padding: var(--page-pad-y) var(--page-pad-x);
+}
+
+/* --- 左侧面板 --- */
+#hv-assess-left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    overflow-y: auto;
+    height: 100%;
+    padding: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.2) transparent;
+}
+
+#hv-assess-left-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+#hv-assess-left-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#hv-assess-left-panel::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.2);
+    border-radius: 3px;
+}
+
+#hv-assess-left-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.4);
+}
+
+/* 卡片固定高度，内容超出时卡片内滚动 */
+.hv-assess-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-panel);
+    overflow: hidden;
+    max-height: calc((100vh - var(--header-h) - 2 * var(--page-pad-y) - 2 * var(--panel-gap)) / 3);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 路网韧性评估模块左侧面板卡片高度调整（2个卡片，每个占一半） */
+#resilience-card-single {
+    max-height: calc((100vh - var(--header-h) - 2 * var(--page-pad-y) - var(--panel-gap)) / 1.5) !important;
+}
+
+.hv-assess-card-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(56, 189, 248, 0.05);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+    flex-shrink: 0;
+}
+
+.hv-assess-card-body {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.15) transparent;
+}
+
+.hv-assess-card-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.hv-assess-card-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.hv-assess-card-body::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.15);
+    border-radius: 2px;
+}
+
+.hv-assess-card-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.3);
+}
+
+/* --- 右侧面板 --- */
+#hv-assess-right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--panel-gap);
+    overflow-y: auto;
+    height: 100%;
+    padding: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(56, 189, 248, 0.2) transparent;
+}
+
+#hv-assess-right-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+#hv-assess-right-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#hv-assess-right-panel::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.2);
+    border-radius: 3px;
+}
+
+#hv-assess-right-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.4);
+}
+
+/* 右侧面板卡片高度限制（2个卡片） */
+#hv-assess-right-panel .hv-assess-card {
+    max-height: calc((100vh - var(--header-h) - 2 * var(--page-pad-y) - var(--panel-gap)) / 1.5);
+}
+
+/* --- 中间地图容器 --- */
+#hv-assess-map-container {
+    position: relative;
+    border-radius: var(--radius-panel);
+    overflow: hidden;
+    border: 1px solid var(--panel-border);
+    height: 100%;
+    min-height: 0;
+}
+
+#hv-assess-map-container #map {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+}
+
+#hv-assess-map-pick-hint {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: rgba(6, 11, 24, 0.85);
+    color: var(--accent-blue);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    pointer-events: none;
+}
+
+#hv-assess-layer-control {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    gap: 6px;
+}
+
+.hv-assess-layer-btn {
+    background: rgba(6, 11, 24, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.hv-assess-layer-btn.active {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent-blue);
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.hv-assess-layer-btn:hover {
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* --- 地图控制按钮 --- */
+#hv-assess-map-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(6, 11, 24, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.hv-map-ctrl-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.hv-map-ctrl-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--accent-blue);
+}
+
+.hv-map-ctrl-btn.active {
+    background: rgba(56, 189, 248, 0.25);
+    color: var(--accent-blue);
+}
+
+.hv-map-ctrl-divider {
+    height: 1px;
+    background: rgba(56, 189, 248, 0.2);
+    margin: 4px 2px;
+}
+
+/* --- 卡片通用样式 --- */
+.hv-assess-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-panel);
+    overflow: hidden;
+}
+
+.hv-assess-card-header {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(56, 189, 248, 0.05);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+}
+
+.hv-assess-card-body {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* --- 表单组件 --- */
+.hv-assess-form-group {
+    margin-bottom: 8px;
+}
+
+.hv-assess-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.hv-assess-input {
+    width: 100%;
+    padding: 6px 8px;
+    background: rgba(3, 16, 30, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.hv-assess-input:focus {
+    border-color: var(--accent-blue);
+}
+
+.hv-assess-input:disabled {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.hv-assess-select {
+    width: 100%;
+    padding: 6px 8px;
+    background: rgba(3, 16, 30, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+}
+
+.hv-assess-form-row {
+    display: flex;
+    gap: 8px;
+}
+
+.hv-assess-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    margin-bottom: 4px;
+}
+
+.hv-assess-checkbox input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+}
+
+/* --- 按钮 --- */
+.hv-assess-btn-primary {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(34, 211, 238, 0.15));
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--accent-blue);
+    padding: 8px 16px;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.hv-assess-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(34, 211, 238, 0.2));
+}
+
+.hv-assess-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hv-assess-btn-secondary {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    color: var(--accent-blue);
+    padding: 6px 12px;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.hv-assess-btn-secondary:hover {
+    background: rgba(56, 189, 248, 0.15);
+}
+
+.hv-assess-btn-sm {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: var(--accent-blue);
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.hv-assess-btn-sm:hover {
+    background: rgba(56, 189, 248, 0.2);
+}
+
+/* --- 单选框组 --- */
+.hv-assess-radio-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.hv-assess-radio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.hv-assess-radio input[type="radio"] {
+    accent-color: var(--accent-blue);
+}
+
+/* --- 信息行 --- */
+.hv-assess-info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.05);
+}
+
+.hv-assess-info-row:last-child {
+    border-bottom: none;
+}
+
+.hv-assess-exceed-row {
+    background: rgba(248, 113, 113, 0.05);
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+/* --- 评估结论色块 --- */
+.hv-assess-conclusion-pass {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    color: #4ADE80;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.hv-assess-conclusion-warn {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    color: #FBBF24;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.hv-assess-conclusion-fail {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    color: #F87171;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* --- 进度条 --- */
+.hv-assess-progress {
+    height: 6px;
+    background: rgba(56, 189, 248, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.hv-assess-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+/* --- 空状态 --- */
+.hv-assess-empty {
+    text-align: center;
+    padding: 20px 10px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.hv-assess-empty-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+/* --- 弹窗样式 --- */
+.hv-assess-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 10000;
+}
+
+.hv-assess-modal-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-panel);
+    padding: 20px;
+    z-index: 10001;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* --- 响应式 --- */
+@media (max-width: 1200px) {
+    #hv-assess-body {
+        grid-template-columns: 280px 1fr 280px;
+    }
+}
+
+@media (max-width: 900px) {
+    #hv-assess-body {
+        grid-template-columns: 1fr;
+    }
+
+    #hv-assess-left-panel,
+    #hv-assess-right-panel {
         max-height: 40vh;
     }
 }

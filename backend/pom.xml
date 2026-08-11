@@ -42,6 +42,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Hibernate Spatial（空间数据支持，SRID 4326 geometry 列） -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-spatial</artifactId>
+        </dependency>
+
         <!-- Lombok (简化 getter/setter) -->
         <dependency>
             <groupId>org.projectlombok</groupId>

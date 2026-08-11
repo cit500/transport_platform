@@ -1,5 +1,9 @@
 server:
   port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
 
 spring:
   datasource:
@@ -23,6 +27,17 @@ spring:
       mode: always            # 每次启动执行 data.sql
       encoding: UTF-8
       continue-on-error: true # 出错继续（数据已存在时忽略）
+
+  # HOME-2: 静态资源映射（资产图片）
+  web:
+    resources:
+      static-locations: classpath:/static,classpath:/public
+      add-mappings: true
+
+# HOME-2: 文件上传配置
+app:
+  upload:
+    dir: uploads/assets
 
 # Python 算法服务地址
 python:
