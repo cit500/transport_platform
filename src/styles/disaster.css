@@ -1,0 +1,116 @@
+.disaster-workbench {
+    position: fixed; inset: 0; min-width: 1180px; overflow: hidden;
+    color: var(--v2-text);
+    background:
+        radial-gradient(circle at 52% 33%, rgba(8,96,158,.16), transparent 36%),
+        radial-gradient(circle at 5% 88%, rgba(13,71,124,.18), transparent 28%),
+        linear-gradient(180deg,#03101e,#01050c 65%);
+}
+.disaster-workbench::before {
+    content:''; position:absolute; inset:0; pointer-events:none; opacity:.24;
+    background-image:
+        radial-gradient(circle,rgba(87,201,255,.7) 0 1px,transparent 1.4px),
+        radial-gradient(circle,rgba(57,135,205,.45) 0 1px,transparent 1.4px);
+    background-position:0 0,25px 18px; background-size:54px 54px,74px 74px;
+}
+.disaster-main { position:relative; z-index:1; }
+.disaster-main .heavy-left-column { grid-template-rows:minmax(0,.86fr) minmax(0,1.42fr) minmax(0,.72fr); }
+.disaster-main .heavy-right-column { grid-template-rows:minmax(0,.65fr) minmax(0,1.1fr) minmax(0,.7fr); }
+.scenario-brief {
+    margin-top:8px; padding:8px 9px; border-left:2px solid var(--v2-cyan);
+    background:rgba(13,77,121,.17); display:grid; gap:4px;
+}
+.scenario-brief strong { color:#e0f6ff; font-size:12px; font-weight:500; }
+.scenario-brief span { color:var(--v2-text-soft); font-size:10px; line-height:1.45; }
+.disaster-parameter-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 8px; }
+.disaster-parameter-form .field-label { margin:0; }
+.disaster-parameter-form .field-span-2 { grid-column:1 / -1; }
+.parameter-location-row { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.map-pick-button {
+    grid-column:1/-1; height:29px; border:1px solid rgba(67,217,255,.48);
+    background:rgba(13,70,106,.54); color:var(--v2-cyan); font-size:11px; cursor:pointer;
+}
+.map-pick-button.is-active { color:#fff; border-color:var(--v2-yellow); box-shadow:0 0 10px rgba(234,240,91,.18); }
+.history-restore-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; align-items:end; margin-top:7px; }
+.history-restore-row select {
+    min-width:0; height:28px; padding:0 7px; border:1px solid rgba(64,162,211,.32);
+    color:var(--v2-text-soft); background:rgba(3,30,51,.82); font-size:10px;
+}
+.history-restore-row .text-action { margin:0; white-space:nowrap; }
+.disaster-mode-switch {
+    position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:650;
+    display:flex; padding:3px; border:1px solid rgba(67,217,255,.5); background:rgba(1,14,29,.9);
+}
+.disaster-mode-switch button {
+    min-width:106px; padding:7px 17px; border:0; background:transparent;
+    color:var(--v2-text-muted); font-size:13px; cursor:pointer;
+}
+.disaster-mode-switch button.is-active {
+    color:#fff; background:linear-gradient(90deg,rgba(23,116,171,.8),rgba(27,171,206,.5));
+    box-shadow:inset 0 -2px 0 var(--v2-cyan);
+}
+.disaster-legend {
+    position:absolute; left:14px; top:14px; z-index:620; width:214px;
+    padding:9px 12px; border:1px solid rgba(63,169,222,.38);
+    background:rgba(1,13,29,.86); display:grid; grid-template-columns:repeat(2,1fr);
+    gap:7px 10px; color:var(--v2-text-soft); font-size:10px;
+}
+.disaster-legend strong { grid-column:1/-1; color:var(--v2-cyan); font-size:12px; }
+.disaster-legend span { display:flex; align-items:center; gap:5px; white-space:nowrap; }
+.legend-swatch { width:9px; height:9px; border-radius:50%; display:inline-block; }
+.damage-DS0 { background:#35da87; }.damage-DS1 { background:#43d9ff; }
+.damage-DS2 { background:#efd253; }.damage-DS3 { background:#ff9748; }
+.damage-DS4 { background:#ff5669; }.damage-PENDING_DATA { background:#718a9a; }
+.risk-low { background:#35da87; }.risk-medium { background:#efd253; }
+.risk-high { background:#ff9748; }.risk-extreme { background:#ff5669; }
+.hazard-source-icon {
+    width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
+    color:#fff; border:2px solid #fff; font-size:13px; font-weight:bold;
+    background:#ff5669; box-shadow:0 0 18px rgba(255,86,105,.9);
+}
+.hazard-source-icon.debris { background:#ff9748; box-shadow:0 0 18px rgba(255,151,72,.9); }
+.disaster-risk-orbit {
+    position:relative; width:126px; height:82px; margin:2px auto 6px;
+    display:grid; place-content:center; justify-items:center; border:1px solid rgba(67,217,255,.32);
+    border-radius:50%; box-shadow:inset 0 0 18px rgba(40,167,225,.13);
+}
+.disaster-risk-orbit::before {
+    content:''; position:absolute; inset:7px; border:1px dashed rgba(67,217,255,.28); border-radius:50%;
+}
+.disaster-risk-orbit span,.disaster-risk-orbit strong,.disaster-risk-orbit small { position:relative; z-index:1; }
+.disaster-risk-orbit span { color:var(--v2-text-muted); font-size:9px; }
+.disaster-risk-orbit strong { color:var(--v2-text-soft); font-size:17px; letter-spacing:.08em; }
+.disaster-risk-orbit small { color:var(--v2-yellow); font-size:11px; }
+.disaster-risk-orbit[data-risk="高风险"] strong { color:var(--v2-orange); }
+.disaster-risk-orbit[data-risk="极高风险"] strong { color:var(--v2-red); }
+.disaster-risk-orbit[data-risk="中风险"] strong { color:var(--v2-yellow); }
+.disaster-risk-orbit[data-risk="低风险"] strong { color:var(--v2-green); }
+.disaster-summary-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
+.disaster-summary-metrics div {
+    padding:6px 2px; text-align:center; border:1px solid rgba(74,165,208,.18);
+    background:rgba(4,34,57,.42);
+}
+.disaster-summary-metrics span { display:block; color:var(--v2-text-muted); font-size:9px; }
+.disaster-summary-metrics strong { display:block; margin-top:3px; color:var(--v2-yellow); font-size:14px; font-weight:500; }
+.disaster-summary-metrics small { color:var(--v2-text-muted); font-size:8px; }
+.disaster-result-panel .heavy-asset-list { height:calc(100% - 61px); }
+.damage-badge { display:block; margin-bottom:3px; color:#fff; font-size:10px; text-align:right; }
+.damage-chart-row { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; padding:12px 6px 0; }
+.damage-chart-item { display:grid; gap:5px; text-align:center; color:var(--v2-text-soft); font-size:10px; }
+.damage-chart-bar { height:38px; display:flex; align-items:flex-end; background:rgba(28,78,109,.25); }
+.damage-chart-bar i { display:block; width:100%; min-height:3px; }
+.derivation-flow { display:flex; align-items:center; gap:7px; padding:16px 4px 0; }
+.derivation-flow div { flex:1; padding:8px 5px; text-align:center; border:1px solid rgba(68,158,208,.3); background:rgba(5,36,61,.58); }
+.derivation-flow strong { display:block; color:var(--v2-cyan); font-size:11px; }
+.derivation-flow small { display:block; margin-top:4px; color:var(--v2-text-muted); font-size:9px; }
+.derivation-flow b { color:var(--v2-cyan); font-weight:400; }
+.road-impact-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; padding-top:12px; }
+.road-impact-grid div { padding:9px; border-left:2px solid var(--v2-cyan); background:rgba(5,36,61,.58); }
+.road-impact-grid span { color:var(--v2-text-muted); font-size:10px; }
+.road-impact-grid strong { display:block; margin-top:4px; color:var(--v2-yellow); font-size:16px; font-weight:500; }
+@media (max-height:860px) {
+    .disaster-parameter-form { gap:5px 7px; }
+    .disaster-parameter-form .field-label input,.disaster-parameter-form .field-label select { height:27px; }
+    .scenario-brief { padding:5px 7px; margin-top:5px; }
+    .disaster-risk-orbit { width:112px; height:69px; margin-top:0; }
+}

@@ -1,0 +1,642 @@
+/* 导入响应式样式文件，用于不同屏幕尺寸下的适配 */
+@import url('./responsive.css');
+
+/* ==================== CSS 自定义属性（全局变量） ==================== */
+:root {
+    /* 页面背景色：深蓝黑色 */
+    --v2-bg: #020711;
+    /* 面板背景色：半透明深蓝 */
+    --v2-panel: rgba(2, 16, 33, 0.91);
+    /* 柔和面板背景色：更浅的半透明深蓝 */
+    --v2-panel-soft: rgba(5, 29, 54, 0.74);
+    /* 边框线颜色：半透明青色 */
+    --v2-line: rgba(42, 166, 228, 0.58);
+    /* 明亮边框线颜色：亮青色 */
+    --v2-line-bright: #42d7ff;
+    /* 主题色（青色）：用于高亮和强调 */
+    --v2-cyan: #43d9ff;
+    /* 辅助色（蓝色）：用于次要强调 */
+    --v2-blue: #198ad2;
+    /* 辅助色（黄色）：用于数值高亮 */
+    --v2-yellow: #eaf05b;
+    /* 主要文字颜色：浅蓝白色 */
+    --v2-text: #dcefff;
+    /* 次要文字颜色：灰蓝色 */
+    --v2-text-soft: #8db8d2;
+    /* 弱化文字颜色：深灰蓝色 */
+    --v2-text-muted: #557e9b;
+    /* 辅助色（绿色）：用于成功/安全状态 */
+    --v2-green: #35da87;
+    /* 辅助色（橙色）：用于警告状态 */
+    --v2-orange: #ff9748;
+    /* 辅助色（红色）：用于危险/错误状态 */
+    --v2-red: #ff5669;
+    /* 顶部导航栏高度：响应式，最小64px，首选7.2vh，最大74px */
+    --header-height: clamp(64px, 7.2vh, 74px);
+    /* 左右侧边栏宽度：响应式，最小330px，首选20.5vw，最大398px */
+    --side-width: clamp(330px, 20.5vw, 398px);
+    /* 页面元素间距：响应式，最小8px，首选0.65vw，最大12px */
+    --page-gap: clamp(8px, 0.65vw, 12px);
+    /* 全局字体族：优先使用微软雅黑、苹方、Segoe UI */
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+}
+
+/* ==================== 全局重置样式 ==================== */
+/* 所有元素使用 border-box 盒模型，方便尺寸计算 */
+* { box-sizing: border-box; }
+/* html 和 body 占满整个视口，无边距，禁止滚动 */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+/* body 使用全局变量定义的文字颜色和背景色 */
+body { color: var(--v2-text); background: var(--v2-bg); }
+/* 按钮和输入框继承父元素的字体设置 */
+button, input { font: inherit; }
+/* 按钮继承父元素的颜色 */
+button { color: inherit; }
+
+/* ==================== 主容器 ==================== */
+/* 仪表盘主容器：固定定位，占满整个视口 */
+.dashboard-v2 {
+    position: fixed;          /* 固定定位，不随页面滚动 */
+    inset: 0;                 /* 上下左右均为0，等同于 top:0; right:0; bottom:0; left:0 */
+    min-width: 1180px;        /* 最小宽度1180px，防止过度压缩 */
+    overflow: hidden;         /* 隐藏溢出内容 */
+    /* 多层背景叠加：两个径向渐变 + 一个线性渐变，营造科技感深空背景 */
+    background:
+        radial-gradient(circle at 50% 36%, rgba(16, 80, 130, 0.19), transparent 34%),
+        radial-gradient(circle at 12% 88%, rgba(16, 74, 132, 0.17), transparent 28%),
+        linear-gradient(180deg, #03101e, #01050c 64%);
+}
+
+/* 主容器的点阵网格背景伪元素 */
+.dashboard-v2::before {
+    content: '';                /* 伪元素必需属性 */
+    position: absolute;         /* 绝对定位 */
+    inset: 0;                   /* 铺满父容器 */
+    pointer-events: none;       /* 不响应鼠标事件，避免遮挡下方交互 */
+    opacity: .28;               /* 透明度28%，使网格不抢眼 */
+    /* 两层径向渐变模拟点阵效果 */
+    background-image:
+        radial-gradient(circle, rgba(87, 201, 255, .7) 0 1px, transparent 1.4px),
+        radial-gradient(circle, rgba(57, 135, 205, .45) 0 1px, transparent 1.4px);
+    /* 两层点阵的偏移位置 */
+    background-position: 0 0, 25px 18px;
+    /* 两层点阵的间距大小 */
+    background-size: 54px 54px, 74px 74px;
+}
+
+/* ==================== 顶部导航栏（Header） ==================== */
+/* 导航栏容器 */
+.dashboard-header {
+    position: relative;         /* 相对定位，作为子元素定位参考 */
+    z-index: 1000;              /* 高层级，确保在地图等元素之上 */
+    height: var(--header-height); /* 高度使用CSS变量 */
+    display: grid;              /* 使用Grid布局 */
+    /* 三列布局：左侧自适应、中间固定宽度响应式、右侧自适应 */
+    grid-template-columns: minmax(0, 1fr) clamp(480px, 34vw, 650px) minmax(0, 1fr);
+    align-items: stretch;       /* 子元素拉伸填满高度 */
+    border-bottom: 2px solid rgba(39, 190, 249, .65); /* 底部青色边框 */
+    /* 从上到下的渐变背景 */
+    background: linear-gradient(180deg, rgba(2, 11, 23, .98), rgba(3, 20, 38, .92));
+    box-shadow: 0 5px 18px rgba(0, 125, 210, .24); /* 底部蓝色阴影 */
+}
+
+/* 导航栏底部发光装饰线 */
+.dashboard-header::after {
+    content: '';                /* 伪元素必需属性 */
+    position: absolute;         /* 绝对定位 */
+    left: 24%; right: 24%;      /* 左右各留24%空白，居中显示 */
+    bottom: -3px;               /* 向下偏移3px，部分溢出边框 */
+    height: 4px;                /* 线条高度 */
+    /* 中间亮两端渐隐的渐变 */
+    background: linear-gradient(90deg, transparent, #44d9ff, transparent);
+    filter: blur(.4px);         /* 轻微模糊，营造发光效果 */
+}
+
+/* 导航栏左右翼容器：左侧改为时间卡片自适应+按钮等分，右侧保持3列 */
+.header-wing { display: grid; min-width: 0; }
+/* 左侧翼：时间卡片占自动宽度，两个导航按钮等分剩余空间 */
+.header-wing-left { grid-template-columns: auto 1fr 1fr; padding-left: 8px; }
+/* 右侧翼：3列等宽Grid布局 */
+.header-wing-right { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-right: 8px; }
+
+
+/* 导航按钮和状态卡片的共用样式 */
+.header-nav-item, .header-status-card {
+    position: relative;         /* 相对定位 */
+    border: 0;                  /* 无边框 */
+    border-right: 1px solid rgba(57, 172, 229, .22); /* 右侧分隔线 */
+    /* 对角渐变背景 */
+    background: linear-gradient(135deg, rgba(7, 24, 45, .42), rgba(9, 34, 61, .64));
+    color: #8fb8d9;             /* 灰蓝色文字 */
+}
+/* 右侧翼的导航按钮：去掉右边框，改为左边框 */
+.header-wing-right .header-nav-item { border-right: 0; border-left: 1px solid rgba(57, 172, 229, .22); }
+
+/* 导航按钮独立样式 */
+.header-nav-item {
+    cursor: pointer;            /* 鼠标悬停显示手型 */
+    padding: 0 12px;            /* 左右内边距12px */
+    font-size: clamp(15px, 1.18vw, 22px); /* 响应式字体大小 */
+    letter-spacing: .06em;      /* 字间距增加6% */
+    text-shadow: 0 0 10px rgba(49, 183, 245, .35); /* 文字发光效果 */
+    transition: .2s ease;       /* 0.2秒平滑过渡动画 */
+    clip-path: polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%); /* 平行四边形裁剪 */
+}
+/* 管理员导航按钮：独立缩小样式 */
+.admin-nav-button {
+    min-width: 80px;            /* 最小宽度80px，比其他按钮窄 */
+    padding: 0 8px;             /* 减小左右内边距 */
+    font-size: clamp(13px, 1vw, 18px); /* 字体略小 */
+    clip-path: polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%); /* 更陡峭的平行四边形 */
+}
+/* 导航按钮悬停或激活状态 */
+.header-nav-item:hover,
+.header-nav-item.is-active {
+    color: #dff7ff;             /* 更亮的文字颜色 */
+    /* 更亮的渐变背景 */
+    background: linear-gradient(135deg, rgba(17, 69, 112, .75), rgba(21, 95, 145, .42));
+    /* 底部青色线条 + 内部发光 */
+    box-shadow: inset 0 -3px 0 var(--v2-cyan), inset 0 0 28px rgba(44, 192, 255, .18);
+}
+/* 激活状态导航按钮的底部发光条 */
+.header-nav-item.is-active::after {
+    content: '';                /* 伪元素必需属性 */
+    position: absolute;         /* 绝对定位 */
+    left: 20%; right: 20%;      /* 左右各留20%，居中显示 */
+    bottom: 0;                  /* 贴底 */
+    height: 7px;                /* 发光条高度 */
+    background: var(--v2-cyan); /* 青色背景 */
+    filter: blur(7px);          /* 强模糊，营造发光效果 */
+}
+
+/* 状态卡片（显示时间、日期、天气） */
+.header-status-card {
+    display: grid;              /* Grid布局 */
+    grid-template-columns: auto 1fr; /* 两列：自动宽度 + 剩余空间 */
+    grid-template-rows: 1fr 1fr;     /* 两行等分 */
+    align-content: center;      /* 垂直居中 */
+    gap: 0 8px;                 /* 行间距0，列间距8px */
+    padding: 9px 16px;          /* 上下9px，左右16px内边距 */
+    color: var(--v2-text-soft); /* 次要文字颜色 */
+}
+/* 状态卡片中的时间文字（大号） */
+.header-status-card strong { grid-row: 1 / span 2; align-self: center; color: var(--v2-cyan); font-size: clamp(17px, 1.3vw, 24px); font-weight: 500; }
+/* 状态卡片中的日期和天气文字 */
+.header-status-card span { font-size: 14px; white-space: nowrap; }
+/* 天气行特殊颜色 */
+.header-status-card .weather-line { color: #b2d9ec; }
+
+/* 平台标题容器 */
+.platform-title {
+    position: relative;         /* 相对定位 */
+    display: flex;              /* Flex布局 */
+    align-items: center;        /* 垂直居中 */
+    justify-content: center;    /* 水平居中 */
+    isolation: isolate;         /* 创建新的层叠上下文，避免z-index干扰 */
+}
+/* 平台标题背景装饰（梯形渐变背景） */
+.platform-title::before {
+    content: '';                /* 伪元素必需属性 */
+    position: absolute;         /* 绝对定位 */
+    inset: 0 -42px;             /* 上下贴边，左右各扩展42px */
+    z-index: -1;                /* 置于标题文字下方 */
+    clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%); /* 梯形裁剪 */
+    /* 渐变背景 + 竖线纹理 */
+    background:
+        linear-gradient(90deg, transparent, rgba(21, 83, 128, .72) 16%, rgba(12, 49, 83, .94) 50%, rgba(21, 83, 128, .72) 84%, transparent),
+        repeating-linear-gradient(90deg, transparent 0 34px, rgba(65, 203, 255, .06) 35px 36px);
+    border-bottom: 1px solid rgba(65, 207, 255, .7); /* 底部亮线 */
+}
+/* 平台标题文字 */
+.platform-title h1 {
+    margin: 0;                  /* 无边距 */
+    color: #e0f7ff;             /* 浅蓝白色 */
+    font-size: clamp(25px, 2.05vw, 39px); /* 响应式字体 */
+    font-style: italic;         /* 斜体 */
+    font-weight: 800;           /* 超粗体 */
+    letter-spacing: .06em;      /* 字间距增加6% */
+    /* 双层文字发光效果 */
+    text-shadow: 0 0 8px rgba(77, 211, 255, .75), 0 0 24px rgba(28, 141, 220, .45);
+    white-space: nowrap;        /* 禁止换行 */
+}
+
+/* 管理员导航包裹容器 */
+.admin-nav-wrap { position: relative; min-width: 0; }
+/* 管理员按钮占满容器 */
+.admin-nav-button { width: 100%; height: 100%; }
+/* 管理员下拉菜单 */
+.admin-menu {
+    position: absolute;         /* 绝对定位 */
+    top: calc(100% + 5px);      /* 在按钮下方5px处 */
+    right: 4px;                 /* 右对齐，偏移4px */
+    width: 140px;               /* 固定宽度 */
+    padding: 6px;               /* 内边距 */
+    display: none;              /* 默认隐藏 */
+    border: 1px solid var(--v2-line); /* 青色边框 */
+    background: rgba(3, 20, 39, .98); /* 深蓝背景 */
+    box-shadow: 0 0 20px rgba(29, 153, 219, .25); /* 蓝色发光阴影 */
+}
+/* 菜单打开状态：显示为Grid布局 */
+.admin-menu.is-open { display: grid; }
+/* 菜单项按钮样式 */
+.admin-menu button { border: 0; padding: 9px 10px; background: transparent; text-align: left; color: var(--v2-text-soft); cursor: pointer; }
+/* 菜单项悬停效果 */
+.admin-menu button:hover { background: rgba(38, 157, 216, .17); color: var(--v2-cyan); }
+
+/* ==================== 主内容区布局 ==================== */
+/* 主内容区：绝对定位在导航栏下方 */
+.dashboard-main {
+    position: absolute;         /* 绝对定位 */
+    z-index: 10;                /* 层级10，在背景之上 */
+    /* 定位：顶部在导航栏下方+间距，左右下各留间距 */
+    inset: calc(var(--header-height) + var(--page-gap)) var(--page-gap) var(--page-gap);
+    display: grid;              /* Grid布局 */
+    /* 三列：左侧边栏、中间自适应、右侧边栏 */
+    grid-template-columns: var(--side-width) minmax(0, 1fr) var(--side-width);
+    gap: var(--page-gap);       /* 列间距使用CSS变量 */
+    min-height: 0;              /* 允许Grid子元素收缩 */
+}
+/* 列容器通用样式 */
+.dashboard-column { display: grid; gap: var(--page-gap); min-height: 0; }
+/* 左侧列：两行，上方占0.76份，下方占2.24份 */
+.dashboard-left-column { grid-template-rows: 0.9fr 2fr; }
+/* 右侧列：三行，比例为0.92:1:1.18 */
+.dashboard-right-column { grid-template-rows: 0.95fr 1.05fr 0.9fr; }
+/* 中间列：两行，上方自适应，下方固定38px（滚动条） */
+.dashboard-center-column { display: grid; grid-template-rows: minmax(0, 1fr) 38px; gap: var(--page-gap); min-width: 0; min-height: 0; }
+
+/* ==================== 可复用的科技风格面板 ==================== */
+/* 技术面板、地图面板、地质滚动条的共用样式 */
+.tech-panel, .map-panel, .geological-ticker {
+    position: relative;         /* 相对定位 */
+    min-height: 0;              /* 允许收缩 */
+    overflow: hidden;           /* 隐藏溢出 */
+    border: 1px solid var(--v2-line); /* 青色边框 */
+    /* 四边科技风格边框线（上下左右各一条亮线）+ 面板背景 */
+    background:
+        linear-gradient(90deg, var(--v2-line-bright) 0 20px, transparent 20px calc(100% - 20px), var(--v2-line-bright) calc(100% - 20px)) top / 100% 2px no-repeat,
+        linear-gradient(90deg, var(--v2-line-bright) 0 20px, transparent 20px calc(100% - 20px), var(--v2-line-bright) calc(100% - 20px)) bottom / 100% 2px no-repeat,
+        linear-gradient(180deg, var(--v2-line-bright) 0 20px, transparent 20px calc(100% - 20px), var(--v2-line-bright) calc(100% - 20px)) left / 2px 100% no-repeat,
+        linear-gradient(180deg, var(--v2-line-bright) 0 20px, transparent 20px calc(100% - 20px), var(--v2-line-bright) calc(100% - 20px)) right / 2px 100% no-repeat,
+        var(--v2-panel);
+    /* 内部发光 + 外部阴影 */
+    box-shadow: inset 0 0 32px rgba(25, 127, 191, .08), 0 0 16px rgba(16, 120, 194, .12);
+}
+/* 面板顶部渐变光晕伪元素 */
+.tech-panel::after {
+    content: '';                /* 伪元素必需属性 */
+    position: absolute;         /* 绝对定位 */
+    inset: 0;                   /* 铺满面板 */
+    pointer-events: none;       /* 不响应鼠标事件 */
+    /* 从上到下的淡蓝色渐变 */
+    background: linear-gradient(180deg, rgba(72, 204, 255, .045), transparent 30%);
+}
+
+/* 面板标题 */
+.tech-panel-title {
+    position: relative;         /* 相对定位 */
+    z-index: 2;                 /* 层级2，在光晕之上 */
+    width: 60%;                 /* 宽度占父容器的48% */
+    height: 35px;               /* 固定高度 */
+    margin: 0 auto 6px;         /* 水平居中，底部外边距6px */
+    display: flex;              /* Flex布局 */
+    align-items: center;        /* 垂直居中 */
+    justify-content: center;    /* 水平居中 */
+    color: var(--v2-cyan);      /* 青色文字 */
+    font-size: 18px;            /* 字体大小 */
+    font-weight: 600;           /* 粗体 */
+    letter-spacing: .15em;      /* 字间距增加12% */
+    /* 渐变背景 */
+    background: linear-gradient(180deg, rgba(17, 76, 119, .75), rgba(5, 28, 53, .1));
+    clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%); /* 梯形裁剪 */
+    text-shadow: 0 0 8px rgba(62, 211, 255, .6); /* 文字发光 */
+}
+
+/* 演示标签和助手状态标签 */
+.demo-badge, .assistant-status {
+    position: absolute;         /* 绝对定位 */
+    z-index: 3;                 /* 层级3，在标题之上 */
+    right: 12px;                /* 距右侧12px */
+    top: 9px;                   /* 距顶部9px */
+    padding: 2px 7px;           /* 内边距 */
+    color: #729bb5;             /* 灰蓝色文字 */
+    border: 1px solid rgba(71, 153, 197, .24); /* 半透明边框 */
+    background: rgba(5, 35, 60, .65); /* 半透明深蓝背景 */
+    font-size: 10px;             /* 小字体 */
+}
+
+/* 滚动区域自定义滚动条样式（Firefox） */
+.scroll-region { scrollbar-width: thin; scrollbar-color: rgba(49, 189, 245, .36) transparent; }
+/* 滚动区域自定义滚动条样式（Webkit浏览器） */
+.scroll-region::-webkit-scrollbar, .assistant-chat::-webkit-scrollbar { width: 3px; }
+/* 滚动条滑块样式 */
+.scroll-region::-webkit-scrollbar-thumb, .assistant-chat::-webkit-scrollbar-thumb { background: rgba(49, 189, 245, .36); }
+
+/* ==================== 数据概览面板 ==================== */
+/* 数据网格容器 */
+.overview-grid {
+    height: calc(100% - 42px);  /* 高度减去标题区域 */
+    padding: 4px 14px 12px;     /* 上4px，左右14px，下12px */
+    display: grid;              /* Grid布局 */
+    grid-template-columns: 1.2fr 1fr 1fr; /* 三列，第一列稍宽 */
+    grid-template-rows: 1fr 1fr;       /* 两行等分 */
+    gap: 7px;                   /* 间距7px */
+    align-items: stretch;
+}
+/* 单个数据指标卡片 */
+.overview-metric {
+    position: relative;         /* 相对定位 */
+    min-width: 0;               /* 允许收缩 */
+    padding: 8px 8px 6px;       /* 上8px，左右8px，下6px */
+    overflow: hidden;           /* 隐藏溢出 */
+    border: 1px solid rgba(45, 150, 207, .38); /* 半透明青色边框 */
+    /* 对角渐变背景 */
+    background: linear-gradient(135deg, rgba(10, 46, 80, .66), rgba(3, 22, 42, .56));
+}
+/* 指标卡片左上角装饰线 */
+.overview-metric::before { content: ''; position: absolute; left: 0; top: 0; width: 22px; height: 2px; background: var(--v2-cyan); }
+/* 指标标签文字 */
+.overview-metric span { display: block; color: var(--v2-text-soft); font-size: 15px; white-space: nowrap; }
+/* 指标数值文字（大号黄色） */
+.overview-metric strong { display: inline-block; margin-top: 4px; color: var(--v2-yellow); font-family: "Segoe UI", sans-serif; font-size: clamp(16px, 1.3vw, 25px); font-weight: 500; text-shadow: 0 0 9px rgba(228, 238, 79, .35); }
+/* 指标单位文字 */
+.overview-metric small { margin-left: 4px; color: #72a7c7; font-size: 15px; }
+/* 主指标卡片（行政区数）：跨两行，居中显示 */
+.overview-primary { grid-row: 1 / span 2; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+/* 主指标标签字体 */
+.overview-primary span { font-size: 18px; }
+/* 主指标数值字体（超大号） */
+.overview-primary strong { font-size: clamp(34px, 2.7vw, 50px); }
+/* 地图装饰图标（多边形） */
+.metric-map-icon { width: 48px; height: 25px; margin-top: 3px; opacity: .5; border: 2px solid var(--v2-cyan); clip-path: polygon(5% 40%, 20% 10%, 40% 28%, 58% 0, 78% 30%, 95% 18%, 88% 82%, 63% 100%, 42% 77%, 18% 94%); }
+
+/* ==================== 重车通行概况面板 ==================== */
+/* 重车面板底部内边距 */
+.heavy-panel { padding-bottom: 8px; }
+/* 车辆信息摘要卡片 */
+.vehicle-summary { margin: 0 12px 5px; min-height: 42px; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid rgba(43, 156, 214, .28); background: rgba(7, 37, 65, .56); }
+/* 车辆图标 */
+.vehicle-icon { color: var(--v2-cyan); font-size: 35px; transform: skewX(-8deg); text-shadow: 0 0 12px rgba(59, 216, 255, .55); }
+/* 车辆名称 */
+.vehicle-summary strong { font-size: 15px; color: #cdecf8; }
+/* 车辆参数详情 */
+.vehicle-summary p { margin: 3px 0 0; color: var(--v2-text-muted); font-size: 13px; }
+/* 小操作按钮（参数按钮） */
+.tiny-action { border: 1px solid rgba(54, 182, 235, .45); background: rgba(18, 80, 117, .34); color: var(--v2-cyan); font-size: 10px; padding: 4px 7px; cursor: pointer; }
+/* 通行率图表行 */
+.pass-rate-row { height: 130px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 8px;}
+/* 单个通行率仪表盘 */
+.pass-gauge { min-width: 0px; height: 120px; }
+/* 小标题行（桥隧通行结果标题） */
+.mini-section-heading { margin: 0 12px 4px; padding: 3px 2px 4px; display: flex; justify-content: space-between; color: #8cb5cd; border-bottom: 1px solid rgba(51, 158, 211, .25); font-size: 12px; }
+/* 结果列表滚动区域 */
+.result-scroll { height: calc(120% - 188px); margin: 0 10px; overflow-y: auto; }
+/* 结果行（单个桥隧通行结果） */
+.result-row { display: grid; grid-template-columns: minmax(0, 1.4fr) 44px 62px; gap: 5px; align-items: center; padding: 6px 6px; border-bottom: 1px solid rgba(44, 130, 176, .17); font-size: 12px; }
+/* 结果行悬停效果 */
+.result-row:hover { background: rgba(30, 133, 190, .12); }
+/* 结果名称容器 */
+.result-name { min-width: 0; }
+/* 结果名称文字（超长省略） */
+.result-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #a9d8ec; font-size: 13px; font-weight: 500; }
+/* 结果原因说明 */
+.result-name small { color: #4f7892; }
+/* 结果类型（桥梁/隧道） */
+.result-type { color: #698fa8; }
+/* 结果状态标签 */
+.result-badge { justify-self: end; padding: 2px 5px; border: 1px solid currentColor; font-size: 10px; white-space: nowrap; }
+/* 可通行状态颜色（绿色） */
+.result-pass { color: var(--v2-green); }
+/* 条件通行状态颜色（黄色） */
+.result-condition { color: #f0ca50; }
+/* 禁止通行状态颜色（红色） */
+.result-deny { color: var(--v2-red); }
+
+/* ==================== 区域风险概况面板 ==================== */
+/* 风险统计行 */
+.risk-summary-row { height: 100px; display: grid; grid-template-columns: 45% 50%; padding: 0 15px; }
+/* 风险饼图 */
+.risk-pie-chart { min-width: 0; height: 100px; }
+/* 风险图例容器 */
+.risk-legend-summary { align-self: center; display: grid; gap: 5px; }
+/* 单个风险图例项 */
+.risk-summary-item { display: grid; grid-template-columns: 8px 1fr auto; gap: 5px; align-items: center; color: var(--v2-text-soft); font-size: 12px; }
+/* 风险图例颜色点 */
+.risk-summary-item i { width: 10px; height: 10px; border-radius: 50%; }
+/* 风险图例数量 */
+.risk-summary-item strong { color: #d6ecf5; font-size: 12px; font-weight: 500; }
+/* 区域风险列表滚动区 */
+.region-risk-scroll { height: calc(100% - 139px); margin: 0 10px 8px; overflow-y: auto; }
+/* 单个区域风险行 */
+.region-risk-row { display: grid; grid-template-columns: 1fr 58px 36px; gap: 5px; align-items: center; padding: 6px 5px; border-bottom: 1px solid rgba(38, 132, 181, .18); font-size: 10px; cursor: pointer; }
+/* 区域风险行悬停效果 */
+.region-risk-row:hover { background: rgba(38, 141, 200, .13); }
+/* 区域名称 */
+.region-risk-row strong { color: #a8d2e7; font-size: 12px; font-weight: 500; }
+/* 区域风险分数 */
+.region-risk-row small { color: #577e97;font-size: 9px; }
+
+/* ==================== 地图面板 ==================== */
+/* 地图面板容器 */
+.map-panel { isolation: isolate; background-color: #03101e; }
+/* 地图容器 */
+.overview-map { position: absolute; inset: 3px; z-index: 1; background: radial-gradient(circle at center, #0b2842, #020811 72%); }
+/* Leaflet控件容器字体继承 */
+.overview-map .leaflet-control-container { font-family: inherit; }
+/* Leaflet工具提示样式 */
+.overview-map .leaflet-tooltip { border: 1px solid rgba(65, 203, 255, .65); border-radius: 0; background: rgba(2, 18, 34, .94); color: #d9f3ff; box-shadow: 0 0 14px rgba(31, 172, 231, .25); font-size: 15px; }
+/* 地图网格覆盖层 */
+.map-grid-overlay { position: absolute; z-index: 2; inset: 0; pointer-events: none; opacity: .12; background-image: linear-gradient(rgba(53, 150, 205, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(53, 150, 205, .2) 1px, transparent 1px); background-size: 48px 48px; }
+/* 地图面板内边框装饰 */
+.map-panel::after { content: ''; position: absolute; z-index: 3; inset: 8px; pointer-events: none; border: 1px solid rgba(55, 175, 226, .22); clip-path: polygon(0 0, 100% 0, 100% 85%, 96% 100%, 0 100%); }
+/* 地图上层元素统一层级 */
+.map-search-box, .indicator-switcher, .map-tool-rail, .dynamic-map-legend, .map-caption, .map-layer-popover { z-index: 500; }
+/* 地图搜索框（已调整到左下） */
+.map-search-box { position: absolute; top: auto; left: 16px; right: auto; bottom: 14px; width: 218px; height: 32px; display: flex; border: 1px solid rgba(51, 180, 233, .48); background: rgba(2, 20, 38, .88); box-shadow: 0 0 14px rgba(20, 133, 196, .17); }
+/* 搜索框最高层级 */
+.map-search-box { z-index: 520; }
+/* 搜索框输入框 */
+.map-search-box input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 0 10px; color: #c7e8f6; background: transparent; font-size: 15px; }
+/* 搜索框按钮 */
+.map-search-box button { width: 35px; border: 0; background: rgba(24, 111, 161, .45); color: var(--v2-cyan); cursor: pointer; font-size: 20px; }
+/* 指标切换器容器（已调整到右下） */
+.indicator-switcher { position: absolute; top: auto; right: 16px; left: auto; bottom: 14px; display: flex; padding: 3px; border: 1px solid rgba(45, 171, 224, .46); background: rgba(2, 18, 35, .9); box-shadow: 0 0 18px rgba(20, 135, 199, .22); }
+/* 指标按钮 */
+.indicator-button { min-width: 94px; border: 0; padding: 7px 12px; color: #719bb8; background: transparent; cursor: pointer; font-size: 12px; }
+/* 指标按钮激活状态 */
+.indicator-button.is-active { color: #e5f9ff; background: linear-gradient(180deg, rgba(28, 127, 184, .72), rgba(16, 73, 113, .58)); box-shadow: inset 0 -2px 0 var(--v2-cyan), 0 0 15px rgba(60, 207, 255, .18); }
+/* 地图工具栏（右侧垂直排列） */
+.map-tool-rail { position: absolute; right: 17px; top: 50%; transform: translateY(-50%); display: grid; gap: 4px; }
+/* 工具栏按钮 */
+.map-tool-rail button { width: 32px; height: 32px; border: 1px solid rgba(54, 172, 224, .44); background: rgba(2, 21, 39, .88); color: #8bc8e4; cursor: pointer; }
+/* 工具栏按钮悬停效果 */
+.map-tool-rail button:hover { color: #fff; border-color: var(--v2-cyan); background: rgba(19, 91, 137, .75); }
+/* 图层控制弹窗 */
+.map-layer-popover { position: absolute; right: 56px; top: 42%; width: 220px; padding: 10px; display: none; border: 1px solid var(--v2-line); background: rgba(2, 19, 37, .96); box-shadow: 0 0 18px rgba(31, 157, 220, .23); font-size: 12px; }
+/* 图层弹窗打开状态 */
+.map-layer-popover.is-open { display: grid; gap: 7px; }
+/* 图层弹窗标题 */
+.map-layer-popover strong { color: var(--v2-cyan); }
+/* 图层弹窗标签 */
+.map-layer-popover label { color: var(--v2-text-soft); cursor: pointer; }
+/* 图层弹窗按钮 */
+.map-layer-popover button { border: 1px solid rgba(40, 145, 198, .25); padding: 5px; background: rgba(13, 58, 92, .35); color: #7eabc4; cursor: pointer; }
+/* 图层弹窗按钮激活状态 */
+.map-layer-popover button.is-active { color: var(--v2-cyan); border-color: var(--v2-cyan); }
+.map-base-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.map-base-options label { display: grid; place-items: center; min-height: 34px; padding: 4px 2px; border: 1px solid rgba(40, 145, 198, .25); background: rgba(13, 58, 92, .35); text-align: center; line-height: 1.2; }
+.map-base-options label.is-active { color: var(--v2-cyan); border-color: var(--v2-cyan); background: rgba(20, 104, 151, .46); }
+.map-base-options button { min-height: 38px; padding: 4px 3px; display: grid; place-items: center; line-height: 1.2; }
+.map-base-options button.is-active { color: var(--v2-cyan); border-color: var(--v2-cyan); background: rgba(20, 104, 151, .46); box-shadow: inset 0 0 10px rgba(67, 217, 255, .12); }
+.map-base-options input { position: absolute; opacity: 0; pointer-events: none; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: rgba(2, 19, 37, .97); color: #ccecf8; border: 1px solid rgba(67, 217, 255, .48); }
+.leaflet-popup-content-wrapper { border-radius: 2px; box-shadow: 0 0 20px rgba(31, 157, 220, .34); }
+.leaflet-popup-close-button { color: #7dddfd !important; }
+.region-map-popup { min-width: 190px; display: grid; gap: 6px; }
+.region-map-popup > strong { padding-bottom: 5px; color: var(--v2-cyan); font-size: 14px; border-bottom: 1px solid rgba(67, 217, 255, .24); }
+.region-map-popup > div { display: grid; grid-template-columns: 74px 1fr auto; gap: 7px; align-items: center; }
+.region-map-popup span { color: #719bb2; }
+.region-map-popup b { color: #d8f3ff; font-weight: 500; }
+.region-map-popup em { color: var(--v2-yellow); font-style: normal; }
+.region-name-label { border: 0 !important; background: rgba(15, 19, 22, .72) !important; color: #d6dde1 !important; box-shadow: none !important; font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+.region-name-label::before { display: none !important; }
+/* 图层弹窗分隔线 */
+.layer-divider { height: 1px; background: rgba(46, 152, 204, .25); }
+/* 地图说明文字（已调整到左上） */
+.map-caption { position: absolute; left: 16px; right: auto; top: 14px; bottom: auto; display: flex; align-items: center; gap: 7px; padding: 6px 9px; border-left: 2px solid var(--v2-cyan); color: #8ebbd2; background: rgba(2, 18, 35, .8); font-size: 12px; }
+/* 脉冲点动画 */
+.pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--v2-green); box-shadow: 0 0 8px var(--v2-green); animation: v2-pulse 1.6s infinite; }
+/* 动态地图图例（已调整到右上） */
+.dynamic-map-legend { position: absolute; right: 18px; left: auto; top: 14px; bottom: auto; min-width: 230px; display: flex; justify-content: center; gap: 13px; padding: 7px 10px; border: 1px solid rgba(47, 151, 204, .28); background: rgba(2, 17, 33, .82); }
+/* 图例项 */
+.map-legend-item { display: flex; gap: 10px; align-items: center; color: #9cc3d7; font-size: 12px; white-space: nowrap; }
+/* 图例颜色点 */
+.map-legend-item i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 7px currentColor; }
+
+/* ==================== 地质灾害动态滚动条 ==================== */
+/* 滚动条容器 */
+.geological-ticker { display: grid; grid-template-columns: 130px minmax(0, 1fr); background: rgba(2, 17, 32, .94); }
+/* 滚动条标签 */
+.ticker-label { display: flex; align-items: center; justify-content: center; gap: 7px; color: #f2ca52; border-right: 1px solid rgba(48, 156, 207, .35); font-size: 14px; font-weight: 600; letter-spacing: .08em; }
+/* 警告脉冲点 */
+.alert-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--v2-red); box-shadow: 0 0 8px var(--v2-red); animation: v2-pulse 1.2s infinite; }
+/* 滚动视口（隐藏溢出） */
+.ticker-viewport { overflow: hidden; min-width: 0; }
+/* 滚动轨道（水平滚动动画） */
+.ticker-track { width: max-content; height: 100%; display: flex; align-items: center; animation: ticker-scroll 42s linear infinite; }
+/* 悬停暂停滚动 */
+.ticker-track:hover { animation-play-state: paused; }
+/* 单个滚动事件 */
+.ticker-event { display: inline-flex; align-items: center; gap: 7px; margin-right: 48px; color: #86abc1; font-size: 10px; white-space: nowrap; cursor: pointer; }
+/* 事件区域名称 */
+.ticker-event b { color: #d4edf7; font-weight: 500; font-size: 12px; }
+/* 事件灾害类型标签 */
+.ticker-event em { padding: 1px 5px; font-style: normal; color: #efc451; border: 1px solid rgba(240, 192, 70, .35); }
+/* 高级别事件标签颜色（红色） */
+.ticker-event.high em { color: #ff7180; border-color: rgba(255, 85, 104, .42); }
+
+/* ==================== 区域韧性概况面板 ==================== */
+/* 韧性面板底部内边距 */
+.resilience-panel { padding-bottom: 8px; }
+/* 当前区域标题行 */
+.selected-region-heading { margin: 1px 14px 4px; display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 7px; border-bottom: 1px solid rgba(47, 158, 211, .25); }
+/* 标题提示文字 */
+.selected-region-heading span { display: block; color: var(--v2-text-muted); font-size: 9px; }
+/* 区域名称 */
+.selected-region-heading strong { color: #d4eef8; font-size: 16px; font-weight: 500; }
+/* 等级标签通用样式 */
+.level-badge { padding: 3px 7px; border: 1px solid currentColor; font-size: 9px !important; }
+/* 良好等级颜色（青色） */
+.level-good { color: var(--v2-cyan) !important; }
+/* 中等等级颜色（黄色） */
+.level-medium { color: #f0ca50 !important; }
+/* 低等级颜色（红色） */
+.level-low { color: var(--v2-red) !important; }
+/* 韧性摘要区 */
+.resilience-summary { height: 128px; display: grid; grid-template-columns: 56% 44%; padding: 0 8px; }
+/* 韧性仪表盘 */
+.resilience-gauge { min-width: 0; height: 128px; }
+/* 关键数值容器 */
+.resilience-key-values { display: grid; align-content: center; gap: 9px; }
+/* 单个关键数值卡片 */
+.resilience-key-values div { padding: 7px 8px; border-left: 2px solid var(--v2-cyan); background: linear-gradient(90deg, rgba(23, 91, 132, .32), transparent); }
+/* 关键数值标签 */
+.resilience-key-values span { display: block; color: var(--v2-text-muted); font-size: 10px; }
+/* 关键数值 */
+.resilience-key-values strong { color: var(--v2-yellow); font-size: 18px; font-weight: 500; }
+/* 进度条容器 */
+.resilience-bars { display: grid; gap: 8px; padding: 0 15px; }
+/* 单个进度条行 */
+.resilience-bar-row { display: grid; grid-template-columns: 68px 1fr 28px; gap: 7px; align-items: center; color: #83abc2; font-size: 10px; }
+/* 进度条轨道 */
+.resilience-bar-track { height: 6px; background: rgba(29, 76, 108, .62); overflow: hidden; }
+/* 进度条填充 */
+.resilience-bar-fill { height: 100%; background: linear-gradient(90deg, #167fd0, #58dcff); box-shadow: 0 0 8px rgba(68, 212, 255, .45); }
+/* 进度条数值 */
+.resilience-bar-row strong { color: #c8e6f1; font-size: 9px; font-weight: 500; text-align: right; }
+/* 底部提示文字 */
+.region-hint { position: absolute; bottom: 7px; left: 0; right: 0; margin: 0; text-align: center; color: #476f89; font-size: 8px; }
+
+/* ==================== 数字人助手面板 ==================== */
+/* 助手面板底部内边距 */
+.assistant-panel { padding-bottom: 7px; }
+/* 助手状态标签 */
+.assistant-status { color: var(--v2-green); }
+/* 助手状态指示灯 */
+.assistant-status i { display: inline-block; width: 5px; height: 5px; margin-right: 4px; border-radius: 50%; background: var(--v2-green); box-shadow: 0 0 6px var(--v2-green); }
+/* 助手舞台区（头像+气泡） */
+.assistant-stage { height: 104px; display: grid; grid-template-columns: 42% 58%; align-items: center; padding: 0 12px; }
+/* 头像容器 */
+.assistant-avatar { position: relative; width: 88px; height: 88px; margin: 0 auto; display: flex; justify-content: center; }
+/* 头像底部标签 */
+.assistant-avatar > span { position: absolute; bottom: -1px; padding: 2px 7px; color: #8fdfff; background: rgba(3, 30, 54, .88); border: 1px solid rgba(68, 201, 251, .35); font-size: 9px; z-index: 4; }
+/* 头像轨道（旋转圆环） */
+.avatar-orbit { position: absolute; left: 50%; top: 50%; border: 1px solid rgba(62, 203, 255, .5); border-radius: 50%; transform: translate(-50%, -50%); }
+/* 外轨道（虚线旋转） */
+.orbit-one { width: 78px; height: 78px; border-style: dashed; animation: avatar-rotate 12s linear infinite; }
+/* 内轨道 */
+.orbit-two { width: 61px; height: 61px; border-color: rgba(88, 224, 255, .25); }
+/* 头像头部 */
+.avatar-head { position: absolute; top: 18px; width: 25px; height: 29px; border-radius: 48% 48% 42% 42%; background: linear-gradient(145deg, #74e9ff, #1c72aa); box-shadow: 0 0 15px rgba(67, 215, 255, .6); z-index: 2; }
+/* 头像身体 */
+.avatar-body { position: absolute; top: 46px; width: 53px; height: 35px; border-radius: 48% 48% 8px 8px; background: linear-gradient(180deg, rgba(65, 206, 247, .9), rgba(13, 71, 111, .7)); clip-path: polygon(27% 0, 73% 0, 100% 100%, 0 100%); z-index: 2; }
+/* 对话气泡 */
+.assistant-bubble { position: relative; padding: 10px; color: #9dc5d8; border: 1px solid rgba(49, 162, 214, .33); background: rgba(8, 45, 75, .48); font-size: 12px; line-height: 1.65; }
+/* 对话气泡小三角 */
+.assistant-bubble::before { content: ''; position: absolute; left: -8px; top: 22px; width: 14px; height: 14px; border-left: 1px solid rgba(49, 162, 214, .33); border-bottom: 1px solid rgba(49, 162, 214, .33); background: #082c49; transform: rotate(45deg); }
+/* 聊天区域 */
+.assistant-chat { height: calc(100% - 247px); min-height: 42px; margin: 0 12px 6px; padding: 7px; overflow-y: auto; border: 1px solid rgba(41, 141, 194, .23); background: rgba(1, 15, 29, .55); }
+/* 聊天消息通用样式 */
+.chat-message { max-width: 88%; margin-bottom: 6px; padding: 5px 7px; font-size: 10px; line-height: 1.45; }
+/* 助手消息样式 */
+.assistant-message { color: #9ec8dc; background: rgba(17, 71, 108, .43); border-left: 2px solid var(--v2-cyan); }
+/* 用户消息样式 */
+.user-message { margin-left: auto; color: #d8eaf2; background: rgba(31, 91, 124, .6); text-align: right; border-right: 2px solid #e0d955; }
+/* 快捷问题按钮容器 */
+.assistant-prompts { display: flex; gap: 4px; padding: 0 12px 6px; overflow: hidden; }
+/* 快捷问题按钮 */
+.assistant-prompts button { flex: 1; min-width: 0; padding: 5px 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid rgba(47, 159, 210, .27); background: rgba(10, 54, 87, .42); color: #75a9c4; cursor: pointer; font-size: 10px; }
+/* 快捷问题按钮悬停效果 */
+.assistant-prompts button:hover { color: var(--v2-cyan); border-color: rgba(67, 211, 255, .55); }
+/* 输入行容器 */
+.assistant-input-row { height: 29px; display: flex; margin: 0 12px; border: 1px solid rgba(49, 165, 216, .35); background: rgba(2, 18, 34, .7); }
+/* 输入框 */
+.assistant-input-row input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 8px; color: #c6e3ee; background: transparent; font-size: 10px; }
+/* 发送按钮 */
+.assistant-input-row button { width: 48px; border: 0; background: linear-gradient(180deg, rgba(25, 122, 174, .75), rgba(12, 70, 108, .75)); color: #cbeefa; cursor: pointer; font-size: 9px; }
+/* 免责声明文字 */
+.assistant-disclaimer { display: block; margin-top: 4px; text-align: center; color: #3f657d; font-size: 8px; }
+
+/* ==================== 提示消息和动画 ==================== */
+/* 提示消息容器 */
+.toast-host { position: fixed; z-index: 3000; left: 50%; top: calc(var(--header-height) + 16px); transform: translateX(-50%); display: grid; gap: 6px; pointer-events: none; }
+/* 单个提示消息 */
+.v2-toast { min-width: 220px; padding: 9px 14px; color: #bfe8f7; border: 1px solid rgba(67, 202, 250, .48); background: rgba(2, 23, 42, .95); box-shadow: 0 0 18px rgba(27, 153, 216, .25); text-align: center; font-size: 10px; animation: toast-in .25s ease; }
+/* 脉冲动画（用于状态指示灯） */
+@keyframes v2-pulse { 50% { opacity: .35; transform: scale(.75); } }
+/* 头像旋转动画 */
+@keyframes avatar-rotate { to { transform: translate(-50%, -50%) rotate(360deg); } }
+/* 滚动条水平滚动动画 */
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+/* 提示消息进入动画 */
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }

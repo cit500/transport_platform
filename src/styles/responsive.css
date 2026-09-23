@@ -1,0 +1,74 @@
+/* ==================== 响应式样式 ==================== */
+/* 当屏幕宽度小于等于1580px时的适配 */
+@media (max-width: 1580px) {
+    /* 缩小侧边栏宽度范围 */
+    :root { --side-width: clamp(310px, 21vw, 350px); }
+    /* 缩小导航栏中间标题区域宽度 */
+    .dashboard-header { grid-template-columns: minmax(0, 1fr) 490px minmax(0, 1fr); }
+    /* 缩小状态卡片左右内边距 */
+    .header-status-card { padding-left: 10px; padding-right: 8px; }
+    /* 缩小导航按钮左右内边距 */
+    .header-nav-item { padding: 0 7px; }
+    /* 缩小数据网格左右内边距 */
+    .overview-grid { padding-left: 8px; padding-right: 8px; }
+    /* 调整结果行布局，缩小类型和标签列宽度 */
+    .result-row { grid-template-columns: minmax(0, 1.3fr) 38px 56px; }
+    /* 缩小地图图例间距和最小宽度 */
+    .dynamic-map-legend { gap: 7px; min-width: 206px; }
+}
+
+/* 当屏幕高度小于等于850px时的适配（矮屏场景） */
+@media (max-height: 850px) {
+    /* 降低导航栏高度 */
+    :root { --header-height: 62px; }
+    /* 调整左侧列行比例，上方更小，下方更大 */
+    .dashboard-left-column { grid-template-rows: .72fr 2.28fr; }
+    /* 调整右侧列三行比例（韧性概况增加，数字人降低） */
+    .dashboard-right-column { grid-template-rows: 1fr 1.1fr 0.7fr; }
+    /* 缩小面板标题高度、底部间距和字体 */
+    .tech-panel-title { height: 25px; margin-bottom: 3px; font-size: 12px; }
+    /* 调整演示标签和助手状态位置，向上移动 */
+    .demo-badge, .assistant-status { top: 6px; }
+    /* 缩小车辆信息卡片最小高度和底部间距 */
+    .vehicle-summary { min-height: 36px; margin-bottom: 2px; }
+    /* 缩小通行率图表行和仪表盘高度 */
+    .pass-rate-row, .pass-gauge { height: 68px; }
+    /* 调整结果列表滚动区高度计算 */
+    .result-scroll { height: calc(100% - 143px); }
+    /* 缩小风险统计行和饼图高度 */
+    .risk-summary-row, .risk-pie-chart { height: 86px; }
+    /* 调整区域风险列表滚动区高度计算 */
+    .region-risk-scroll { height: calc(100% - 117px); }
+    /* 缩小韧性摘要区和仪表盘高度 */
+    .resilience-summary, .resilience-gauge { height: 105px; }
+    /* 缩小韧性进度条间距 */
+    .resilience-bars { gap: 5px; }
+    /* 缩小助手舞台区高度 */
+    .assistant-stage { height: 84px; }
+    /* 缩小助手头像（缩放82%） */
+    .assistant-avatar { transform: scale(.82); }
+    /* 调整聊天区域高度计算 */
+    .assistant-chat { height: calc(100% - 213px); }
+}
+
+/* 当屏幕宽度小于等于1280px时的适配（小屏场景） */
+@media (max-width: 1280px) {
+    /* 固定侧边栏宽度为300px，缩小页面间距 */
+    :root { --side-width: 300px; --page-gap: 7px; }
+    /* 进一步缩小导航栏中间标题区域宽度 */
+    .dashboard-header { grid-template-columns: minmax(0, 1fr) 440px minmax(0, 1fr); }
+    /* 状态卡片改为单列垂直布局，3行自动高度，居中对齐 */
+    .header-status-card { grid-template-columns: 1fr; grid-template-rows: repeat(3, auto); padding: 5px 7px; text-align: center; }
+    /* 状态卡片时间文字不再跨行，缩小字体 */
+    .header-status-card strong { grid-row: auto; font-size: 17px; }
+    /* 缩小状态卡片日期和天气文字 */
+    .header-status-card span { font-size: 8px; }
+    /* 缩小导航按钮字体 */
+    .header-nav-item { font-size: 14px; }
+    /* 缩小平台标题字体 */
+    .platform-title h1 { font-size: 24px; }
+    /* 缩小指标按钮最小宽度和左右内边距 */
+    .indicator-button { min-width: 80px; padding-left: 7px; padding-right: 7px; }
+    /* 缩小地图搜索框宽度 */
+    .map-search-box { width: 180px; }
+}

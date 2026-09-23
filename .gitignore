@@ -1,0 +1,13 @@
+node_modules/
+.npm-cache/
+dist/
+backend/target/
+.venv/
+uploads/
+*.log
+backend/*.log
+.env
+.env.*
+!.env.example
+exports/
+.codex-ppt/

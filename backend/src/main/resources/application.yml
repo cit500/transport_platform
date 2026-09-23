@@ -1,45 +1,16 @@
 server:
   port: 8080
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/geo+json,text/html,text/css,application/javascript
   error:
     include-message: always
     include-binding-errors: always
     include-stacktrace: on_param
 
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/plant_platform?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
-    username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update        # 启动时自动建表/更新表结构
-    defer-datasource-initialization: true
-    show-sql: true            # 控制台打印 SQL（方便调试）
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: true
-
-  sql:
-    init:
-      mode: always            # 每次启动执行 data.sql
-      encoding: UTF-8
-      continue-on-error: true # 出错继续（数据已存在时忽略）
-
-  # HOME-2: 静态资源映射（资产图片）
-  web:
-    resources:
-      static-locations: classpath:/static,classpath:/public
-      add-mappings: true
-
-# HOME-2: 文件上传配置
 app:
-  upload:
-    dir: uploads/assets
-
-# Python 算法服务地址
-python:
-  service:
-    url: http://localhost:5000
+  v2-datasource:
+    url: ${PLANT_DB_URL:jdbc:mysql://localhost:3306/transport_resilience_v2?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useCursorFetch=true&defaultFetchSize=500}
+    username: ${PLANT_DB_USERNAME:root}
+    password: ${PLANT_DB_PASSWORD:root}
