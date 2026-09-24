@@ -39,17 +39,17 @@ CREATE OR REPLACE VIEW v_road_edge_task_state AS
 SELECT
     r.road_edge_id,
     r.task_id,
-    t.module_type,
-    'DISASTER' AS result_type,
+    CONVERT(t.module_type USING utf8mb4) COLLATE utf8mb4_unicode_ci AS module_type,
+    _utf8mb4'DISASTER' COLLATE utf8mb4_unicode_ci AS result_type,
     t.completed_at,
-    r.passability_status,
+    CONVERT(r.passability_status USING utf8mb4) COLLATE utf8mb4_unicode_ci AS passability_status,
     CASE r.passability_status
         WHEN 'BLOCKED' THEN 0.0000
         WHEN 'CONDITIONAL' THEN 0.5000
         ELSE 1.0000
     END AS remaining_capacity_ratio,
     r.impact_score AS hazard_impact_score,
-    r.risk_level AS hazard_risk_level,
+    CONVERT(r.risk_level USING utf8mb4) COLLATE utf8mb4_unicode_ci AS hazard_risk_level,
     CAST(NULL AS DECIMAL(7,2)) AS resilience_criticality_score
 FROM disaster_road_result r
 JOIN evaluation_task t ON t.id = r.task_id
@@ -60,17 +60,17 @@ UNION ALL
 SELECT
     r.road_edge_id,
     r.task_id,
-    t.module_type,
-    'RESILIENCE' AS result_type,
+    CONVERT(t.module_type USING utf8mb4) COLLATE utf8mb4_unicode_ci AS module_type,
+    _utf8mb4'RESILIENCE' COLLATE utf8mb4_unicode_ci AS result_type,
     t.completed_at,
     CASE r.road_status
-        WHEN 'BLOCKED' THEN 'BLOCKED'
-        WHEN 'REDUCED' THEN 'CONDITIONAL'
-        ELSE 'PASS'
-    END AS passability_status,
+        WHEN 'BLOCKED' THEN _utf8mb4'BLOCKED' COLLATE utf8mb4_unicode_ci
+        WHEN 'REDUCED' THEN _utf8mb4'CONDITIONAL' COLLATE utf8mb4_unicode_ci
+        ELSE _utf8mb4'PASS' COLLATE utf8mb4_unicode_ci
+    END COLLATE utf8mb4_unicode_ci AS passability_status,
     r.remaining_capacity_ratio,
     CAST(NULL AS DECIMAL(7,4)) AS hazard_impact_score,
-    CAST(NULL AS CHAR(20)) AS hazard_risk_level,
+    CAST(NULL AS CHAR(20) CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci AS hazard_risk_level,
     r.criticality_score AS resilience_criticality_score
 FROM resilience_road_result r
 JOIN evaluation_task t ON t.id = r.task_id

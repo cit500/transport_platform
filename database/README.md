@@ -15,11 +15,12 @@
 7. `migrations/V007__create_disaster_assessment_schema.sql`
 8. `migrations/V008__create_resilience_assessment_schema.sql`
 9. `migrations/V009__simplify_local_road_network_schema.sql`
-10. `maintenance/refresh_road_derived_attributes.sql`
-11. `maintenance/fill_road_default_attributes.sql`（仅在需要补齐默认值时执行）
-12. `validation/validate_base_spatial.sql`
-13. `validation/validate_road_network.sql`
-14. `validation/validate_dashboard_data.sql`
+10. `migrations/V010__remove_road_node_type.sql`
+11. `maintenance/refresh_road_derived_attributes.sql`
+12. `maintenance/fill_road_default_attributes.sql`（仅在需要补齐默认值时执行）
+13. `validation/validate_base_spatial.sql`
+14. `validation/validate_road_network.sql`
+15. `validation/validate_dashboard_data.sql`
 
 迁移脚本均采用可重复执行方式。已完成迁移的日常运行不依赖旧数据库或本地 GeoJSON 文件。
 

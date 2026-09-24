@@ -39,7 +39,6 @@ def export_nodes_to_csv():
     cursor.execute("""
         SELECT
             id,
-            node_type,
             street_count,
             ST_X(geom) as longitude,
             ST_Y(geom) as latitude
@@ -51,7 +50,7 @@ def export_nodes_to_csv():
     output_file = os.path.join(OUTPUT_DIR, 'road_nodes.csv')
 
     with open(output_file, 'w', newline='', encoding='utf-8-sig') as f:
-        writer = csv.DictWriter(f, fieldnames=['id', 'node_type', 'street_count', 'longitude', 'latitude'])
+        writer = csv.DictWriter(f, fieldnames=['id', 'street_count', 'longitude', 'latitude'])
         writer.writeheader()
         writer.writerows(nodes)
 
@@ -113,7 +112,6 @@ def export_nodes_to_json():
     cursor.execute("""
         SELECT
             id,
-            node_type,
             street_count,
             ST_X(geom) as longitude,
             ST_Y(geom) as latitude
@@ -178,7 +176,7 @@ def export_geojson():
     # 导出节点 GeoJSON
     cursor.execute("""
         SELECT
-            id, node_type, street_count,
+            id, street_count,
             ST_X(geom) as lng, ST_Y(geom) as lat
         FROM road_node
     """)
@@ -192,7 +190,6 @@ def export_geojson():
                 "type": "Feature",
                 "properties": {
                     "id": node['id'],
-                    "node_type": node['node_type'],
                     "street_count": node['street_count']
                 },
                 "geometry": {

@@ -28,8 +28,9 @@ UPDATE road_edge
 SET length_m = ROUND(ST_Length(geom, 'metre'), 3)
 WHERE geom IS NOT NULL AND ST_IsValid(ST_SRID(geom, 0));
 
--- 每条边只保留一个统计归属区。口径为线几何质心所在区；边界点同时命中多个区时，
--- 使用最小 region_code 保证结果稳定。跨区关系仍由 geom 表达，不从端点行政区推导。
+-- 每条边只保留一个统计归属区。优先使用线几何质心所在区；边界连接边的质心可能
+-- 位于行政区覆盖范围之外，此时回退到任一端点所在区。多区同时命中时使用最小
+-- region_code 保证结果稳定。跨区关系仍由 geom 表达，不从两个端点组合推导。
 DROP TEMPORARY TABLE IF EXISTS tmp_road_edge_region;
 CREATE TEMPORARY TABLE tmp_road_edge_region (
     road_edge_id BIGINT NOT NULL PRIMARY KEY,
@@ -45,11 +46,31 @@ JOIN region r ON ST_Intersects(
 )
 GROUP BY e.id;
 
+DROP TEMPORARY TABLE IF EXISTS tmp_unmatched_road_edge;
+CREATE TEMPORARY TABLE tmp_unmatched_road_edge (
+    road_edge_id BIGINT NOT NULL PRIMARY KEY
+);
+
+INSERT INTO tmp_unmatched_road_edge (road_edge_id)
+SELECT e.id
+FROM road_edge e
+LEFT JOIN tmp_road_edge_region matched ON matched.road_edge_id = e.id
+WHERE matched.road_edge_id IS NULL;
+
+INSERT INTO tmp_road_edge_region (road_edge_id, region_code)
+SELECT e.id, MIN(r.region_code)
+FROM tmp_unmatched_road_edge unmatched
+JOIN road_edge e ON e.id = unmatched.road_edge_id
+JOIN region r ON ST_Intersects(ST_SRID(r.geom, 0), ST_SRID(ST_StartPoint(e.geom), 0))
+              OR ST_Intersects(ST_SRID(r.geom, 0), ST_SRID(ST_EndPoint(e.geom), 0))
+GROUP BY e.id;
+
 UPDATE road_edge e
 JOIN tmp_road_edge_region x ON x.road_edge_id = e.id
 SET e.region_code = x.region_code;
 
 DROP TEMPORARY TABLE tmp_road_edge_region;
+DROP TEMPORARY TABLE tmp_unmatched_road_edge;
 
 COMMIT;
 

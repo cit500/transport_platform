@@ -8,7 +8,11 @@ WHERE table_schema = DATABASE() AND table_name = 'road_node' AND column_name = '
 UNION ALL
 SELECT 'edge_code_column_count', COUNT(*)
 FROM information_schema.columns
-WHERE table_schema = DATABASE() AND table_name = 'road_edge' AND column_name = 'edge_code';
+WHERE table_schema = DATABASE() AND table_name = 'road_edge' AND column_name = 'edge_code'
+UNION ALL
+SELECT 'node_type_column_count', COUNT(*)
+FROM information_schema.columns
+WHERE table_schema = DATABASE() AND table_name = 'road_node' AND column_name = 'node_type';
 
 SELECT COUNT(*) AS invalid_node_geometry_error_count
 FROM road_node
@@ -51,7 +55,9 @@ JOIN region r ON r.region_code = e.region_code
 WHERE NOT ST_Intersects(
     ST_SRID(r.geom, 0),
     ST_Centroid(ST_SRID(e.geom, 0))
-);
+)
+AND NOT ST_Intersects(ST_SRID(r.geom, 0), ST_SRID(ST_StartPoint(e.geom), 0))
+AND NOT ST_Intersects(ST_SRID(r.geom, 0), ST_SRID(ST_EndPoint(e.geom), 0));
 
 -- 以下为信息性统计，不一定代表错误；平行道路、匝道或重复采集都可能共享同一对端点。
 SELECT from_node_id, to_node_id, COUNT(*) AS parallel_edge_count
