@@ -89,7 +89,7 @@ public class V2DashboardController {
     @GetMapping("/map/roads")
     public ResponseEntity<StreamingResponseBody> roadGeoJson() {
         String sql = """
-            SELECT e.id, e.edge_code, e.road_name, e.road_ref, e.road_class,
+            SELECT e.id, e.road_name, e.road_ref, e.road_class,
                    e.one_way, e.lane_count, e.design_speed_kmh, e.length_m,
                    e.region_code, e.source_bridge_flag, e.source_tunnel_flag,
                    ST_AsGeoJSON(ST_Simplify(ST_SRID(e.geom, 0), 0.0001), 6) AS geometry_json
@@ -100,7 +100,6 @@ public class V2DashboardController {
         return geoJsonStream(sql, rs -> {
             Map<String, Object> properties = new LinkedHashMap<>();
             properties.put("id", rs.getLong("id"));
-            properties.put("edgeCode", rs.getString("edge_code"));
             properties.put("roadName", rs.getString("road_name"));
             properties.put("roadRef", rs.getString("road_ref"));
             properties.put("roadClass", rs.getString("road_class"));

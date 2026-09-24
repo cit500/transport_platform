@@ -14,10 +14,16 @@
 6. `migrations/V006__create_admin_scenario_schema.sql`
 7. `migrations/V007__create_disaster_assessment_schema.sql`
 8. `migrations/V008__create_resilience_assessment_schema.sql`
-9. `validation/validate_base_spatial.sql`
-10. `validation/validate_dashboard_data.sql`
+9. `migrations/V009__simplify_local_road_network_schema.sql`
+10. `maintenance/refresh_road_derived_attributes.sql`
+11. `maintenance/fill_road_default_attributes.sql`（仅在需要补齐默认值时执行）
+12. `validation/validate_base_spatial.sql`
+13. `validation/validate_road_network.sql`
+14. `validation/validate_dashboard_data.sql`
 
 迁移脚本均采用可重复执行方式。已完成迁移的日常运行不依赖旧数据库或本地 GeoJSON 文件。
+
+V009 执行后，运行时路网不再保留 OSM 节点编码和边编码，`road_node.id`、`road_edge.id` 是平台稳定标识。旧库只承担首次数据迁移来源，不再构成兼容边界。字段口径和维护方式见 `docs/road-network-data-model.md`。
 
 ## 路网与行政区统计口径
 

@@ -191,7 +191,7 @@ public class V2DisasterService {
             WHERE r.task_id=? ORDER BY FIELD(r.damage_state,'DS4','DS3','DS2','DS1','DS0'),r.distance_km
             """, taskId));
         task.put("roads", jdbc.queryForList("""
-            SELECT r.road_edge_id roadEdgeId,e.edge_code edgeCode,e.road_name roadName,e.road_ref roadRef,
+            SELECT r.road_edge_id roadEdgeId,e.road_name roadName,e.road_ref roadRef,
                    r.distance_km distanceKm,r.impact_score impactScore,r.risk_level riskLevel,
                    r.passability_status passabilityStatus,r.assessment_reason assessmentReason
             FROM disaster_road_result r JOIN road_edge e ON e.id=r.road_edge_id

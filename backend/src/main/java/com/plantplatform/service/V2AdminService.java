@@ -111,7 +111,7 @@ public class V2AdminService {
         List<Object> args = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE 1=1");
         if (hasText(query)) {
-            where.append(" AND (e.road_name LIKE ? OR e.road_ref LIKE ? OR e.edge_code LIKE ?)");
+            where.append(" AND (e.road_name LIKE ? OR e.road_ref LIKE ? OR CAST(e.id AS CHAR) LIKE ?)");
             String like = "%" + query.trim() + "%";
             args.add(like); args.add(like); args.add(like);
         }
@@ -123,7 +123,7 @@ public class V2AdminService {
         List<Object> dataArgs = new ArrayList<>(args);
         dataArgs.add(size); dataArgs.add(page * size);
         List<Map<String, Object>> content = jdbc.queryForList("""
-            SELECT e.id, e.edge_code edgeCode, e.road_name roadName, e.road_ref roadRef,
+            SELECT e.id, e.road_name roadName, e.road_ref roadRef,
                    e.road_class roadClass, e.from_node_id fromNodeId, e.to_node_id toNodeId,
                    e.region_code regionCode, r.region_name regionName, e.length_m lengthM,
                    e.lane_count laneCount, e.design_speed_kmh designSpeedKmh, e.one_way oneWay,
@@ -133,7 +133,7 @@ public class V2AdminService {
             JOIN region r ON r.region_code=e.region_code
             LEFT JOIN asset_road_relation ar ON ar.road_edge_id=e.id
             """ + where + """
-             GROUP BY e.id, e.edge_code, e.road_name, e.road_ref, e.road_class, e.from_node_id,
+             GROUP BY e.id, e.road_name, e.road_ref, e.road_class, e.from_node_id,
                      e.to_node_id, e.region_code, r.region_name, e.length_m, e.lane_count,
                      e.design_speed_kmh, e.one_way, e.source_bridge_flag, e.source_tunnel_flag
             ORDER BY e.id LIMIT ? OFFSET ?
@@ -143,7 +143,7 @@ public class V2AdminService {
 
     public Map<String, Object> road(long id) {
         Map<String, Object> result = queryOne("""
-            SELECT e.id, e.edge_code edgeCode, e.road_name roadName, e.road_ref roadRef,
+            SELECT e.id, e.road_name roadName, e.road_ref roadRef,
                    e.road_class roadClass, e.from_node_id fromNodeId, e.to_node_id toNodeId,
                    e.region_code regionCode, r.region_name regionName, e.length_m lengthM,
                    e.lane_count laneCount, e.design_speed_kmh designSpeedKmh, e.one_way oneWay,
@@ -213,7 +213,7 @@ public class V2AdminService {
             ? optionalOne("SELECT * FROM bridge_detail WHERE asset_id=?", id)
             : optionalOne("SELECT * FROM tunnel_detail WHERE asset_id=?", id));
         result.put("roads", jdbc.queryForList("""
-            SELECT e.id, e.edge_code edgeCode, e.road_name roadName, e.road_ref roadRef,
+            SELECT e.id, e.road_name roadName, e.road_ref roadRef,
                    r.region_name regionName, ar.relation_type relationType, ar.sequence_no sequenceNo,
                    ar.direction, ar.start_chainage startChainage, ar.end_chainage endChainage
             FROM asset_road_relation ar JOIN road_edge e ON e.id=ar.road_edge_id

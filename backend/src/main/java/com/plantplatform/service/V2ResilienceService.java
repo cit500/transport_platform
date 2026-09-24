@@ -140,7 +140,7 @@ public class V2ResilienceService {
             FROM evaluation_task t JOIN resilience_task_result r ON r.task_id=t.id WHERE t.id=?
             """, taskId);
         task.put("roads", jdbc.queryForList("""
-            SELECT rr.road_edge_id roadEdgeId,e.edge_code edgeCode,e.road_name roadName,e.road_ref roadRef,
+            SELECT rr.road_edge_id roadEdgeId,e.road_name roadName,e.road_ref roadRef,
                    e.road_class roadClass,e.length_m/1000 lengthKm,rr.remaining_capacity_ratio remainingCapacityRatio,
                    rr.baseline_flow_veh_h baselineFlowVehH,rr.post_flow_veh_h postFlowVehH,
                    rr.volume_capacity_ratio volumeCapacityRatio,rr.road_status roadStatus,
@@ -149,7 +149,7 @@ public class V2ResilienceService {
             WHERE rr.task_id=? ORDER BY rr.criticality_score DESC,e.id LIMIT 3000
             """, taskId));
         task.put("odResults", jdbc.queryForList("""
-            SELECT o.od_demand_id odDemandId,n1.node_code originNode,n2.node_code destinationNode,
+            SELECT o.od_demand_id odDemandId,CAST(n1.id AS CHAR) originNode,CAST(n2.id AS CHAR) destinationNode,
                    o.reachable,o.demand_veh_h demandVehH,o.baseline_travel_time_min baselineTravelTimeMin,
                    o.post_travel_time_min postTravelTimeMin,o.detour_ratio detourRatio,d.is_priority isPriority,
                    ST_X(n1.geom) originLongitude,ST_Y(n1.geom) originLatitude,
@@ -229,7 +229,7 @@ public class V2ResilienceService {
 
     private List<Edge> loadEdges() {
         return jdbc.query("""
-            SELECT id,from_node_id,to_node_id,COALESCE(road_name,road_ref,edge_code) road_name,road_ref,road_class,
+            SELECT id,from_node_id,to_node_id,COALESCE(road_name,road_ref,CONCAT('道路-',id)) road_name,road_ref,road_class,
                    length_m,COALESCE(design_speed_kmh,CASE road_class WHEN 'motorway' THEN 100 WHEN 'trunk' THEN 80 ELSE 60 END) speed,
                    COALESCE(lane_count,CASE road_class WHEN 'motorway' THEN 4 WHEN 'trunk' THEN 3 ELSE 2 END) lanes
             FROM road_edge WHERE """ + " " + EDGE_FILTER + " ORDER BY id LIMIT 3000", (rs, row) -> {

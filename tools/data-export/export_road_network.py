@@ -39,7 +39,6 @@ def export_nodes_to_csv():
     cursor.execute("""
         SELECT
             id,
-            node_code,
             node_type,
             street_count,
             ST_X(geom) as longitude,
@@ -52,7 +51,7 @@ def export_nodes_to_csv():
     output_file = os.path.join(OUTPUT_DIR, 'road_nodes.csv')
 
     with open(output_file, 'w', newline='', encoding='utf-8-sig') as f:
-        writer = csv.DictWriter(f, fieldnames=['id', 'node_code', 'node_type', 'street_count', 'longitude', 'latitude'])
+        writer = csv.DictWriter(f, fieldnames=['id', 'node_type', 'street_count', 'longitude', 'latitude'])
         writer.writeheader()
         writer.writerows(nodes)
 
@@ -71,7 +70,6 @@ def export_edges_to_csv():
     cursor.execute("""
         SELECT
             e.id,
-            e.edge_code,
             e.from_node_id,
             e.to_node_id,
             e.road_name,
@@ -92,7 +90,7 @@ def export_edges_to_csv():
 
     with open(output_file, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.DictWriter(f, fieldnames=[
-            'id', 'edge_code', 'from_node_id', 'to_node_id',
+            'id', 'from_node_id', 'to_node_id',
             'road_name', 'road_ref', 'road_class', 'one_way',
             'lane_count', 'design_speed_kmh', 'length_m',
             'region_code', 'geometry'
@@ -115,7 +113,6 @@ def export_nodes_to_json():
     cursor.execute("""
         SELECT
             id,
-            node_code,
             node_type,
             street_count,
             ST_X(geom) as longitude,
@@ -145,7 +142,6 @@ def export_edges_to_json():
     cursor.execute("""
         SELECT
             e.id,
-            e.edge_code,
             e.from_node_id,
             e.to_node_id,
             e.road_name,
@@ -182,7 +178,7 @@ def export_geojson():
     # 导出节点 GeoJSON
     cursor.execute("""
         SELECT
-            id, node_code, node_type, street_count,
+            id, node_type, street_count,
             ST_X(geom) as lng, ST_Y(geom) as lat
         FROM road_node
     """)
@@ -196,7 +192,6 @@ def export_geojson():
                 "type": "Feature",
                 "properties": {
                     "id": node['id'],
-                    "node_code": node['node_code'],
                     "node_type": node['node_type'],
                     "street_count": node['street_count']
                 },
@@ -212,7 +207,7 @@ def export_geojson():
     # 导出边 GeoJSON
     cursor.execute("""
         SELECT
-            id, edge_code, from_node_id, to_node_id,
+            id, from_node_id, to_node_id,
             road_name, road_ref, road_class, one_way,
             length_m, region_code,
             ST_AsText(geom) as wkt
@@ -246,7 +241,6 @@ def export_geojson():
                 "type": "Feature",
                 "properties": {
                     "id": edge['id'],
-                    "edge_code": edge['edge_code'],
                     "from_node_id": edge['from_node_id'],
                     "to_node_id": edge['to_node_id'],
                     "road_name": edge['road_name'],

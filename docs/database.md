@@ -15,3 +15,5 @@
 当前后端启动时还会通过 `V2AdminSchemaInitializer` 确保场景、灾害结果和韧性结果表存在。完整迁移和启动初始化暂时并存，后续若引入 Flyway，应统一为单一迁移机制。
 
 详细迁移顺序见 `database/README.md`。
+
+路网已经收敛为平台独立维护的本地数据模型，不再依赖 OSM 编码。节点与边 id、拓扑和几何是固定基础事实；连接度、长度和道路统计归属区由维护脚本统一刷新。详细口径见 `docs/road-network-data-model.md`。
