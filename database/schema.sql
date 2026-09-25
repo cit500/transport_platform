@@ -9,14 +9,14 @@ USE transport_platform;
 CREATE TABLE IF NOT EXISTS region (
     region_code       VARCHAR(20)  NOT NULL,
     region_name       VARCHAR(60)  NOT NULL,
-    area_km2          DECIMAL(12,2) NULL,
-    center_longitude  DECIMAL(10,7) NULL,
-    center_latitude   DECIMAL(10,7) NULL,
+    area_km2          DECIMAL(12,2) NULL COMMENT '由geom椭球面积一次性计算，单位km²',
+    center_longitude  DECIMAL(10,7) NULL COMMENT '由geom平面质心一次性计算',
+    center_latitude   DECIMAL(10,7) NULL COMMENT '由geom平面质心一次性计算',
     geom              GEOMETRY SRID 4326 NOT NULL,
     PRIMARY KEY (region_code),
     UNIQUE KEY uk_region_name (region_name),
     SPATIAL INDEX sp_region_geom (geom)
-) ENGINE=InnoDB COMMENT='行政区基础数据';
+) ENGINE=InnoDB COMMENT='固定且业务只读的行政区基础数据';
 
 CREATE TABLE IF NOT EXISTS road_node (
     id            BIGINT   NOT NULL,
