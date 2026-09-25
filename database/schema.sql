@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS bridge_detail (
     horizontal_clearance_m       DECIMAL(8,2)  NULL,
     PRIMARY KEY (asset_id),
     CONSTRAINT fk_bridge_detail_asset FOREIGN KEY (asset_id) REFERENCES transport_asset (id) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='桥梁暂存详情';
+) ENGINE=InnoDB COMMENT='桥梁专业详情';
 
 CREATE TABLE IF NOT EXISTS tunnel_detail (
     asset_id                 BIGINT        NOT NULL,
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS tunnel_detail (
     lane_count               SMALLINT      NULL,
     PRIMARY KEY (asset_id),
     CONSTRAINT fk_tunnel_detail_asset FOREIGN KEY (asset_id) REFERENCES transport_asset (id) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='隧道暂存详情';
+) ENGINE=InnoDB COMMENT='隧道专业详情';
 
 CREATE TABLE IF NOT EXISTS asset_road_relation (
     asset_id        BIGINT        NOT NULL,
@@ -134,11 +134,11 @@ CREATE TABLE IF NOT EXISTS asset_road_relation (
     start_chainage  DECIMAL(12,3) NULL,
     end_chainage    DECIMAL(12,3) NULL,
     PRIMARY KEY (asset_id, road_edge_id),
-    KEY idx_asset_road_edge (road_edge_id),
+    UNIQUE KEY uk_asset_road_edge (road_edge_id),
     CONSTRAINT fk_asset_road_asset FOREIGN KEY (asset_id) REFERENCES transport_asset (id) ON DELETE CASCADE,
     CONSTRAINT fk_asset_road_edge FOREIGN KEY (road_edge_id) REFERENCES road_edge (id),
     CONSTRAINT ck_asset_road_type CHECK (relation_type IN ('PRIMARY', 'ADJACENT'))
-) ENGINE=InnoDB COMMENT='桥隧与道路边绑定';
+) ENGINE=InnoDB COMMENT='桥隧可绑定多边，每条道路边只能属于一个桥隧';
 
 CREATE TABLE IF NOT EXISTS analysis_task (
     id             BIGINT       NOT NULL AUTO_INCREMENT,

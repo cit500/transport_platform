@@ -4,12 +4,14 @@ const HomeView = () => import('../views/HomeView.vue');
 const HeavyView = () => import('../views/HeavyView.vue');
 const DisasterView = () => import('../views/DisasterView.vue');
 const ResilienceView = () => import('../views/ResilienceView.vue');
+const DataManagementView = () => import('../views/DataManagementView.vue');
 
 const routes = [
     { path: '/', name: 'home', component: HomeView, meta: { title: '交通网络多灾韧性评价可视化平台' } },
     { path: '/heavy', name: 'heavy', component: HeavyView, meta: { title: '重车通行评估 · 交通网络多灾韧性评价可视化平台' } },
     { path: '/disaster', name: 'disaster', component: DisasterView, meta: { title: '灾害风险评估 · 交通网络多灾韧性评价可视化平台' } },
     { path: '/resilience', name: 'resilience', component: ResilienceView, meta: { title: '路网韧性评估 · 交通网络多灾韧性评价可视化平台' } },
+    { path: '/admin/data', name: 'admin-data', component: DataManagementView, meta: { title: '数据管理 · 交通网络多灾韧性评价可视化平台' } },
     { path: '/:pathMatch(.*)*', redirect: '/' }
 ];
 

@@ -10,9 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,30 +28,28 @@ public class AdminService {
     public AdminService(@Qualifier("platformJdbcTemplate") JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public Map<String,Object> summary(){
-        Map<String,Object> result = Objects.requireNonNull(jdbc.queryForObject("""
+        return Objects.requireNonNull(jdbc.queryForObject("""
             SELECT (SELECT COUNT(*) FROM region) regionCount,
                    (SELECT COUNT(*) FROM road_node) roadNodeCount,
                    (SELECT COUNT(*) FROM road_edge) roadEdgeCount,
                    (SELECT ROUND(COALESCE(SUM(length_m),0)/1000,2) FROM road_edge) roadLengthKm,
                    (SELECT COUNT(*) FROM transport_asset WHERE asset_type='BRIDGE') bridgeCount,
                    (SELECT COUNT(*) FROM transport_asset WHERE asset_type='TUNNEL') tunnelCount,
-                   (SELECT COUNT(*) FROM analysis_task) taskCount
+                   (SELECT COUNT(*) FROM analysis_task) taskCount,
+                   (SELECT COUNT(*) FROM transport_asset a LEFT JOIN asset_road_relation r ON r.asset_id=a.id
+                     WHERE r.asset_id IS NULL AND a.service_status<>'CLOSED') unboundAssetCount
             """,(rs,n)->{
                 Map<String,Object> row=new LinkedHashMap<>();
-                row.put("行政区",rs.getLong("regionCount"));
-                row.put("路网节点",rs.getLong("roadNodeCount"));
-                row.put("路网边",rs.getLong("roadEdgeCount"));
-                row.put("道路总长(km)",rs.getBigDecimal("roadLengthKm"));
-                row.put("桥梁",rs.getLong("bridgeCount"));
-                row.put("隧道",rs.getLong("tunnelCount"));
-                row.put("分析任务",rs.getLong("taskCount"));
+                row.put("regionCount",rs.getLong("regionCount"));
+                row.put("roadNodeCount",rs.getLong("roadNodeCount"));
+                row.put("roadEdgeCount",rs.getLong("roadEdgeCount"));
+                row.put("roadLengthKm",rs.getBigDecimal("roadLengthKm"));
+                row.put("bridgeCount",rs.getLong("bridgeCount"));
+                row.put("tunnelCount",rs.getLong("tunnelCount"));
+                row.put("taskCount",rs.getLong("taskCount"));
+                row.put("unboundAssetCount",rs.getLong("unboundAssetCount"));
                 return row;
             }));
-        result.put("未绑定道路的桥隧",jdbc.queryForObject("""
-            SELECT COUNT(*) FROM transport_asset a LEFT JOIN asset_road_relation r ON r.asset_id=a.id
-            WHERE r.asset_id IS NULL AND a.service_status<>'CLOSED'
-            """,Long.class));
-        return result;
     }
 
     public List<Map<String,Object>> regions(){return jdbc.queryForList("""
@@ -60,13 +61,25 @@ public class AdminService {
         ) x ON x.region_code=r.region_code ORDER BY r.region_code
         """);}
 
+    public Map<String,Object> roadNodes(int page,int size,String query){
+        List<Object> args=new ArrayList<>();String where="";
+        if(hasText(query)){where=" WHERE CAST(n.id AS CHAR) LIKE ?";args.add("%"+query.trim()+"%");}
+        long total=jdbc.queryForObject("SELECT COUNT(*) FROM road_node n"+where,Long.class,args.toArray());
+        List<Object> dataArgs=new ArrayList<>(args);dataArgs.add(size);dataArgs.add(page*size);
+        List<Map<String,Object>> content=jdbc.queryForList("""
+            SELECT n.id,n.street_count streetCount,ST_X(n.geom) longitude,ST_Y(n.geom) latitude
+            FROM road_node n
+            """+where+" ORDER BY n.id LIMIT ? OFFSET ?",dataArgs.toArray());
+        return page(content,page,size,total);
+    }
+
     public Map<String,Object> roads(int page,int size,String query){
         List<Object> args=new ArrayList<>(); String where="";
         if(hasText(query)){where=" WHERE e.road_name LIKE ? OR e.road_ref LIKE ? OR CAST(e.id AS CHAR) LIKE ?";String like="%"+query.trim()+"%";args.add(like);args.add(like);args.add(like);}
         long total=jdbc.queryForObject("SELECT COUNT(*) FROM road_edge e"+where,Long.class,args.toArray());
         List<Object> dataArgs=new ArrayList<>(args);dataArgs.add(size);dataArgs.add(page*size);
         List<Map<String,Object>> content=jdbc.queryForList("""
-            SELECT e.id,e.road_name roadName,e.road_ref roadRef,e.road_class roadClass,
+            SELECT e.id,e.from_node_id fromNodeId,e.to_node_id toNodeId,e.road_name roadName,e.road_ref roadRef,e.road_class roadClass,
                    e.region_code regionCode,r.region_name regionName,e.length_m lengthM,
                    e.lane_count laneCount,e.design_speed_kmh designSpeedKmh,e.one_way oneWay,
                    e.source_bridge_flag sourceBridgeFlag,e.source_tunnel_flag sourceTunnelFlag
@@ -84,6 +97,23 @@ public class AdminService {
         FROM road_edge e JOIN region r ON r.region_code=e.region_code WHERE e.id=?
         """,id);}
 
+    public List<Map<String,Object>> roadOptions(String query,int limit){
+        List<Object> args=new ArrayList<>();String where="";
+        if(hasText(query)){
+            where=" WHERE e.road_name LIKE ? OR e.road_ref LIKE ? OR CAST(e.id AS CHAR) LIKE ?";
+            String like="%"+query.trim()+"%";args.add(like);args.add(like);args.add(like);
+        }
+        args.add(limit);
+        return jdbc.queryForList("""
+            SELECT e.id,e.road_name roadName,e.road_ref roadRef,e.road_class roadClass,
+                   e.region_code regionCode,r.region_name regionName,e.length_m lengthM,
+                   ar.asset_id boundAssetId,a.asset_name boundAssetName
+            FROM road_edge e JOIN region r ON r.region_code=e.region_code
+            LEFT JOIN asset_road_relation ar ON ar.road_edge_id=e.id
+            LEFT JOIN transport_asset a ON a.id=ar.asset_id
+            """+where+" ORDER BY CASE WHEN e.road_name IS NULL THEN 1 ELSE 0 END,e.road_name,e.id LIMIT ?",args.toArray());
+    }
+
     public Map<String,Object> assets(int page,int size,String query){
         List<Object> args=new ArrayList<>();String where="";
         if(hasText(query)){where=" WHERE a.asset_name LIKE ? OR a.asset_code LIKE ?";String like="%"+query.trim()+"%";args.add(like);args.add(like);}
@@ -93,9 +123,13 @@ public class AdminService {
             SELECT a.id,a.asset_code assetCode,a.asset_name assetName,a.asset_type assetType,
                    a.region_code regionCode,r.region_name regionName,a.longitude,a.latitude,
                    a.construction_year constructionYear,a.design_grade designGrade,
-                   a.service_status serviceStatus,COUNT(ar.road_edge_id) bindingCount
+                   a.service_status serviceStatus,COUNT(ar.road_edge_id) bindingCount,
+                   MAX(CASE WHEN ar.relation_type='PRIMARY' THEN e.id END) roadEdgeId,
+                   MAX(CASE WHEN ar.relation_type='PRIMARY' THEN e.road_name END) roadName,
+                   MAX(CASE WHEN ar.relation_type='PRIMARY' THEN e.road_ref END) roadRef
             FROM transport_asset a LEFT JOIN region r ON r.region_code=a.region_code
             LEFT JOIN asset_road_relation ar ON ar.asset_id=a.id
+            LEFT JOIN road_edge e ON e.id=ar.road_edge_id
             """+where+" GROUP BY a.id,r.region_name ORDER BY a.asset_type,a.asset_code LIMIT ? OFFSET ?",dataArgs.toArray());
         return page(content,page,size,total);
     }
@@ -112,9 +146,11 @@ public class AdminService {
         String table="BRIDGE".equals(result.get("assetType"))?"bridge_detail":"tunnel_detail";
         result.put("detail",optionalOne("SELECT * FROM "+table+" WHERE asset_id=?",id));
         result.put("roads",jdbc.queryForList("""
-            SELECT e.id roadEdgeId,e.road_name roadName,e.road_ref roadRef,ar.relation_type relationType,
+            SELECT e.id roadEdgeId,e.road_name roadName,e.road_ref roadRef,e.road_class roadClass,
+                   e.region_code regionCode,r.region_name regionName,e.length_m lengthM,ar.relation_type relationType,
                    ar.sequence_no sequenceNo,ar.direction,ar.start_chainage startChainage,ar.end_chainage endChainage
             FROM asset_road_relation ar JOIN road_edge e ON e.id=ar.road_edge_id
+            JOIN region r ON r.region_code=e.region_code
             WHERE ar.asset_id=? ORDER BY COALESCE(ar.sequence_no,32767),e.id
             """,id));
         return result;
@@ -122,11 +158,35 @@ public class AdminService {
 
     @Transactional("platformTransactionManager")
     public long saveAsset(Long id,Map<String,Object> body){
-        String code=required(body,"assetCode"),name=required(body,"assetName"),type=required(body,"assetType");
+        String name=required(body,"assetName"),type=required(body,"assetType");
         if(!List.of("BRIDGE","TUNNEL").contains(type))bad("设施类型必须是 BRIDGE 或 TUNNEL");
-        Object[] values={code,name,type,text(body.get("regionCode")),decimal(body.get("longitude")),decimal(body.get("latitude")),
+        String code=id==null?nextAssetCode(type):text(queryOne("SELECT asset_code assetCode FROM transport_asset WHERE id=?",id).get("assetCode"));
+        String status=defaultText(body.get("serviceStatus"),"IN_SERVICE");
+        if(!List.of("IN_SERVICE","MAINTENANCE","CLOSED").contains(status))bad("服务状态不合法");
+        List<Long> roadEdgeIds=roadIds(body.get("roadEdgeIds"));
+        if(roadEdgeIds.isEmpty())bad("至少绑定一条路网边");
+        String marks=String.join(",",roadEdgeIds.stream().map(value->"?").toList());
+        List<Map<String,Object>> roads=jdbc.queryForList("""
+            SELECT id,region_code regionCode,
+                   ST_X(ST_Centroid(ST_SRID(geom,0))) longitude,
+                   ST_Y(ST_Centroid(ST_SRID(geom,0))) latitude
+            FROM road_edge WHERE id IN ("""+marks+")",roadEdgeIds.toArray());
+        if(roads.size()!=roadEdgeIds.size())bad("部分路网边不存在");
+        List<Object> conflictArgs=new ArrayList<>(roadEdgeIds);
+        String conflictSql="SELECT COUNT(*) FROM asset_road_relation WHERE road_edge_id IN ("+marks+")";
+        if(id!=null){conflictSql+=" AND asset_id<>?";conflictArgs.add(id);}
+        if(jdbc.queryForObject(conflictSql,Long.class,conflictArgs.toArray())>0)bad("所选路网边已绑定其他桥隧设施");
+        Map<Long,Map<String,Object>> roadById=new HashMap<>();
+        for(Map<String,Object> road:roads)roadById.put(longValue(road.get("id")),road);
+        Map<String,Object> primaryRoad=roadById.get(roadEdgeIds.get(0));
+        String regionCode=text(primaryRoad.get("regionCode"));
+        BigDecimal longitude=BigDecimal.ZERO,latitude=BigDecimal.ZERO;
+        for(Long roadId:roadEdgeIds){Map<String,Object> road=roadById.get(roadId);longitude=longitude.add(decimal(road.get("longitude")));latitude=latitude.add(decimal(road.get("latitude")));}
+        longitude=longitude.divide(BigDecimal.valueOf(roadEdgeIds.size()),7,RoundingMode.HALF_UP);
+        latitude=latitude.divide(BigDecimal.valueOf(roadEdgeIds.size()),7,RoundingMode.HALF_UP);
+        Object[] values={code,name,type,regionCode,longitude,latitude,
             integer(body.get("constructionYear")),text(body.get("designGrade")),integer(body.get("designSpeedKmh")),
-            text(body.get("baselineConditionLevel")),date(body.get("baselineInspectionDate")),defaultText(body.get("serviceStatus"),"IN_SERVICE")};
+            text(body.get("baselineConditionLevel")),date(body.get("baselineInspectionDate")),status};
         if(id==null){
             KeyHolder key=new GeneratedKeyHolder();
             jdbc.update(c->{PreparedStatement ps=c.prepareStatement("""
@@ -143,15 +203,60 @@ public class AdminService {
                   construction_year=?,design_grade=?,design_speed_kmh=?,baseline_condition_level=?,baseline_inspection_date=?,service_status=? WHERE id=?
                 """,values[0],values[1],values[2],values[3],values[4],values[5],values[4],values[5],values[4],values[5],values[6],values[7],values[8],values[9],values[10],values[11],id)==0)notFound();
         }
-        replaceRoads(id,list(body.get("roads")));
+        saveDetail(id,type,map(body.get("detail")));
+        replaceRoads(id,roadEdgeIds);
         return id;
     }
 
-    private void replaceRoads(long assetId,List<Map<String,Object>> roads){
-        jdbc.update("DELETE FROM asset_road_relation WHERE asset_id=?",assetId);int sequence=1;
-        for(Map<String,Object> road:roads){Long roadId=longValue(road.get("roadEdgeId"));if(roadId==null)continue;
+    private String nextAssetCode(String type){
+        Long sequence=jdbc.queryForObject("""
+            SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(asset_code,'-',-1) AS UNSIGNED)),0)+1
+            FROM transport_asset WHERE asset_type=?
+            """,Long.class,type);
+        return ("BRIDGE".equals(type)?"BRIDGE-CQ-":"TUNNEL-CQ-")+String.format("%03d",sequence);
+    }
+
+    private void saveDetail(long assetId,String type,Map<String,Object> detail){
+        jdbc.update("DELETE FROM bridge_detail WHERE asset_id=?",assetId);
+        jdbc.update("DELETE FROM tunnel_detail WHERE asset_id=?",assetId);
+        if("BRIDGE".equals(type)){
+            jdbc.update("""
+                INSERT INTO bridge_detail(asset_id,bridge_type,total_length_m,deck_width_m,span_count,max_span_m,
+                  pier_count,representative_pier_height_m,pier_section_type,pier_section_width_m,pier_section_height_m,
+                  concrete_strength_mpa,steel_strength_mpa,reinforcement_ratio,bearing_type,bearing_count,
+                  bearing_stiffness_kn_m,has_restrainer,design_load_grade,design_load_ton,vertical_clearance_m,horizontal_clearance_m)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,assetId,text(detail.get("bridge_type")),decimal(detail.get("total_length_m")),decimal(detail.get("deck_width_m")),
+                integer(detail.get("span_count")),decimal(detail.get("max_span_m")),integer(detail.get("pier_count")),
+                decimal(detail.get("representative_pier_height_m")),text(detail.get("pier_section_type")),
+                decimal(detail.get("pier_section_width_m")),decimal(detail.get("pier_section_height_m")),
+                decimal(detail.get("concrete_strength_mpa")),decimal(detail.get("steel_strength_mpa")),
+                decimal(detail.get("reinforcement_ratio")),text(detail.get("bearing_type")),integer(detail.get("bearing_count")),
+                decimal(detail.get("bearing_stiffness_kn_m")),bool(detail.get("has_restrainer")),
+                text(detail.get("design_load_grade")),decimal(detail.get("design_load_ton")),
+                decimal(detail.get("vertical_clearance_m")),decimal(detail.get("horizontal_clearance_m")));
+        }else{
+            jdbc.update("""
+                INSERT INTO tunnel_detail(asset_id,tunnel_type,total_length_m,diameter_m,buried_depth_m,section_type,
+                  lining_thickness_cm,concrete_strength_mpa,steel_strength_mpa,elastic_modulus_gpa,surrounding_rock_grade,
+                  groundwater_level,site_category,vertical_clearance_m,horizontal_clearance_m,lane_count)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,assetId,text(detail.get("tunnel_type")),decimal(detail.get("total_length_m")),decimal(detail.get("diameter_m")),
+                decimal(detail.get("buried_depth_m")),text(detail.get("section_type")),decimal(detail.get("lining_thickness_cm")),
+                decimal(detail.get("concrete_strength_mpa")),decimal(detail.get("steel_strength_mpa")),
+                decimal(detail.get("elastic_modulus_gpa")),text(detail.get("surrounding_rock_grade")),
+                text(detail.get("groundwater_level")),text(detail.get("site_category")),
+                decimal(detail.get("vertical_clearance_m")),decimal(detail.get("horizontal_clearance_m")),integer(detail.get("lane_count")));
+        }
+    }
+
+    private void replaceRoads(long assetId,List<Long> roadEdgeIds){
+        jdbc.update("DELETE FROM asset_road_relation WHERE asset_id=?",assetId);
+        int sequence=1;
+        for(Long roadEdgeId:roadEdgeIds){
             jdbc.update("INSERT INTO asset_road_relation(asset_id,road_edge_id,relation_type,sequence_no) VALUES(?,?,?,?)",
-                assetId,roadId,defaultText(road.get("relationType"),sequence==1?"PRIMARY":"ADJACENT"),sequence++);}
+                assetId,roadEdgeId,sequence==1?"PRIMARY":"ADJACENT",sequence++);
+        }
     }
 
     public void closeAsset(long id){if(jdbc.update("UPDATE transport_asset SET service_status='CLOSED' WHERE id=?",id)==0)notFound();}
@@ -166,7 +271,13 @@ public class AdminService {
     private static Integer integer(Object v){String s=text(v);return s==null?null:new BigDecimal(s).intValue();}
     private static Long longValue(Object v){String s=text(v);return s==null?null:new BigDecimal(s).longValue();}
     private static java.sql.Date date(Object v){String s=text(v);return s==null?null:java.sql.Date.valueOf(s);}
-    @SuppressWarnings("unchecked") private static List<Map<String,Object>> list(Object v){return v instanceof List<?>?(List<Map<String,Object>>)v:new ArrayList<>();}
+    @SuppressWarnings("unchecked") private static Map<String,Object> map(Object v){return v instanceof Map<?,?>?(Map<String,Object>)v:new LinkedHashMap<>();}
+    private static List<Long> roadIds(Object v){
+        LinkedHashSet<Long> ids=new LinkedHashSet<>();
+        if(v instanceof List<?> values)for(Object value:values){Long id=longValue(value);if(id!=null)ids.add(id);}
+        return new ArrayList<>(ids);
+    }
+    private static Boolean bool(Object v){String s=text(v);return s==null?null:("true".equalsIgnoreCase(s)||"1".equals(s));}
     private static void bind(PreparedStatement ps,Object...v)throws java.sql.SQLException{for(int i=0;i<v.length;i++)ps.setObject(i+1,v[i]);}
     private static void bad(String m){throw new ResponseStatusException(HttpStatus.BAD_REQUEST,m);}
     private static void notFound(){throw new ResponseStatusException(HttpStatus.NOT_FOUND,"数据不存在");}

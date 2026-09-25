@@ -18,6 +18,12 @@ public class AdminController {
 
     @GetMapping("/summary") public Map<String,Object> summary(){return service.summary();}
     @GetMapping("/regions") public Object regions(){return service.regions();}
+    @GetMapping("/road-nodes")
+    public Object roadNodes(@RequestParam(defaultValue="0") int page,
+                            @RequestParam(defaultValue="20") int size,
+                            @RequestParam(required=false) String q){
+        return service.roadNodes(Math.max(0,page),Math.min(Math.max(size,1),100),q);
+    }
     @GetMapping("/roads")
     public Object roads(@RequestParam(defaultValue="0") int page,
                         @RequestParam(defaultValue="20") int size,
@@ -25,6 +31,11 @@ public class AdminController {
         return service.roads(Math.max(0,page),Math.min(Math.max(size,1),100),q);
     }
     @GetMapping("/roads/{id}") public Object road(@PathVariable long id){return service.road(id);}
+    @GetMapping("/road-options")
+    public Object roadOptions(@RequestParam(required=false) String q,
+                              @RequestParam(defaultValue="30") int limit){
+        return service.roadOptions(q,Math.min(Math.max(limit,1),100));
+    }
     @GetMapping("/assets")
     public Object assets(@RequestParam(defaultValue="0") int page,
                          @RequestParam(defaultValue="20") int size,

@@ -10,4 +10,5 @@ backend/*.log
 .env.*
 !.env.example
 exports/
+database/backups/
 .codex-ppt/

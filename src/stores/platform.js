@@ -56,12 +56,11 @@ export const usePlatformStore = defineStore('platform', () => {
 
 export const useUiStore = defineStore('ui', () => {
     const toasts = ref([]);
-    const dataManagementOpen = ref(false);
     let sequence = 0;
     function toast(message, kind = 'info') {
         const id = ++sequence;
         toasts.value.push({ id, message, kind });
         window.setTimeout(() => { toasts.value = toasts.value.filter((item) => item.id !== id); }, 2800);
     }
-    return { toasts, dataManagementOpen, toast };
+    return { toasts, toast };
 });

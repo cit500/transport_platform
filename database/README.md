@@ -2,6 +2,8 @@
 
 当前数据库为 `transport_platform`，不再维护版本迁移链。
 
+桥隧设施采用“公共信息 + 类型详情 + 路网边绑定”的结构：一个桥隧可以绑定多条路网边，但每条路网边只能属于一个桥隧。已有数据库升级到当前结构时，先备份数据库并确认没有边归属冲突，再执行 `maintenance/enforce_exclusive_road_asset.sql`；新建数据库直接使用 `schema.sql`，无需执行该脚本。
+
 新环境按以下顺序执行：
 
 1. `schema.sql`
