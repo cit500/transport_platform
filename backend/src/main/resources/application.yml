@@ -10,7 +10,7 @@ server:
     include-stacktrace: on_param
 
 app:
-  v2-datasource:
-    url: ${PLANT_DB_URL:jdbc:mysql://localhost:3306/transport_resilience_v2?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useCursorFetch=true&defaultFetchSize=500}
+  datasource:
+    url: ${PLANT_DB_URL:jdbc:mysql://localhost:3306/transport_platform?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useCursorFetch=true&defaultFetchSize=500}
     username: ${PLANT_DB_USERNAME:root}
     password: ${PLANT_DB_PASSWORD:root}

@@ -1,6 +1,8 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import L from 'leaflet';
+import { mapConfig } from '../config/map.js';
+import { createBaseLayers } from '../services/mapProvider.js';
 
 const props = defineProps({
     regions: Object,
@@ -36,12 +38,6 @@ const layerVisibility = {
     roads: props.defaultLayerVisibility.roads !== false,
     assets: props.defaultLayerVisibility.assets !== false
 };
-
-const tileServer = import.meta.env.VITE_BIGEMAP_URL || 'http://127.0.0.1:9000';
-const token = import.meta.env.VITE_BIGEMAP_TOKEN || '';
-const satelliteLayerId = import.meta.env.VITE_BIGEMAP_SATELLITE_LAYER || 'bigemap.7f604xec';
-const electronicLayerId = import.meta.env.VITE_BIGEMAP_ELECTRONIC_LAYER || 'bigemap.7lurvljd';
-const tile = (id) => `${tileServer}/${id}/tiles/{z}/{x}/{y}.png${token ? `?access_token=${token}` : ''}`;
 
 const escapeHtml = (value) => String(value ?? '-').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 const numberText = (value, digits = 0, suffix = '') => Number.isFinite(Number(value)) ? `${Number(value).toFixed(digits)}${suffix}` : '-';
@@ -134,9 +130,8 @@ function renderAssets() {
 }
 
 onMounted(() => {
-    map = L.map(element.value, { zoomControl: false, attributionControl: false, preferCanvas: true, minZoom: 7, maxZoom: 18 }).setView(props.center, props.zoom);
-    satellite = L.tileLayer(tile(satelliteLayerId), { maxZoom: 18, opacity: .84 });
-    electronic = L.tileLayer(tile(electronicLayerId), { maxZoom: 18, opacity: .88 });
+    map = L.map(element.value, { zoomControl: false, attributionControl: false, preferCanvas: true, minZoom: mapConfig.minZoom, maxZoom: mapConfig.maxZoom }).setView(props.center, props.zoom);
+    ({ satellite, electronic } = createBaseLayers());
     baseLayer = null;
     if (!['administrative', 'none'].includes(props.defaultBase)) {
         baseLayer = props.defaultBase === 'electronic' ? electronic : satellite;

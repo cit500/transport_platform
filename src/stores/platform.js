@@ -7,7 +7,11 @@ const EMPTY_DASHBOARD = () => ({ overview: {}, defaultVehicle: {}, passSummary: 
 export const usePlatformStore = defineStore('platform', () => {
     const dashboard = reactive(EMPTY_DASHBOARD());
     const mapData = reactive({ regions: null, roads: null, assets: null });
-    const vehicles = ref([]);
+    const vehicles = ref([{
+        id: 'default', profileName: '默认100吨重型运输车', grossWeightTon: 100,
+        vehicleLengthM: 18, vehicleWidthM: 3.2, vehicleHeightM: 4.5,
+        axleCount: 6, plannedSpeedKmh: 30, isDefault: true
+    }]);
     const assets = ref([]);
     const loading = ref(false);
     const backendOnline = ref(true);
@@ -38,9 +42,8 @@ export const usePlatformStore = defineStore('platform', () => {
     }
 
     async function loadCatalogs(force = false) {
-        if (!force && vehicles.value.length && assets.value.length) return;
-        const [vehicleRows, assetPage] = await Promise.all([adminApi('/vehicles'), adminApi('/assets?page=0&size=100')]);
-        vehicles.value = vehicleRows || [];
+        if (!force && assets.value.length) return;
+        const assetPage = await adminApi('/assets?page=0&size=100');
         assets.value = (assetPage?.content || []).filter((item) => item.longitude != null && item.latitude != null);
     }
 

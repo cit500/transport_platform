@@ -15,7 +15,7 @@ DB_CONFIG = {
     'port': int(os.getenv('PLANT_DB_PORT', '3306')),
     'user': os.getenv('PLANT_DB_USERNAME', 'root'),
     'password': os.getenv('PLANT_DB_PASSWORD', 'root'),
-    'database': os.getenv('PLANT_DB_NAME', 'transport_resilience_v2'),
+    'database': os.getenv('PLANT_DB_NAME', 'transport_platform'),
     'charset': 'utf8mb4'
 }
 

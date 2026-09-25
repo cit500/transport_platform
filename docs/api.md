@@ -1,6 +1,6 @@
 # 接口说明
 
-统一前缀：`/api/v2`
+统一前缀：`/api`
 
 ## 首页与地图
 
@@ -9,22 +9,21 @@
 - `GET /map/roads`
 - `GET /map/assets`
 
-## 数据管理
+## 基础数据管理
 
-统一前缀：`/api/v2/admin`
+前缀：`/api/admin`
 
-包括道路、桥隧设施、车辆方案、灾害场景、评估任务、首页发布、灾害动态和预设问答的查询与维护接口。
+- `GET /summary`
+- `GET /regions`
+- `GET /roads`、`GET /roads/{id}`
+- `GET /assets`、`GET /assets/{id}`
+- `POST /assets`、`PUT /assets/{id}`、`DELETE /assets/{id}`
 
-## 灾害评估
+道路和行政区当前只读；桥隧允许维护，删除操作实际是将服务状态改为 `CLOSED`。
 
-- `GET /disaster/bootstrap`
-- `POST /disaster/evaluate`
-- `GET /disaster/tasks/{taskId}`
+## 灾害与韧性演示
 
-## 韧性评估
+- `GET /disaster/bootstrap`、`POST /disaster/evaluate`、`GET /disaster/tasks/{id}`
+- `GET /resilience/bootstrap`、`POST /resilience/evaluate`、`GET /resilience/tasks/{id}`
 
-- `GET /resilience/bootstrap`
-- `POST /resilience/evaluate`
-- `GET /resilience/tasks/{taskId}`
-
-重车评估当前由前端规则模块执行，尚无独立后端评估接口。
+这两组接口用于跑通界面、任务和历史结果，不代表最终专业分析方法。重车评估暂由前端规则模块演示。

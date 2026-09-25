@@ -1,4 +1,4 @@
-const API_ROOT = import.meta.env.VITE_API_ROOT || '/api/v2';
+const API_ROOT = import.meta.env.VITE_API_ROOT || '/api';
 
 export async function api(path, options = {}) {
     const response = await fetch(`${API_ROOT}${path}`, {
