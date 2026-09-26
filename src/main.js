@@ -8,5 +8,6 @@ import './styles/data-management.css';
 import './styles/heavy.css';
 import './styles/disaster.css';
 import './styles/resilience.css';
+import './styles/ui-system.css';
 
 createApp(App).use(createPinia()).use(router).mount('#app');

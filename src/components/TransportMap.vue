@@ -16,7 +16,7 @@ const props = defineProps({
     },
     defaultBase: { type: String, default: 'satellite' },
     outlineRegions: { type: Boolean, default: false },
-    regionIndicator: { type: String, default: 'risk' },
+    regionIndicator: { type: String, default: 'resilienceIndex' },
     showRegionLabels: { type: Boolean, default: false },
     center: { type: Array, default: () => [30.2, 107.5] },
     zoom: { type: Number, default: 8 },
@@ -40,7 +40,7 @@ const layerVisibility = {
 };
 
 const escapeHtml = (value) => String(value ?? '-').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
-const numberText = (value, digits = 0, suffix = '') => Number.isFinite(Number(value)) ? `${Number(value).toFixed(digits)}${suffix}` : '-';
+const numberText = (value, digits = 0, suffix = '') => value != null && value !== '' && Number.isFinite(Number(value)) ? `${Number(value).toFixed(digits)}${suffix}` : '-';
 function regionDetail(feature) {
     const properties = feature.properties || {};
     return props.regionDetails.find((item) =>
@@ -48,29 +48,35 @@ function regionDetail(feature) {
         item.regionName === (properties.regionName || properties.name || properties.NAME)
     ) || properties;
 }
+function metricColor(value) {
+    if (value == null || value === '') return '#526f84';
+    const score = Number(value);
+    if (!Number.isFinite(score)) return '#526f84';
+    const normalized = Math.max(0, Math.min(100, score));
+    const stops = normalized <= 50
+        ? [[239, 107, 117], [246, 200, 95], normalized / 50]
+        : [[246, 200, 95], [57, 200, 137], (normalized - 50) / 50];
+    const [start, end, ratio] = stops;
+    const rgb = start.map((channel, index) => Math.round(channel + (end[index] - channel) * ratio));
+    return `rgb(${rgb.join(',')})`;
+}
 function regionStyle(feature) {
     const name = feature.properties?.regionName || feature.properties?.name || feature.properties?.NAME;
     const selected = name === selectedRegionName;
     const detail = regionDetail(feature);
-    const colorSets = {
-        risk: { '低风险': '#35da87', '中风险': '#efd253', '高风险': '#ff9748', '极高风险': '#ff5669', '暂无数据': '#526f84' },
-        resilience: { '高韧性': '#42e4dc', '较高韧性': '#3996f2', '中等韧性': '#efd253', '低韧性': '#ff6171', '暂无数据': '#526f84' },
-        passability: { '畅通': '#35da87', '条件通行': '#efd253', '受限': '#ff9748', '阻断': '#ff5669', '暂无数据': '#526f84' }
-    };
-    const valueKeys = { risk: 'riskLevel', resilience: 'resilienceLevel', passability: 'passabilityLevel' };
-    const value = detail[valueKeys[props.regionIndicator]] || '暂无数据';
+    const value = detail[props.regionIndicator];
     return {
         color: selected ? '#15191d' : '#3c444b',
         weight: selected ? 2.6 : 1.15,
         opacity: .96,
-        fillColor: colorSets[props.regionIndicator]?.[value] || '#526f84',
+        fillColor: metricColor(value),
         fillOpacity: props.outlineRegions ? 0 : (selected ? .72 : .56)
     };
 }
 function popupContent(feature) {
     const item = regionDetail(feature);
     const name = item.regionName || feature.properties?.regionName || '行政区';
-    return `<div class="region-map-popup"><strong>${escapeHtml(name)}</strong><div><span>灾害风险</span><b>${escapeHtml(item.riskLevel || '暂无数据')}</b><em>${numberText(item.riskScore, 0, ' 分')}</em></div><div><span>综合韧性</span><b>${escapeHtml(item.resilienceLevel || '暂无数据')}</b><em>${numberText(item.resilienceScore, 0, ' 分')}</em></div><div><span>路网连通度</span><b>${numberText(item.connectivity, 2)}</b></div><div><span>通行保障率</span><b>${numberText(item.guaranteeRate, 0, '%')}</b></div><div><span>通行等级</span><b>${escapeHtml(item.passabilityLevel || '暂无数据')}</b></div></div>`;
+    return `<div class="region-map-popup"><strong>${escapeHtml(name)}</strong><div><span>韧性指数</span><b>${numberText(item.resilienceIndex, 1, ' 分')}</b></div><div><span>路网连通度</span><b>${numberText(item.connectivityScore, 1, ' 分')}</b></div><div><span>灾害恢复能力</span><b>${numberText(item.recoveryCapacity, 1, ' 分')}</b></div></div>`;
 }
 
 function renderRegions() {
@@ -90,8 +96,7 @@ function renderRegions() {
                 mouseover() { layer.setStyle({ color: '#20262b', weight: 2.3, fillOpacity: props.outlineRegions ? 0 : .68 }); },
                 mouseout() { layer.setStyle(regionStyle(feature)); },
                 click() {
-                    selectedRegionName = name;
-                    regionLayer.eachLayer((item) => item.setStyle(regionStyle(item.feature)));
+                    selectRegion(name);
                     emit('region-click', { name, feature, details: regionDetail(feature), layer });
                 }
             });
@@ -166,13 +171,18 @@ function drawRoutes(paths = []) {
     if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 13 });
 }
 function focus(lat, lng, zoom = 13) { map?.flyTo([Number(lat), Number(lng)], zoom, { duration: .5 }); }
+function selectRegion(name) {
+    selectedRegionName = name || null;
+    regionLayer?.eachLayer((item) => item.setStyle(regionStyle(item.feature)));
+    if (!name) map?.closePopup();
+}
 function toggleLayer(name, show) {
     const layer = { regions: regionLayer, roads: roadLayer, assets: assetLayer }[name];
     if (!layer) return;
     layerVisibility[name] = show;
     if (show) layer.addTo(map); else map.removeLayer(layer);
 }
-defineExpose({ zoomIn: () => map?.zoomIn(), zoomOut: () => map?.zoomOut(), reset: () => map?.setView(props.center, props.zoom), setBase, drawRoutes, focus, toggleLayer });
+defineExpose({ zoomIn: () => map?.zoomIn(), zoomOut: () => map?.zoomOut(), reset: () => map?.setView(props.center, props.zoom), setBase, drawRoutes, focus, toggleLayer, selectRegion });
 </script>
 
 <template><div ref="element" :class="className"></div></template>

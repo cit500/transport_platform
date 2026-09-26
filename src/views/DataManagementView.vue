@@ -16,6 +16,13 @@ const page = ref(0);
 const totalPages = ref(1);
 const totalElements = ref(0);
 const query = ref('');
+const assetTypeFilter = ref('ALL');
+const analysisTypeFilter = ref('ALL');
+const statusUpdatingId = ref(null);
+const taskDetail = ref(null);
+const taskDetailPage = ref(0);
+const taskDetailLoading = ref(false);
+const taskDeletingId = ref(null);
 const editorOpen = ref(false);
 const editor = reactive({});
 const roadQuery = ref('');
@@ -23,11 +30,12 @@ const roadOptions = ref([]);
 const selectedRoads = ref([]);
 
 const tabs = [
-    { key: 'overview', icon: '◈', name: '数据概览', note: '数据质量与绑定状态' },
-    { key: 'regions', icon: '▦', name: '行政区划', note: '固定基础数据 · 只读' },
-    { key: 'road-nodes', icon: '⊙', name: '路网节点', note: '拓扑节点 · 只读' },
-    { key: 'roads', icon: '⌁', name: '路网边', note: '道路网络 · 只读' },
-    { key: 'assets', icon: '◇', name: '桥隧设施', note: '可编辑业务资产' }
+    { key: 'overview', icon: '◈', name: '数据概览' },
+    { key: 'regions', icon: '▦', name: '行政区划' },
+    { key: 'road-nodes', icon: '⊙', name: '路网节点' },
+    { key: 'roads', icon: '⌁', name: '路网边' },
+    { key: 'assets', icon: '◇', name: '桥隧设施' },
+    { key: 'analysis-tasks', icon: '▤', name: '分析任务' }
 ];
 
 const bridgeFields = [
@@ -53,7 +61,6 @@ const tunnelFields = [
 
 const activeTab = computed(() => tabs.find((item) => item.key === tab.value));
 const detailFields = computed(() => editor.assetType === 'TUNNEL' ? tunnelFields : bridgeFields);
-const isReadOnlyTab = computed(() => ['regions','road-nodes','roads'].includes(tab.value));
 const availableRoadOptions = computed(() => roadOptions.value.filter((road) =>
     !selectedRoads.value.some((selected) => Number(selected.roadEdgeId || selected.id) === Number(road.id))
     && (!road.boundAssetId || Number(road.boundAssetId) === Number(editor.id))
@@ -64,16 +71,29 @@ const statCards = computed(() => [
     ['路网边', summary.value.roadEdgeCount, `${format(summary.value.roadLengthKm, 2)} km`],
     ['桥梁', summary.value.bridgeCount, '可维护设施'],
     ['隧道', summary.value.tunnelCount, '可维护设施'],
-    ['未绑定设施', summary.value.unboundAssetCount, '应优先处理']
+    ['未绑定设施', summary.value.unboundAssetCount, '应优先处理'],
+    ['分析任务', summary.value.taskCount, '重车 · 灾害 · 韧性']
 ]);
 
 function format(value, digits = 0) {
+    if (value == null || value === '') return '—';
     const number = Number(value);
     return Number.isFinite(number) ? number.toLocaleString('zh-CN', { maximumFractionDigits: digits }) : '—';
 }
 function label(value) { return value == null || value === '' ? '—' : String(value); }
 function assetTypeLabel(value) { return value === 'BRIDGE' ? '桥梁' : value === 'TUNNEL' ? '隧道' : value; }
-function statusLabel(value) { return ({ IN_SERVICE:'运营中', MAINTENANCE:'养护中', CLOSED:'已停用' })[value] || value; }
+function taskTypeLabel(value) { return ({ HEAVY:'重车通行', DISASTER:'灾害影响', RESILIENCE:'区域韧性', OTHER:'其他' })[value] || value; }
+function taskStatusLabel(value) { return ({ SUCCESS:'已完成', RUNNING:'运行中', PENDING:'待运行', FAILED:'失败' })[value] || value; }
+function dateTime(value) { return value ? String(value).replace('T',' ').slice(0,19) : '—'; }
+function parseJson(value) { try { return typeof value === 'string' ? JSON.parse(value) : value || {}; } catch { return {}; } }
+function prettyJson(value) { try { return JSON.stringify(parseJson(value),null,2); } catch { return String(value || ''); } }
+function resultDescription(item) {
+    const details = parseJson(item.resultJson);
+    if (item.targetType === 'HEAVY_PASS') return details.restrictionReason || '—';
+    if (item.targetType === 'DISASTER_DAMAGE') return `受损概率 ${format(details.damageProbability ?? item.score,1)}%`;
+    if (item.targetType === 'RESILIENCE') return `连通度 ${format(details.connectivityScore,1)} · 恢复能力 ${format(details.recoveryCapacity,1)}`;
+    return '—';
+}
 
 async function load() {
     loading.value = true;
@@ -85,7 +105,9 @@ async function load() {
             return;
         }
         const search = encodeURIComponent(query.value.trim());
-        const endpoint = tab.value === 'regions' ? '/regions' : `/${tab.value}?page=${page.value}&size=20&q=${search}`;
+        const selectedType = tab.value === 'assets' ? assetTypeFilter.value : tab.value === 'analysis-tasks' ? analysisTypeFilter.value : 'ALL';
+        const type = selectedType !== 'ALL' ? `&type=${selectedType}` : '';
+        const endpoint = tab.value === 'regions' ? '/regions' : `/${tab.value}?page=${page.value}&size=20&q=${search}${type}`;
         const data = await adminApi(endpoint);
         rows.value = Array.isArray(data) ? data : data.content || [];
         totalPages.value = Array.isArray(data) ? 1 : Math.max(1, Number(data.totalPages || 1));
@@ -147,23 +169,57 @@ async function saveAsset() {
         const path = editor.id ? `/assets/${editor.id}` : '/assets';
         await adminApi(path, { method: editor.id ? 'PUT' : 'POST', body: JSON.stringify(body) });
         editorOpen.value = false;
-        await Promise.all([platform.loadCatalogs(true), load()]);
+        await Promise.all([platform.loadCatalogs(true), platform.loadDashboard(true), platform.loadMap('assets', true), load()]);
         ui.toast('桥隧设施及详细属性已保存', 'success');
     } catch (exception) { ui.toast(exception.message); }
     finally { saving.value = false; }
 }
 
-async function closeAsset(item) {
-    if (!window.confirm(`确定停用“${item.assetName}”吗？记录会保留，可再次编辑恢复。`)) return;
+async function toggleAssetStatus(item) {
+    const next = item.serviceStatus === 'CLOSED' ? 'IN_SERVICE' : 'CLOSED';
+    statusUpdatingId.value = item.id;
+    try {
+        await adminApi(`/assets/${item.id}/status`, { method:'PUT', body:JSON.stringify({ serviceStatus:next }) });
+        item.serviceStatus = next;
+        await Promise.all([platform.loadCatalogs(true), platform.loadDashboard(true), platform.loadMap('assets',true)]);
+        ui.toast(next === 'IN_SERVICE' ? '设施已恢复运营' : '设施已停用', 'success');
+    } catch (exception) { ui.toast(exception.message); }
+    finally { statusUpdatingId.value = null; }
+}
+
+async function deleteAsset(item) {
+    if (!window.confirm(`确定永久删除“${item.assetName}”吗？\n设施详情和路网绑定会一并删除，此操作无法撤销。`)) return;
     try {
         await adminApi(`/assets/${item.id}`, { method:'DELETE' });
-        await Promise.all([platform.loadCatalogs(true), load()]);
-        ui.toast('设施已标记为停用', 'success');
+        await Promise.all([platform.loadCatalogs(true), platform.loadDashboard(true), platform.loadMap('assets',true), load()]);
+        ui.toast('桥隧设施已永久删除，其编码可再次使用', 'success');
     } catch (exception) { ui.toast(exception.message); }
 }
 
+async function openTaskDetail(item, detailPage = 0) {
+    taskDetailLoading.value = true;
+    try {
+        taskDetail.value = await adminApi(`/analysis-tasks/${item.id}?page=${detailPage}&size=30`);
+        taskDetailPage.value = detailPage;
+    } catch (exception) { ui.toast(exception.message); }
+    finally { taskDetailLoading.value = false; }
+}
+
+async function deleteAnalysisTask(item) {
+    if (!window.confirm(`确定永久删除分析任务“${item.taskName}”吗？\n该任务的汇总及全部设施、区域结果会一并删除。`)) return;
+    taskDeletingId.value = item.id;
+    try {
+        await adminApi(`/analysis-tasks/${item.id}`, { method:'DELETE' });
+        if (taskDetail.value?.id === item.id) taskDetail.value = null;
+        if (rows.value.length === 1 && page.value > 0) page.value--;
+        await Promise.all([load(), platform.loadDashboard(true), platform.loadMap('regions',true)]);
+        ui.toast('分析任务及其结果已删除', 'success');
+    } catch (exception) { ui.toast(exception.message); }
+    finally { taskDeletingId.value = null; }
+}
+
 function changeTab(key) { if (tab.value !== key) tab.value = key; }
-watch(tab, () => { page.value = 0; query.value = ''; editorOpen.value = false; load(); });
+watch(tab, () => { page.value = 0; query.value = ''; assetTypeFilter.value = 'ALL'; analysisTypeFilter.value = 'ALL'; editorOpen.value = false; taskDetail.value = null; load(); });
 watch(() => editor.assetType, (next, previous) => { if (editorOpen.value && previous && next !== previous) editor.detail = {}; });
 onMounted(load);
 </script>
@@ -173,24 +229,25 @@ onMounted(load);
     <PlatformHeader :show-admin-menu="true" />
     <main class="dm-shell">
         <header class="dm-page-header">
-            <div><span class="dm-eyebrow">DATA GOVERNANCE</span><h2>平台数据管理</h2><p>固定基础数据只读，桥梁与隧道作为业务设施独立维护。</p></div>
+            <div><span class="dm-eyebrow">DATA GOVERNANCE</span><h2>平台数据管理</h2></div>
             <div class="dm-page-actions"><span class="dm-connection"><i></i>transport_platform</span><button class="dm-icon-button" title="刷新" @click="load">↻</button></div>
         </header>
         <div class="dm-workspace">
             <aside class="dm-sidebar">
                 <button v-for="item in tabs" :key="item.key" class="dm-nav-item" :class="{'is-active':tab===item.key}" @click="changeTab(item.key)">
-                    <i>{{ item.icon }}</i><span><strong>{{ item.name }}</strong><small>{{ item.note }}</small></span>
+                    <i>{{ item.icon }}</i><span><strong>{{ item.name }}</strong></span>
                 </button>
-                <div class="dm-sidebar-foot"><span>管理边界</span><strong>行政区与路网由数据导入流程维护</strong><small>日常管理仅修改桥隧设施及其属性</small></div>
             </aside>
             <section class="dm-main"><div class="dm-main-content">
                 <div class="dm-section-header">
-                    <div><div class="dm-title-row"><h3>{{ activeTab?.name }}</h3><span v-if="isReadOnlyTab" class="dm-badge dm-badge-readonly">只读</span><span v-if="tab==='assets'" class="dm-badge dm-badge-editable">可维护</span></div><p>{{ activeTab?.note }}</p></div>
+                    <div class="dm-title-row"><h3>{{ activeTab?.name }}</h3><span v-if="tab==='assets'" class="dm-badge dm-badge-editable">可维护</span></div>
                     <button v-if="tab==='assets'" class="dm-button dm-button-primary" @click="editAsset()">＋ 新建桥隧</button>
                 </div>
 
-                <form v-if="['road-nodes','roads','assets'].includes(tab)" class="dm-filter-bar" @submit.prevent="page=0;load()">
-                    <input v-model="query" type="search" :placeholder="tab==='road-nodes'?'输入节点 ID':tab==='assets'?'输入设施名称或编码':'输入道路名称、编号或边 ID'">
+                <form v-if="['road-nodes','roads','assets','analysis-tasks'].includes(tab)" class="dm-filter-bar" @submit.prevent="page=0;load()">
+                    <input v-model="query" type="search" :placeholder="tab==='road-nodes'?'输入节点 ID':tab==='assets'?'输入设施名称或编码':tab==='analysis-tasks'?'输入任务名称或 ID':'输入道路名称、编号或边 ID'">
+                    <select v-if="tab==='assets'" v-model="assetTypeFilter" class="dm-type-filter" aria-label="设施类型" @change="page=0;load()"><option value="ALL">全部类型</option><option value="BRIDGE">桥梁</option><option value="TUNNEL">隧道</option></select>
+                    <select v-if="tab==='analysis-tasks'" v-model="analysisTypeFilter" class="dm-type-filter" aria-label="分析类型" @change="page=0;load()"><option value="ALL">全部分析</option><option value="HEAVY">重车通行</option><option value="DISASTER">灾害影响</option><option value="RESILIENCE">区域韧性</option></select>
                     <button class="dm-button">查询</button><button v-if="query" type="button" class="dm-button dm-button-ghost" @click="query='';page=0;load()">清空</button>
                     <span class="dm-filter-note">共 {{ format(totalElements) }} 条</span>
                 </form>
@@ -210,13 +267,15 @@ onMounted(load);
                     <thead><tr v-if="tab==='regions'"><th>行政区代码</th><th>名称</th><th>面积</th><th>路网边数</th><th>道路总长</th></tr>
                     <tr v-else-if="tab==='road-nodes'"><th>节点 ID</th><th>连接度</th><th>经度</th><th>纬度</th><th>维护方式</th></tr>
                     <tr v-else-if="tab==='roads'"><th>边 ID / 道路</th><th>行政区</th><th>等级</th><th>拓扑与规模</th><th>基础参数</th></tr>
+                    <tr v-else-if="tab==='analysis-tasks'"><th>任务编号 / 名称</th><th>分析类型</th><th>状态</th><th>创建时间</th><th>结果数量</th><th>操作</th></tr>
                     <tr v-else><th>设施编码 / 名称</th><th>类型</th><th>行政区</th><th>绑定路网边</th><th>状态</th><th>操作</th></tr></thead>
                     <tbody>
                         <template v-if="tab==='regions'"><tr v-for="item in rows" :key="item.regionCode"><td class="dm-code">{{ item.regionCode }}</td><td><strong>{{ item.regionName }}</strong></td><td>{{ format(item.areaKm2,2) }} km²</td><td>{{ format(item.roadCount) }}</td><td>{{ format(item.roadLengthKm,2) }} km</td></tr></template>
                         <template v-else-if="tab==='road-nodes'"><tr v-for="item in rows" :key="item.id"><td class="dm-code">#{{ item.id }}</td><td>{{ label(item.streetCount) }}</td><td>{{ format(item.longitude,7) }}</td><td>{{ format(item.latitude,7) }}</td><td><span class="dm-badge dm-badge-readonly">数据导入</span></td></tr></template>
                         <template v-else-if="tab==='roads'"><tr v-for="item in rows" :key="item.id"><td><strong>#{{ item.id }} · {{ item.roadName||'未命名道路' }}</strong><small>{{ item.roadRef||'无道路编号' }}</small></td><td>{{ item.regionName }}</td><td><span class="dm-badge">{{ item.roadClass }}</span></td><td><strong>{{ item.fromNodeId }} → {{ item.toNodeId }}</strong><small>{{ format(Number(item.lengthM)/1000,3) }} km</small></td><td>{{ item.laneCount||'—' }} 车道 · {{ item.designSpeedKmh||'—' }} km/h</td></tr></template>
-                        <template v-else><tr v-for="item in rows" :key="item.id"><td><strong>{{ item.assetName }}</strong><small>{{ item.assetCode }} · #{{ item.id }}</small></td><td><span class="dm-badge">{{ assetTypeLabel(item.assetType) }}</span></td><td>{{ item.regionName||'随路网确定' }}</td><td><template v-if="item.roadEdgeId"><strong>{{ item.bindingCount }} 条边 · 首条 #{{ item.roadEdgeId }}</strong><small>{{ item.roadName||'未命名道路' }} {{ item.roadRef?`· ${item.roadRef}`:'' }}</small></template><span v-else class="dm-warning">未绑定</span></td><td><span class="dm-status" :class="`is-${String(item.serviceStatus).toLowerCase()}`">{{ statusLabel(item.serviceStatus) }}</span></td><td><button class="dm-link" @click="editAsset(item)">编辑设施</button><button v-if="item.serviceStatus!=='CLOSED'" class="dm-link dm-link-danger" @click="closeAsset(item)">停用</button></td></tr></template>
-                        <tr v-if="!rows.length"><td :colspan="tab==='assets'?6:5"><div class="dm-state">暂无符合条件的记录</div></td></tr>
+                        <template v-else-if="tab==='analysis-tasks'"><tr v-for="item in rows" :key="item.id"><td><strong>{{ item.taskName }}</strong><small>{{ item.taskCode }}{{ item.source==='SYSTEM_SEED'?' · 预置任务':'' }}</small></td><td><span class="dm-badge">{{ taskTypeLabel(item.taskType) }}</span></td><td><span class="dm-badge" :class="item.status==='SUCCESS'?'dm-badge-editable':''">{{ taskStatusLabel(item.status) }}</span></td><td>{{ dateTime(item.createdAt) }}</td><td><strong>{{ format(item.resultCount) }} 条</strong><small>设施 {{ format(item.assetCount) }} · 区域 {{ format(item.regionCount) }}</small></td><td><button class="dm-link" @click="openTaskDetail(item)">查看结果</button><button class="dm-link dm-link-danger" :disabled="taskDeletingId===item.id" @click="deleteAnalysisTask(item)">删除</button></td></tr></template>
+                        <template v-else><tr v-for="item in rows" :key="item.id"><td><strong>{{ item.assetName }}</strong><small>{{ item.assetCode }} · #{{ item.id }}</small></td><td><span class="dm-badge">{{ assetTypeLabel(item.assetType) }}</span></td><td>{{ item.regionName||'随路网确定' }}</td><td><template v-if="item.roadEdgeId"><strong>{{ item.bindingCount }} 条边 · 首条 #{{ item.roadEdgeId }}</strong><small>{{ item.roadName||'未命名道路' }} {{ item.roadRef?`· ${item.roadRef}`:'' }}</small></template><span v-else class="dm-warning">未绑定</span></td><td><button class="dm-status-switch" :class="{'is-active':item.serviceStatus!=='CLOSED'}" :disabled="statusUpdatingId===item.id" @click="toggleAssetStatus(item)"><i></i><span>{{ item.serviceStatus==='CLOSED'?'已停用':'运营中' }}</span></button></td><td><button class="dm-link" @click="editAsset(item)">编辑设施</button><button class="dm-link dm-link-danger" @click="deleteAsset(item)">删除</button></td></tr></template>
+                        <tr v-if="!rows.length"><td :colspan="['assets','analysis-tasks'].includes(tab)?6:5"><div class="dm-state">暂无符合条件的记录</div></td></tr>
                     </tbody>
                 </table></div>
                 <div v-if="totalPages>1" class="dm-pagination"><button :disabled="page===0" @click="page--;load()">上一页</button><span>第 {{ page+1 }} / {{ totalPages }} 页</span><button :disabled="page>=totalPages-1" @click="page++;load()">下一页</button></div>
@@ -225,7 +284,7 @@ onMounted(load);
         <footer class="dm-footer"><span><i></i>数据库连接正常</span><span>基础路网只读 · 桥隧设施事务化保存</span></footer>
     </main>
     <div v-if="editorOpen" class="dm-dialog-backdrop" @click.self="editorOpen=false">
-        <form class="dm-dialog" aria-modal="true" role="dialog" @submit.prevent="saveAsset">
+        <form class="dm-dialog" aria-modal="true" role="dialog" @keydown.esc.prevent="editorOpen=false" @submit.prevent="saveAsset">
             <header class="dm-editor-heading"><div><span>{{ editor.id ? `设施 #${editor.id}` : 'NEW ASSET' }}</span><h3>{{ editor.id ? `维护 · ${editor.assetName}` : '新建桥隧设施' }}</h3></div><button type="button" class="dm-icon-button" aria-label="关闭" @click="editorOpen=false">×</button></header>
             <div class="dm-dialog-body">
                 <section class="dm-form-section dm-form-section-flat">
@@ -237,7 +296,7 @@ onMounted(load);
                     <div class="dm-form-grid">
                     <label><span>设施编码</span><input :value="editor.assetCode || '保存后由系统自动生成'" readonly class="dm-input-readonly"></label>
                     <label class="dm-field-wide"><span>设施名称 *</span><input v-model.trim="editor.assetName" required maxlength="200" placeholder="绑定首条路网边后可自动带出建议名称"></label>
-                    <label><span>服务状态 *</span><select v-model="editor.serviceStatus" required><option value="IN_SERVICE">运营中</option><option value="MAINTENANCE">养护中</option><option value="CLOSED">已停用</option></select></label>
+                    <label><span>服务状态 *</span><select v-model="editor.serviceStatus" required><option value="IN_SERVICE">运营中</option><option value="CLOSED">已停用</option></select></label>
                     <label><span>建成年份</span><input v-model="editor.constructionYear" type="number" min="1800" max="2200"></label>
                     <label><span>设计等级</span><input v-model.trim="editor.designGrade"></label>
                     <label><span>设计速度（km/h）</span><input v-model="editor.designSpeedKmh" type="number" min="0"></label>
@@ -270,6 +329,21 @@ onMounted(load);
             </div>
             <footer class="dm-dialog-actions"><span>保存时同步更新设施、专业详情、道路关系和自动坐标</span><div><button type="button" class="dm-button dm-button-ghost" @click="editorOpen=false">取消</button><button class="dm-button dm-button-primary" :disabled="saving">{{ saving?'正在保存…':'保存全部变更' }}</button></div></footer>
         </form>
+    </div>
+    <div v-if="taskDetail" class="dm-dialog-backdrop" @click.self="taskDetail=null">
+        <div class="dm-dialog dm-analysis-dialog" aria-modal="true" role="dialog" :aria-label="`分析任务 ${taskDetail.taskName}`" @keydown.esc="taskDetail=null">
+            <header class="dm-editor-heading"><div><span>{{ taskDetail.taskCode }}</span><h3>{{ taskDetail.taskName }}</h3></div><button type="button" class="dm-icon-button" aria-label="关闭" @click="taskDetail=null">×</button></header>
+            <div class="dm-dialog-body dm-analysis-body">
+                <div class="dm-analysis-meta"><span>{{ taskTypeLabel(taskDetail.taskType) }}</span><span>{{ taskStatusLabel(taskDetail.status) }}</span><span>创建于 {{ dateTime(taskDetail.createdAt) }}</span><span>完成于 {{ dateTime(taskDetail.completedAt) }}</span></div>
+                <p v-if="taskDetail.errorMessage" class="dm-warning">{{ taskDetail.errorMessage }}</p>
+                <div class="dm-analysis-snapshots"><details><summary>任务输入快照</summary><pre>{{ prettyJson(taskDetail.inputJson) }}</pre></details><details v-if="taskDetail.summaryJson"><summary>汇总结果</summary><pre>{{ prettyJson(taskDetail.summaryJson) }}</pre></details></div>
+                <div class="dm-analysis-heading"><strong>逐项分析结果</strong><span>共 {{ format(taskDetail.results?.totalElements) }} 条</span></div>
+                <div v-if="taskDetailLoading" class="dm-state">正在读取结果…</div>
+                <div v-else class="dm-table-wrap dm-analysis-results"><table><thead><tr><th>范围</th><th>对象</th><th>状态 / 等级</th><th>分值</th><th>结果摘要</th></tr></thead><tbody><tr v-for="item in taskDetail.results?.content||[]" :key="item.id"><td>{{ item.resultScope==='ASSET'?'桥隧设施':item.resultScope==='REGION'?'行政区划':item.resultScope }}</td><td><strong>{{ item.targetName||item.targetKey||'—' }}</strong><small>{{ item.targetKey }}</small></td><td>{{ label(item.statusCode) }}</td><td>{{ format(item.score,1) }}</td><td>{{ resultDescription(item) }}</td></tr><tr v-if="!taskDetail.results?.content?.length"><td colspan="5">暂无逐项结果</td></tr></tbody></table></div>
+                <div v-if="taskDetail.results?.totalPages>1" class="dm-pagination"><button :disabled="taskDetailPage===0 || taskDetailLoading" @click="openTaskDetail(taskDetail,taskDetailPage-1)">上一页</button><span>第 {{ taskDetailPage+1 }} / {{ taskDetail.results.totalPages }} 页</span><button :disabled="taskDetailPage>=taskDetail.results.totalPages-1 || taskDetailLoading" @click="openTaskDetail(taskDetail,taskDetailPage+1)">下一页</button></div>
+            </div>
+            <footer class="dm-dialog-actions"><span>结果由分析任务生成；可在列表中删除整项历史任务</span><div><button type="button" class="dm-button dm-button-primary" @click="taskDetail=null">关闭</button></div></footer>
+        </div>
     </div>
 </div>
 </template>

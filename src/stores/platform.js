@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, reactive, ref } from 'vue';
 import { api, adminApi } from '../services/api.js';
 
-const EMPTY_DASHBOARD = () => ({ overview: {}, defaultVehicle: {}, passSummary: [], heavyResults: [], regions: [], riskDistribution: [], hazardNotices: [], assistantQuestions: [] });
+const EMPTY_DASHBOARD = () => ({ overview: {}, defaultVehicle: {}, passSummary: [], heavyResults: [], regions: [], resilienceOverall: {}, damageDistribution: [], damageResults: [], hazardNotices: [], assistantQuestions: [] });
 
 export const usePlatformStore = defineStore('platform', () => {
     const dashboard = reactive(EMPTY_DASHBOARD());

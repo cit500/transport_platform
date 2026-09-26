@@ -38,6 +38,13 @@ public class AnalysisStore {
         jdbc.update("INSERT INTO analysis_result(task_id,result_scope,result_json) VALUES(?,'SUMMARY',CAST(? AS JSON))",id,write(result));
     }
 
+    public void addResult(long taskId,String scope,String targetType,String targetKey,String statusCode,Number score,Map<String,Object> result){
+        jdbc.update("""
+            INSERT INTO analysis_result(task_id,result_scope,target_type,target_key,status_code,score,result_json)
+            VALUES(?,?,?,?,?,?,CAST(? AS JSON))
+            """,taskId,scope,targetType,targetKey,statusCode,score,write(result));
+    }
+
     public Map<String,Object> result(long id,String type){
         List<String> rows=jdbc.queryForList("""
             SELECT CAST(r.result_json AS CHAR) FROM analysis_result r JOIN analysis_task t ON t.id=r.task_id
@@ -48,9 +55,13 @@ public class AnalysisStore {
     }
 
     public List<Map<String,Object>> recent(String type){return jdbc.queryForList("""
-        SELECT id,CONCAT(task_type,'-',LPAD(id,6,'0')) taskCode,task_name taskName,
-               task_type moduleType,status,created_at createdAt,completed_at completedAt
-        FROM analysis_task WHERE task_type=? ORDER BY created_at DESC,id DESC LIMIT 10
+        SELECT t.id,CONCAT(t.task_type,'-',LPAD(t.id,6,'0')) taskCode,t.task_name taskName,
+               COALESCE(JSON_UNQUOTE(JSON_EXTRACT(t.input_json,'$.hazardType')),
+                        JSON_UNQUOTE(JSON_EXTRACT(t.input_json,'$.eventType')),t.task_type) moduleType,
+               t.status,t.created_at createdAt,t.completed_at completedAt,
+               (SELECT JSON_UNQUOTE(JSON_EXTRACT(r.result_json,'$.riskLevel')) FROM analysis_result r
+                WHERE r.task_id=t.id AND r.result_scope='SUMMARY' ORDER BY r.id DESC LIMIT 1) riskLevel
+        FROM analysis_task t WHERE t.task_type=? ORDER BY t.created_at DESC,t.id DESC LIMIT 10
         """,type);}
 
     private String write(Object value){try{return mapper.writeValueAsString(value);}catch(Exception e){throw new IllegalArgumentException("JSON 数据无效",e);}}

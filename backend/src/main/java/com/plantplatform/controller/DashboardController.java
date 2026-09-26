@@ -2,6 +2,7 @@ package com.plantplatform.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.plantplatform.service.DashboardDataService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,35 +29,23 @@ public class DashboardController {
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
+    private final DashboardDataService dashboardData;
 
-    public DashboardController(@Qualifier("platformJdbcTemplate") JdbcTemplate jdbc, ObjectMapper objectMapper) {
+    public DashboardController(@Qualifier("platformJdbcTemplate") JdbcTemplate jdbc, ObjectMapper objectMapper, DashboardDataService dashboardData) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
+        this.dashboardData = dashboardData;
     }
 
     @GetMapping("/dashboard/bootstrap")
     public Map<String, Object> bootstrap() {
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("overview", overview());
-        response.put("defaultVehicle", Map.of(
-            "profileName", "默认100吨重型运输车", "grossWeightTon", 100,
-            "vehicleLengthM", 18, "vehicleWidthM", 3.2, "vehicleHeightM", 4.5,
-            "axleCount", 6, "plannedSpeedKmh", 30));
-        response.put("passSummary", List.of());
-        response.put("heavyResults", List.of());
-        response.put("regions", regions());
-        response.put("riskDistribution", List.of(Map.of("name", "暂无数据", "value", regionCount())));
-        response.put("hazardNotices", List.of());
-        response.put("assistantQuestions", List.of(
-            Map.of("questionCode", "platform", "answerText", "平台当前集中维护行政区、路网和桥隧基础数据，分析模块处于方法设计阶段。"),
-            Map.of("questionCode", "map", "answerText", "地图统一使用基础行政区、道路和桥隧图层；分析颜色将在方法确定后由任务结果驱动。"),
-            Map.of("questionCode", "heavy", "answerText", "重车页面目前用于参数和桥隧规则演示，正式路径方法将在后续确定。")
-        ));
-        return response;
+        return dashboardData.bootstrap();
     }
 
     @GetMapping("/map/regions")
     public ResponseEntity<StreamingResponseBody> regionGeoJson() {
+        Map<String,Map<String,Object>> metrics = new LinkedHashMap<>();
+        for(Map<String,Object> row:dashboardData.regions())metrics.put(String.valueOf(row.get("regionCode")),row);
         String sql = """
             SELECT region_code,region_name,ST_AsGeoJSON(geom,6) geometry_json
             FROM region ORDER BY region_code
@@ -65,9 +54,8 @@ public class DashboardController {
             Map<String, Object> p = new LinkedHashMap<>();
             p.put("regionCode", rs.getString("region_code"));
             p.put("regionName", rs.getString("region_name"));
-            p.put("riskLevel", "暂无数据");
-            p.put("resilienceLevel", "暂无数据");
-            p.put("passabilityLevel", "暂无数据");
+            Map<String,Object> detail=metrics.get(rs.getString("region_code"));
+            if(detail!=null)p.putAll(detail);
             return geoJsonFeature(rs.getString("geometry_json"), p);
         });
     }
@@ -121,33 +109,6 @@ public class DashboardController {
             return feature(geometry, properties);
         });
         return featureCollection(features);
-    }
-
-    private Map<String, Object> overview() {
-        return jdbc.queryForObject("""
-            SELECT (SELECT COUNT(*) FROM region) region_count,
-                   (SELECT COUNT(*) FROM road_edge) road_count,
-                   (SELECT ROUND(SUM(length_m)/1000,2) FROM road_edge) road_length_km,
-                   (SELECT COUNT(*) FROM transport_asset WHERE asset_type='BRIDGE') bridge_count,
-                   (SELECT COUNT(*) FROM transport_asset WHERE asset_type='TUNNEL') tunnel_count
-            """, (rs, rowNum) -> Map.of(
-            "regionCount", rs.getLong("region_count"), "roadCount", rs.getLong("road_count"),
-            "roadLengthKm", rs.getBigDecimal("road_length_km"), "bridgeCount", rs.getLong("bridge_count"),
-            "tunnelCount", rs.getLong("tunnel_count")));
-    }
-
-    private long regionCount() { return jdbc.queryForObject("SELECT COUNT(*) FROM region", Long.class); }
-
-    private List<Map<String, Object>> regions() {
-        return jdbc.query("SELECT region_code,region_name FROM region ORDER BY region_code", (rs, rowNum) -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("regionCode", rs.getString("region_code"));
-            row.put("regionName", rs.getString("region_name"));
-            row.put("riskLevel", "暂无数据");
-            row.put("resilienceLevel", "暂无数据");
-            row.put("passabilityLevel", "暂无数据");
-            return row;
-        });
     }
 
     private String writeJson(Map<String, Object> value) {

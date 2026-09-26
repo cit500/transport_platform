@@ -114,9 +114,15 @@ public class AdminService {
             """+where+" ORDER BY CASE WHEN e.road_name IS NULL THEN 1 ELSE 0 END,e.road_name,e.id LIMIT ?",args.toArray());
     }
 
-    public Map<String,Object> assets(int page,int size,String query){
-        List<Object> args=new ArrayList<>();String where="";
-        if(hasText(query)){where=" WHERE a.asset_name LIKE ? OR a.asset_code LIKE ?";String like="%"+query.trim()+"%";args.add(like);args.add(like);}
+    public Map<String,Object> assets(int page,int size,String query,String type){
+        List<Object> args=new ArrayList<>();List<String> conditions=new ArrayList<>();
+        if(hasText(query)){conditions.add("(a.asset_name LIKE ? OR a.asset_code LIKE ?)");String like="%"+query.trim()+"%";args.add(like);args.add(like);}
+        if(hasText(type)){
+            String normalized=type.trim().toUpperCase();
+            if(!List.of("BRIDGE","TUNNEL").contains(normalized))bad("设施类型筛选值不合法");
+            conditions.add("a.asset_type=?");args.add(normalized);
+        }
+        String where=conditions.isEmpty()?"":" WHERE "+String.join(" AND ",conditions);
         long total=jdbc.queryForObject("SELECT COUNT(*) FROM transport_asset a"+where,Long.class,args.toArray());
         List<Object> dataArgs=new ArrayList<>(args);dataArgs.add(size);dataArgs.add(page*size);
         List<Map<String,Object>> content=jdbc.queryForList("""
@@ -160,7 +166,8 @@ public class AdminService {
     public long saveAsset(Long id,Map<String,Object> body){
         String name=required(body,"assetName"),type=required(body,"assetType");
         if(!List.of("BRIDGE","TUNNEL").contains(type))bad("设施类型必须是 BRIDGE 或 TUNNEL");
-        String code=id==null?nextAssetCode(type):text(queryOne("SELECT asset_code assetCode FROM transport_asset WHERE id=?",id).get("assetCode"));
+        Map<String,Object> existing=id==null?null:queryOne("SELECT asset_code assetCode,asset_type assetType FROM transport_asset WHERE id=?",id);
+        String code=id==null||!type.equals(existing.get("assetType"))?nextAssetCode(type):text(existing.get("assetCode"));
         String status=defaultText(body.get("serviceStatus"),"IN_SERVICE");
         if(!List.of("IN_SERVICE","MAINTENANCE","CLOSED").contains(status))bad("服务状态不合法");
         List<Long> roadEdgeIds=roadIds(body.get("roadEdgeIds"));
@@ -209,11 +216,14 @@ public class AdminService {
     }
 
     private String nextAssetCode(String type){
-        Long sequence=jdbc.queryForObject("""
-            SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(asset_code,'-',-1) AS UNSIGNED)),0)+1
-            FROM transport_asset WHERE asset_type=?
-            """,Long.class,type);
-        return ("BRIDGE".equals(type)?"BRIDGE-CQ-":"TUNNEL-CQ-")+String.format("%03d",sequence);
+        String prefix="BRIDGE".equals(type)?"BRIDGE-CQ-":"TUNNEL-CQ-";
+        List<Integer> used=jdbc.queryForList("""
+            SELECT CAST(SUBSTRING_INDEX(asset_code,'-',-1) AS UNSIGNED)
+            FROM transport_asset WHERE asset_type=? AND asset_code LIKE ? ORDER BY 1
+            """,Integer.class,type,prefix+"%");
+        int sequence=1;
+        for(Integer value:used){if(value==null||value<sequence)continue;if(value==sequence)sequence++;else break;}
+        return prefix+String.format("%03d",sequence);
     }
 
     private void saveDetail(long assetId,String type,Map<String,Object> detail){
@@ -259,7 +269,83 @@ public class AdminService {
         }
     }
 
-    public void closeAsset(long id){if(jdbc.update("UPDATE transport_asset SET service_status='CLOSED' WHERE id=?",id)==0)notFound();}
+    public void updateAssetStatus(long id,Object value){
+        String status=text(value);
+        if(status==null||!List.of("IN_SERVICE","CLOSED").contains(status))bad("状态只能是 IN_SERVICE 或 CLOSED");
+        if(jdbc.update("UPDATE transport_asset SET service_status=? WHERE id=?",status,id)==0)notFound();
+    }
+
+    @Transactional("platformTransactionManager")
+    public void deleteAsset(long id){
+        jdbc.update("DELETE FROM analysis_result WHERE result_scope='ASSET' AND target_key=CAST(? AS CHAR) COLLATE utf8mb4_unicode_ci",id);
+        if(jdbc.update("DELETE FROM transport_asset WHERE id=?",id)==0)notFound();
+    }
+
+    public Map<String,Object> analysisTasks(int page,int size,String query,String type){
+        List<Object> args=new ArrayList<>();List<String> conditions=new ArrayList<>();
+        if(hasText(query)){
+            conditions.add("(t.task_name LIKE ? OR CAST(t.id AS CHAR) LIKE ?)");
+            String like="%"+query.trim()+"%";args.add(like);args.add(like);
+        }
+        if(hasText(type)){
+            String normalized=type.trim().toUpperCase();
+            if(!List.of("HEAVY","DISASTER","RESILIENCE","OTHER").contains(normalized))bad("分析类型筛选值不合法");
+            conditions.add("t.task_type=?");args.add(normalized);
+        }
+        String where=conditions.isEmpty()?"":" WHERE "+String.join(" AND ",conditions);
+        long total=jdbc.queryForObject("SELECT COUNT(*) FROM analysis_task t"+where,Long.class,args.toArray());
+        List<Object> dataArgs=new ArrayList<>(args);dataArgs.add(size);dataArgs.add(page*size);
+        List<Map<String,Object>> content=jdbc.queryForList("""
+            SELECT t.id,CONCAT(t.task_type,'-',LPAD(t.id,6,'0')) taskCode,
+                   t.task_name taskName,t.task_type taskType,t.status,
+                   t.created_at createdAt,t.completed_at completedAt,
+                   JSON_UNQUOTE(JSON_EXTRACT(t.input_json,'$.source')) source,
+                   COALESCE(x.resultCount,0) resultCount,
+                   COALESCE(x.assetCount,0) assetCount,COALESCE(x.regionCount,0) regionCount
+            FROM analysis_task t LEFT JOIN (
+                SELECT task_id,COUNT(*) resultCount,
+                       SUM(result_scope='ASSET') assetCount,SUM(result_scope='REGION') regionCount
+                FROM analysis_result GROUP BY task_id
+            ) x ON x.task_id=t.id
+            """+where+" ORDER BY t.created_at DESC,t.id DESC LIMIT ? OFFSET ?",dataArgs.toArray());
+        return page(content,page,size,total);
+    }
+
+    public Map<String,Object> analysisTask(long id,int page,int size){
+        Map<String,Object> task=queryOne("""
+            SELECT t.id,CONCAT(t.task_type,'-',LPAD(t.id,6,'0')) taskCode,
+                   t.task_name taskName,t.task_type taskType,t.status,
+                   t.created_at createdAt,t.started_at startedAt,t.completed_at completedAt,
+                   t.error_message errorMessage,CAST(t.input_json AS CHAR) inputJson
+            FROM analysis_task t WHERE t.id=?
+            """,id);
+        List<Map<String,Object>> summaries=jdbc.queryForList("""
+            SELECT CAST(result_json AS CHAR) resultJson FROM analysis_result
+            WHERE task_id=? AND result_scope='SUMMARY' ORDER BY id DESC LIMIT 1
+            """,id);
+        task.put("summaryJson",summaries.isEmpty()?null:summaries.get(0).get("resultJson"));
+        long total=jdbc.queryForObject("SELECT COUNT(*) FROM analysis_result WHERE task_id=? AND result_scope<>'SUMMARY'",Long.class,id);
+        List<Map<String,Object>> results=jdbc.queryForList("""
+            SELECT ar.id,ar.result_scope resultScope,ar.target_type targetType,ar.target_key targetKey,
+                   ar.status_code statusCode,ar.score,CAST(ar.result_json AS CHAR) resultJson,
+                   CASE WHEN ar.target_key='CHONGQING' THEN '重庆市总体'
+                        WHEN ar.result_scope='ASSET' THEN a.asset_name
+                        WHEN ar.result_scope='REGION' THEN rg.region_name
+                        ELSE NULL END targetName
+            FROM analysis_result ar
+            LEFT JOIN transport_asset a ON ar.result_scope='ASSET' AND a.id=CAST(ar.target_key AS UNSIGNED)
+            LEFT JOIN region rg ON ar.result_scope='REGION' AND rg.region_code=ar.target_key COLLATE utf8mb4_unicode_ci
+            WHERE ar.task_id=? AND ar.result_scope<>'SUMMARY'
+            ORDER BY ar.id LIMIT ? OFFSET ?
+            """,id,size,page*size);
+        task.put("results",page(results,page,size,total));
+        return task;
+    }
+
+    @Transactional("platformTransactionManager")
+    public void deleteAnalysisTask(long id){
+        if(jdbc.update("DELETE FROM analysis_task WHERE id=?",id)==0)notFound();
+    }
     private Map<String,Object> page(List<Map<String,Object>> c,int p,int s,long t){return Map.of("content",c,"page",p,"size",s,"totalElements",t,"totalPages",(t+s-1)/s);}
     private Map<String,Object> queryOne(String sql,Object...args){List<Map<String,Object>> rows=jdbc.queryForList(sql,args);if(rows.isEmpty())notFound();return new LinkedHashMap<>(rows.get(0));}
     private Map<String,Object> optionalOne(String sql,Object...args){List<Map<String,Object>> rows=jdbc.queryForList(sql,args);return rows.isEmpty()?new LinkedHashMap<>():new LinkedHashMap<>(rows.get(0));}

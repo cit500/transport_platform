@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/** 仅管理稳定的基础数据，不暴露尚未定型的业务配置表。 */
+/** 基础数据只读；桥隧设施与分析任务提供管理入口。 */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -39,13 +39,31 @@ public class AdminController {
     @GetMapping("/assets")
     public Object assets(@RequestParam(defaultValue="0") int page,
                          @RequestParam(defaultValue="20") int size,
-                         @RequestParam(required=false) String q){
-        return service.assets(Math.max(0,page),Math.min(Math.max(size,1),100),q);
+                         @RequestParam(required=false) String q,
+                         @RequestParam(required=false) String type){
+        return service.assets(Math.max(0,page),Math.min(Math.max(size,1),100),q,type);
     }
     @GetMapping("/assets/{id}") public Object asset(@PathVariable long id){return service.asset(id);}
     @PostMapping("/assets") public Object createAsset(@RequestBody Map<String,Object> body){return Map.of("id",service.saveAsset(null,body));}
     @PutMapping("/assets/{id}") public Object updateAsset(@PathVariable long id,@RequestBody Map<String,Object> body){return Map.of("id",service.saveAsset(id,body));}
-    @DeleteMapping("/assets/{id}") public Object closeAsset(@PathVariable long id){service.closeAsset(id);return Map.of("success",true);}
+    @PutMapping("/assets/{id}/status") public Object updateAssetStatus(@PathVariable long id,@RequestBody Map<String,Object> body){service.updateAssetStatus(id,body.get("serviceStatus"));return Map.of("success",true);}
+    @DeleteMapping("/assets/{id}") public Object deleteAsset(@PathVariable long id){service.deleteAsset(id);return Map.of("success",true);}
+
+    @GetMapping("/analysis-tasks")
+    public Object analysisTasks(@RequestParam(defaultValue="0") int page,
+                                @RequestParam(defaultValue="20") int size,
+                                @RequestParam(required=false) String q,
+                                @RequestParam(required=false) String type){
+        return service.analysisTasks(Math.max(0,page),Math.min(Math.max(size,1),100),q,type);
+    }
+    @GetMapping("/analysis-tasks/{id}")
+    public Object analysisTask(@PathVariable long id,
+                               @RequestParam(defaultValue="0") int page,
+                               @RequestParam(defaultValue="50") int size){
+        return service.analysisTask(id,Math.max(0,page),Math.min(Math.max(size,1),100));
+    }
+    @DeleteMapping("/analysis-tasks/{id}")
+    public Object deleteAnalysisTask(@PathVariable long id){service.deleteAnalysisTask(id);return Map.of("success",true);}
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String,String>> dataConflict(DataIntegrityViolationException exception){

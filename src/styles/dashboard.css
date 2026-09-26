@@ -411,10 +411,11 @@ button { color: inherit; }
 .result-condition { color: #f0ca50; }
 /* 禁止通行状态颜色（红色） */
 .result-deny { color: var(--v2-red); }
+.result-pending { color: #7894aa; }
 
 /* ==================== 区域风险概况面板 ==================== */
 /* 风险统计行 */
-.risk-summary-row { height: 100px; display: grid; grid-template-columns: 45% 50%; padding: 0 15px; }
+.risk-summary-row { height: 100px; display: grid; grid-template-columns: 42% 58%; padding: 0 12px; }
 /* 风险饼图 */
 .risk-pie-chart { min-width: 0; height: 100px; }
 /* 风险图例容器 */
@@ -435,6 +436,11 @@ button { color: inherit; }
 .region-risk-row strong { color: #a8d2e7; font-size: 12px; font-weight: 500; }
 /* 区域风险分数 */
 .region-risk-row small { color: #577e97;font-size: 9px; }
+.asset-damage-list { height: calc(100% - 139px); margin: 0 10px 8px; overflow-y: auto; }
+.asset-damage-row { display: grid; grid-template-columns: minmax(0, 1fr) 54px 42px; gap: 8px; align-items: center; min-height: 37px; padding: 6px 7px; border-bottom: 1px solid rgba(79, 137, 183, .16); }
+.asset-damage-row strong { display: block; min-width: 0; overflow: hidden; color: #d1e8f6; font-size: 12px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.asset-damage-score { color: #d9eafe; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.asset-damage-level { padding: 2px 0; border: 1px solid; border-radius: 4px; font-size: 11px; text-align: center; }
 
 /* ==================== 地图面板 ==================== */
 /* 地图面板容器 */
@@ -512,6 +518,10 @@ button { color: inherit; }
 .map-legend-item { display: flex; gap: 10px; align-items: center; color: #9cc3d7; font-size: 12px; white-space: nowrap; }
 /* 图例颜色点 */
 .map-legend-item i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 7px currentColor; }
+.metric-gradient-legend { min-width: 280px; gap: 7px; color: #a9c4d8; font-size: 11px; }
+.metric-gradient-legend i { width: 62px; height: 7px; border-radius: 999px; box-shadow: 0 0 9px rgba(91, 143, 249, .18); }
+.metric-gradient-legend i:first-of-type { background: linear-gradient(90deg, #ef6b75, #f6c85f); }
+.metric-gradient-legend i:last-of-type { background: linear-gradient(90deg, #f6c85f, #39c889); }
 
 /* ==================== 地质灾害动态滚动条 ==================== */
 /* 滚动条容器 */
@@ -544,6 +554,9 @@ button { color: inherit; }
 .selected-region-heading span { display: block; color: var(--v2-text-muted); font-size: 9px; }
 /* 区域名称 */
 .selected-region-heading strong { color: #d4eef8; font-size: 16px; font-weight: 500; }
+.resilience-reset { padding: 4px 7px; border: 1px solid rgba(91, 157, 255, .36); border-radius: 4px; color: #91bded; background: rgba(35, 71, 116, .2); font-size: 11px; cursor: pointer; }
+.resilience-reset:hover { color: #fff; border-color: #5b9dff; }
+.resilience-radar { width: calc(100% - 14px); height: calc(100% - 78px); min-height: 165px; margin: 0 7px; }
 /* 等级标签通用样式 */
 .level-badge { padding: 3px 7px; border: 1px solid currentColor; font-size: 9px !important; }
 /* 良好等级颜色（青色） */

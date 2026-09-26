@@ -39,6 +39,8 @@
 .dm-filter-bar { display:flex; align-items:center; gap:8px; margin:5px 0 16px; padding:11px; border:1px solid rgba(47,134,177,.26); background:rgba(5,30,50,.62); }
 .dm-filter-bar input { width:min(430px,46%); height:34px; padding:0 11px; border:1px solid rgba(60,155,196,.38); outline:none; color:#d5eff9; background:rgba(1,16,29,.8); }
 .dm-filter-bar input:focus { border-color:var(--v2-cyan); box-shadow:0 0 0 2px rgba(67,217,255,.08); }
+.dm-type-filter { height:34px; min-width:128px; padding:0 30px 0 11px; border:1px solid rgba(60,155,196,.38); outline:none; color:#d5eff9; background:#071a2b; font-size:12px; cursor:pointer; }
+.dm-type-filter:focus { border-color:var(--v2-cyan); box-shadow:0 0 0 2px rgba(67,217,255,.08); }
 .dm-filter-note { margin-left:auto; color:#5c879c; font-size:11px; }
 .dm-stat-grid { display:grid; grid-template-columns:repeat(3,minmax(160px,1fr)); gap:13px; margin-top:8px; }
 .dm-stat-card { min-height:110px; display:grid; align-content:center; gap:6px; padding:16px 18px; border:1px solid rgba(49,153,198,.34); background:linear-gradient(135deg,rgba(7,42,68,.78),rgba(2,21,38,.72)); }
@@ -66,6 +68,13 @@
 .dm-status.is-in_service { color:#65dda0; border-color:rgba(53,218,135,.38); }
 .dm-status.is-maintenance { color:#f1c960; border-color:rgba(239,210,83,.38); }
 .dm-status.is-closed { color:#e77c88; border-color:rgba(255,86,105,.38); }
+.dm-status-switch { display:inline-flex; align-items:center; gap:7px; padding:4px 8px 4px 5px; border:1px solid rgba(239,107,117,.32); border-radius:999px; color:#e88b94; background:rgba(92,31,42,.18); font-size:11px; cursor:pointer; transition:.16s ease; }
+.dm-status-switch i { position:relative; width:24px; height:14px; border-radius:999px; background:rgba(239,107,117,.35); }
+.dm-status-switch i::after { content:''; position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:#eaa0a6; transition:.16s ease; }
+.dm-status-switch.is-active { border-color:rgba(57,200,137,.34); color:#78ddb0; background:rgba(28,93,68,.18); }
+.dm-status-switch.is-active i { background:rgba(57,200,137,.48); }
+.dm-status-switch.is-active i::after { left:12px; background:#9af0c7; }
+.dm-status-switch:disabled { opacity:.5; cursor:wait; }
 .dm-pagination { display:flex; align-items:center; justify-content:flex-end; gap:12px; padding-top:13px; color:#6f98aa; font-size:11px; }
 .dm-pagination button { min-width:72px; height:30px; border:1px solid rgba(59,150,190,.35); background:rgba(5,37,61,.7); color:#82b5c9; cursor:pointer; }
 .dm-pagination button:disabled { opacity:.35; cursor:not-allowed; }
@@ -152,5 +161,18 @@
 .dm-dialog-actions { display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-top:1px solid rgba(47,143,184,.28); background:rgba(3,24,42,.94); }
 .dm-dialog-actions>span { color:#52798c; font-size:10px; }
 .dm-dialog-actions>div { display:flex; gap:9px; }
+.dm-analysis-dialog { width:min(1080px,90vw); }
+.dm-analysis-body { display:flex; flex-direction:column; gap:14px; }
+.dm-analysis-meta { display:flex; flex-wrap:wrap; gap:8px; }
+.dm-analysis-meta span { padding:5px 9px; border:1px solid rgba(91,143,249,.3); border-radius:4px; color:#a8c9e8; background:rgba(34,67,105,.25); font-size:12px; }
+.dm-analysis-snapshots { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.dm-analysis-snapshots details { min-width:0; border:1px solid rgba(91,143,249,.25); border-radius:6px; background:rgba(13,29,47,.7); }
+.dm-analysis-snapshots summary { padding:10px 12px; color:#aed2ef; font-size:13px; cursor:pointer; }
+.dm-analysis-snapshots pre { max-height:180px; overflow:auto; margin:0; padding:12px; border-top:1px solid rgba(91,143,249,.18); color:#9ebdd6; font:11px/1.55 Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+.dm-analysis-heading { display:flex; justify-content:space-between; align-items:center; color:#cce6f6; font-size:14px; }
+.dm-analysis-heading span { color:#87a9c0; font-size:12px; }
+.dm-analysis-results { flex:1; min-height:200px; }
+.dm-analysis-results table { min-width:700px; }
+.dm-analysis-results td:last-child { max-width:310px; overflow-wrap:anywhere; }
 @media(max-width:1380px) { .dm-workspace{grid-template-columns:220px minmax(0,1fr)} .dm-form-grid{grid-template-columns:repeat(3,minmax(0,1fr))} .dm-stat-grid{grid-template-columns:repeat(3,1fr)} }
 @media(max-height:820px) { .dm-shell{padding-top:10px}.dm-page-header{min-height:68px}.dm-main-content{padding-top:14px}.dm-form-section{margin-top:11px;padding:12px}.dm-form-section-flat{margin:0}.dm-form-grid{gap:8px}.dm-form-grid input,.dm-form-grid select{height:32px}.dm-dialog{height:94vh}.dm-dialog-backdrop{padding-top:2vh;padding-bottom:2vh} }

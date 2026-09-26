@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /** 灾害模块当前提供可替换的演示算法，结果统一写入通用分析表。 */
 @Service
@@ -32,14 +34,20 @@ public class DisasterService {
     @Transactional("platformTransactionManager")
     public Map<String,Object> evaluate(Map<String,Object> input){
         String hazard=text(input.get("hazardType"),"EARTHQUAKE");String name=text(input.get("taskName"),"灾害风险评估任务");
-        long id=store.start("DISASTER",name,input);double severity="EARTHQUAKE".equals(hazard)?number(input.get("pgaG"),.2)*3:number(input.get("accumulatedRainfallMm"),240)/500;
+        double severity="EARTHQUAKE".equals(hazard)?number(input.get("pgaG"),.2)*3:number(input.get("accumulatedRainfallMm"),240)/500;
         severity=Math.max(.15,Math.min(.95,severity));
+        Map<String,Object> storedInput=new LinkedHashMap<>(input);storedInput.put("eventType",hazard);
+        storedInput.putIfAbsent("occurredAt",LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+        if(!storedInput.containsKey("regionName")){String regionCode=text(input.get("regionCode"),null);List<String> names=regionCode==null?List.of():jdbc.queryForList("SELECT region_name FROM region WHERE region_code=?",String.class,regionCode);storedInput.put("regionName",names.isEmpty()?"重庆市":names.get(0));}
+        if("EARTHQUAKE".equals(hazard))storedInput.putIfAbsent("magnitude",number(input.get("magnitudeMw"),6.5));else storedInput.putIfAbsent("probability",round(severity*100));
+        long id=store.start("DISASTER",name,storedInput);
         List<Map<String,Object>> assets=new ArrayList<>();List<Map<String,Object>> assetRows=jdbc.queryForList("""
             SELECT id assetId,asset_name assetName,asset_type assetType,longitude,latitude FROM transport_asset WHERE service_status<>'CLOSED' ORDER BY id
             """);
         int[] damage=new int[5];int bridge=0,tunnel=0,index=0;
-        for(Map<String,Object> row:assetRows){int ds=Math.min(4,Math.max(0,(int)Math.round(severity*4-(index++%3)*.55)));damage[ds]++;if("BRIDGE".equals(row.get("assetType")))bridge++;else tunnel++;
-            Map<String,Object> item=new LinkedHashMap<>(row);item.put("damageState","DS"+ds);item.put("passabilityStatus",ds>=4?"BLOCKED":ds>=2?"CONDITIONAL":"PASS");item.put("assessmentReason","基于当前演示参数的规则结果");item.put("recommendedAction",ds>=3?"优先现场复核并设置交通管制":"保持巡检");assets.add(item);}
+        for(Map<String,Object> row:assetRows){int ordinal=index++;int estimatedDs=Math.min(4,Math.max(0,(int)Math.round(severity*4-(ordinal%3)*.55)));double probability=Math.min(100,round(estimatedDs*20+severity*18+ordinal%5));int ds=damageIndex(probability);String damageLevel="DS"+ds;damage[ds]++;if("BRIDGE".equals(row.get("assetType")))bridge++;else tunnel++;
+            Map<String,Object> item=new LinkedHashMap<>(row);item.put("damageState","DS"+ds);item.put("damageProbability",probability);item.put("damageLevel",damageLevel);item.put("passabilityStatus",ds>=4?"BLOCKED":ds>=2?"CONDITIONAL":"PASS");item.put("assessmentReason","基于当前演示参数的规则结果");item.put("recommendedAction",ds>=3?"优先现场复核并设置交通管制":"保持巡检");assets.add(item);
+            store.addResult(id,"ASSET","DISASTER_DAMAGE",String.valueOf(row.get("assetId")),damageLevel,probability,Map.of("assetId",row.get("assetId"),"damageProbability",probability,"damageLevel",damageLevel,"damageState","DS"+ds));}
         List<Map<String,Object>> roads=new ArrayList<>();for(Map<String,Object> row:jdbc.queryForList("""
             SELECT id roadEdgeId,road_name roadName,road_ref roadRef,length_m lengthM FROM road_edge
             WHERE source_bridge_flag=TRUE OR source_tunnel_flag=TRUE ORDER BY id LIMIT 80
@@ -53,4 +61,5 @@ public class DisasterService {
     private static String text(Object v,String d){return v==null||String.valueOf(v).isBlank()?d:String.valueOf(v);}
     private static double number(Object v,double d){try{return v==null?d:Double.parseDouble(String.valueOf(v));}catch(Exception e){return d;}}
     private static double round(double v){return Math.round(v*100.0)/100.0;}
+    private static int damageIndex(double value){return value<20?0:value<40?1:value<60?2:value<80?3:4;}
 }

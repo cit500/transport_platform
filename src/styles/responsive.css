@@ -38,7 +38,7 @@
     /* 缩小风险统计行和饼图高度 */
     .risk-summary-row, .risk-pie-chart { height: 86px; }
     /* 调整区域风险列表滚动区高度计算 */
-    .region-risk-scroll { height: calc(100% - 117px); }
+    .region-risk-scroll, .asset-damage-list { height: calc(100% - 117px); }
     /* 缩小韧性摘要区和仪表盘高度 */
     .resilience-summary, .resilience-gauge { height: 105px; }
     /* 缩小韧性进度条间距 */
