@@ -101,10 +101,9 @@ onMounted(async()=>{try{await Promise.all([platform.loadDashboard(),platform.loa
 </aside>
 <section class="dashboard-center-column">
   <section class="map-panel" :class="{'is-administrative':baseLayer==='administrative'}">
-    <TransportMap ref="mapRef" class-name="overview-map" :class="{'is-administrative':baseLayer==='administrative'}" :regions="mapData.regions" :region-details="dashboard.regions" :region-indicator="indicator" :roads="mapData.roads" :assets="mapData.assets?.features?.map(f=>({...f.properties,longitude:f.geometry?.coordinates?.[0],latitude:f.geometry?.coordinates?.[1]}))||[]" :default-layer-visibility="visibleLayers" default-base="administrative" :relief="true" :show-region-labels="baseLayer==='administrative'" @region-click="selectedRegion=$event.details"/>
-    <div class="map-grid-overlay" :class="{'is-relief-grid':baseLayer==='administrative'}"></div>
-    <div v-if="baseLayer==='administrative'" class="indicator-switcher" aria-label="行政区指标着色">
-      <span class="indicator-heading">指标着色</span>
+    <TransportMap ref="mapRef" class-name="overview-map" :class="{'is-administrative':baseLayer==='administrative'}" :regions="mapData.regions" :region-details="dashboard.regions" :region-indicator="indicator" :roads="mapData.roads" :assets="mapData.assets?.features?.map(f=>({...f.properties,longitude:f.geometry?.coordinates?.[0],latitude:f.geometry?.coordinates?.[1]}))||[]" :default-layer-visibility="visibleLayers" default-base="administrative" :decorated-regions="true" :show-region-labels="baseLayer==='administrative'" @region-click="selectedRegion=$event.details"/>
+    <div class="map-grid-overlay" :class="{'is-district-grid':baseLayer==='administrative'}"></div>
+    <div v-if="baseLayer==='administrative'" class="indicator-switcher" aria-label="行政区指标">
       <button v-for="item in indicatorOptions" :key="item[0]" class="indicator-button" :class="{'is-active':indicator===item[0]}" :aria-pressed="indicator===item[0]" @click="toggleIndicator(item[0])">{{ item[1] }}</button>
     </div>
     <form class="map-search-box" @submit.prevent="findRegion"><input v-model="search" type="search" placeholder="搜索行政区"><button title="搜索">⌕</button></form>
@@ -124,7 +123,7 @@ onMounted(async()=>{try{await Promise.all([platform.loadDashboard(),platform.loa
     </div>
     <div class="map-caption"><span class="pulse-dot"></span><span>{{ selectedRegion?.regionName||'重庆市' }} · {{ baseLayer==='administrative' ? indicatorLabel : baseLayer==='satellite' ? '卫星地图' : '电子地图' }}</span></div>
     <div v-if="baseLayer==='administrative' && indicator" class="dynamic-map-legend metric-gradient-legend" :aria-label="`${indicatorLabel}连续颜色图例`"><span>低 0</span><i></i><span>50 中</span><i></i><span>100 高</span></div>
-    <div v-else-if="baseLayer==='administrative'" class="map-relief-hint">悬停区县查看详情 · 点击指标可为区划着色</div>
+    <div v-else-if="baseLayer==='administrative'" class="map-district-hint">悬停区县查看详情 · 点击指标可为区划着色</div>
   </section>
   <section class="geological-ticker"><div class="ticker-label"><span class="alert-pulse"></span>灾害动态</div><div class="ticker-viewport"><div class="ticker-track"><span v-for="n in dashboard.hazardNotices" :key="n.id" class="ticker-event">{{ n.regionName }} · {{ n.content }}</span></div></div></section>
 </section>

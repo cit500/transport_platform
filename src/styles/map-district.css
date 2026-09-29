@@ -1,4 +1,4 @@
-/* 首页行政区模式：深色底盘、区县浮雕和引线标签。 */
+/* 首页行政区模式：深色网格、发光区县边界和引线标签。 */
 .map-panel { overflow: clip; }
 
 .map-panel.is-administrative {
@@ -15,7 +15,7 @@
     background-size: auto, 36px 36px, 36px 36px, auto;
 }
 
-.map-grid-overlay.is-relief-grid {
+.map-grid-overlay.is-district-grid {
     opacity: .6;
     background-image:
         radial-gradient(ellipse at 50% 48%, transparent 35%, rgba(0, 5, 13, .7) 100%),
@@ -24,29 +24,21 @@
     background-size: auto, 72px 72px, 72px 72px;
 }
 
-.overview-map .relief-region-shape {
+.overview-map .district-region-shape {
     stroke-linejoin: round;
-    filter:
-        drop-shadow(0 3px 0 #082237)
-        drop-shadow(0 6px 0 #061a2b)
-        drop-shadow(0 12px 8px rgba(0, 3, 12, .88))
-        drop-shadow(0 0 4px rgba(64, 223, 255, .52));
+    filter: drop-shadow(0 0 4px rgba(64, 223, 255, .52));
     transition: fill .24s ease, fill-opacity .2s ease, stroke .2s ease, stroke-width .2s ease, filter .2s ease;
 }
 
-.overview-map .relief-region-shape.is-region-hovered {
-    filter:
-        drop-shadow(0 4px 0 #0d3852)
-        drop-shadow(0 8px 0 #082336)
-        drop-shadow(0 15px 13px rgba(0, 3, 12, .95))
-        drop-shadow(0 0 9px rgba(112, 239, 255, .95));
+.overview-map .district-region-shape.is-region-hovered {
+    filter: drop-shadow(0 0 9px rgba(112, 239, 255, .95));
 }
 
-.region-relief-label-marker,
-.region-relief-label-marker * { pointer-events: none !important; }
-.region-relief-label-marker { border: 0; background: transparent; }
+.district-label-marker,
+.district-label-marker * { pointer-events: none !important; }
+.district-label-marker { border: 0; background: transparent; }
 
-.region-relief-pin {
+.district-pin {
     position: absolute;
     left: -5px;
     top: -5px;
@@ -58,7 +50,7 @@
     box-shadow: 0 0 0 4px rgba(42, 210, 246, .15), 0 0 13px 3px rgba(56, 223, 255, .86);
 }
 
-.region-relief-leader {
+.district-leader {
     position: absolute;
     left: 5px;
     top: -19px;
@@ -70,7 +62,7 @@
     box-shadow: 0 0 5px rgba(68, 218, 255, .65);
 }
 
-.region-relief-label {
+.district-label {
     position: absolute;
     left: 23px;
     top: -41px;
@@ -91,7 +83,7 @@
     white-space: nowrap;
 }
 
-.region-relief-label em {
+.district-label em {
     padding-left: 6px;
     border-left: 1px solid rgba(103, 211, 240, .4);
     color: #a7efff;
@@ -99,11 +91,11 @@
     font-variant-numeric: tabular-nums;
 }
 
-.region-relief-label-marker.is-label-suppressed .region-relief-label,
-.region-relief-label-marker.is-label-suppressed .region-relief-leader { display: none; }
-.region-relief-label-marker.is-label-highlight .region-relief-label { display: flex; border-color: #c1f6ff; box-shadow: 0 0 18px rgba(70, 228, 255, .72); }
-.region-relief-label-marker.is-label-highlight .region-relief-leader { display: block; }
-.region-relief-label-marker.is-label-highlight .region-relief-pin { background: #f3ffff; box-shadow: 0 0 0 6px rgba(75, 226, 255, .2), 0 0 18px 5px #59e5ff; }
+.district-label-marker.is-label-suppressed .district-label,
+.district-label-marker.is-label-suppressed .district-leader { display: none; }
+.district-label-marker.is-label-highlight .district-label { display: flex; border-color: #c1f6ff; box-shadow: 0 0 18px rgba(70, 228, 255, .72); }
+.district-label-marker.is-label-highlight .district-leader { display: block; }
+.district-label-marker.is-label-highlight .district-pin { background: #f3ffff; box-shadow: 0 0 0 6px rgba(75, 226, 255, .2), 0 0 18px 5px #59e5ff; }
 
 /* 地图模式三选一；业务叠加仅出现在影像或电子地图中。 */
 .map-layer-popover { width: 250px; z-index: 800; }
@@ -117,9 +109,8 @@
 .map-layer-hint { margin: 0; color: #83a9bd; font-size: 11px; line-height: 1.6; }
 
 .indicator-switcher { align-items: center; gap: 2px; }
-.indicator-heading { padding: 0 7px; color: #83aabd; font-size: 11px; white-space: nowrap; }
 .indicator-button { min-width: 82px; padding: 7px 8px; }
-.map-relief-hint {
+.map-district-hint {
     position: absolute;
     top: 14px;
     right: 16px;
@@ -134,11 +125,10 @@
 }
 
 @media (max-width: 1450px) {
-    .indicator-heading { display: none; }
     .indicator-button { min-width: 74px; padding: 7px 5px; font-size: 11px; }
-    .map-relief-hint { max-width: 205px; text-align: right; }
+    .map-district-hint { max-width: 205px; text-align: right; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .overview-map .relief-region-shape { transition: none; }
+    .overview-map .district-region-shape { transition: none; }
 }
