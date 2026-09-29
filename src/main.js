@@ -9,5 +9,6 @@ import './styles/heavy.css';
 import './styles/disaster.css';
 import './styles/resilience.css';
 import './styles/ui-system.css';
+import './styles/map-relief.css';
 
 createApp(App).use(createPinia()).use(router).mount('#app');

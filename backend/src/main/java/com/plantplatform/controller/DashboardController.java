@@ -47,13 +47,15 @@ public class DashboardController {
         Map<String,Map<String,Object>> metrics = new LinkedHashMap<>();
         for(Map<String,Object> row:dashboardData.regions())metrics.put(String.valueOf(row.get("regionCode")),row);
         String sql = """
-            SELECT region_code,region_name,ST_AsGeoJSON(geom,6) geometry_json
+            SELECT region_code,region_name,center_longitude,center_latitude,ST_AsGeoJSON(geom,6) geometry_json
             FROM region ORDER BY region_code
             """;
         return geoJsonStream(sql, rs -> {
             Map<String, Object> p = new LinkedHashMap<>();
             p.put("regionCode", rs.getString("region_code"));
             p.put("regionName", rs.getString("region_name"));
+            p.put("centerLongitude", rs.getBigDecimal("center_longitude"));
+            p.put("centerLatitude", rs.getBigDecimal("center_latitude"));
             Map<String,Object> detail=metrics.get(rs.getString("region_code"));
             if(detail!=null)p.putAll(detail);
             return geoJsonFeature(rs.getString("geometry_json"), p);

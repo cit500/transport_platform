@@ -15,6 +15,7 @@ const props = defineProps({
         default: () => ({ regions: true, roads: true, assets: true })
     },
     defaultBase: { type: String, default: 'satellite' },
+    relief: { type: Boolean, default: false },
     outlineRegions: { type: Boolean, default: false },
     regionIndicator: { type: String, default: 'resilienceIndex' },
     showRegionLabels: { type: Boolean, default: false },
@@ -26,6 +27,9 @@ const emit = defineEmits(['region-click', 'asset-click']);
 const element = ref();
 let map;
 let regionLayer;
+let reliefRenderer;
+let regionLabelLayer;
+let regionLabelEntries = [];
 let roadLayer;
 let assetLayer;
 let routeLayer;
@@ -33,6 +37,7 @@ let baseLayer;
 let satellite;
 let electronic;
 let selectedRegionName = '';
+let initialRegionFit = false;
 const layerVisibility = {
     regions: props.defaultLayerVisibility.regions !== false,
     roads: props.defaultLayerVisibility.roads !== false,
@@ -49,9 +54,9 @@ function regionDetail(feature) {
     ) || properties;
 }
 function metricColor(value) {
-    if (value == null || value === '') return '#526f84';
+    if (value == null || value === '') return props.relief ? '#124766' : '#526f84';
     const score = Number(value);
-    if (!Number.isFinite(score)) return '#526f84';
+    if (!Number.isFinite(score)) return props.relief ? '#124766' : '#526f84';
     const normalized = Math.max(0, Math.min(100, score));
     const stops = normalized <= 50
         ? [[239, 107, 117], [246, 200, 95], normalized / 50]
@@ -66,11 +71,12 @@ function regionStyle(feature) {
     const detail = regionDetail(feature);
     const value = detail[props.regionIndicator];
     return {
-        color: selected ? '#15191d' : '#3c444b',
-        weight: selected ? 2.6 : 1.15,
+        className: props.relief ? 'relief-region-shape' : '',
+        color: props.relief ? (selected ? '#d8fbff' : '#50d7f3') : (selected ? '#15191d' : '#3c444b'),
+        weight: selected ? 2.6 : props.relief ? 1.45 : 1.15,
         opacity: .96,
         fillColor: metricColor(value),
-        fillOpacity: props.outlineRegions ? 0 : (selected ? .72 : .56)
+        fillOpacity: props.outlineRegions ? 0 : props.relief ? (selected ? .95 : .83) : (selected ? .72 : .56)
     };
 }
 function popupContent(feature) {
@@ -79,22 +85,78 @@ function popupContent(feature) {
     return `<div class="region-map-popup"><strong>${escapeHtml(name)}</strong><div><span>韧性指数</span><b>${numberText(item.resilienceIndex, 1, ' 分')}</b></div><div><span>路网连通度</span><b>${numberText(item.connectivityScore, 1, ' 分')}</b></div><div><span>灾害恢复能力</span><b>${numberText(item.recoveryCapacity, 1, ' 分')}</b></div></div>`;
 }
 
+function refreshRegionLabels() {
+    if (!map || !regionLabelLayer || !map.hasLayer(regionLabelLayer)) return;
+    const occupied = [];
+    for (const entry of regionLabelEntries) {
+        const icon = entry.marker.getElement();
+        if (!icon) continue;
+        const point = map.latLngToContainerPoint(entry.position);
+        const width = entry.name.length > 5 ? 110 : 82;
+        const box = { left: point.x + 19, right: point.x + 19 + width, top: point.y - 37, bottom: point.y - 8 };
+        const inView = box.right > 0 && box.left < map.getSize().x && box.bottom > 0 && box.top < map.getSize().y;
+        const crowded = occupied.some((other) => box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top);
+        icon.classList.toggle('is-label-suppressed', !inView || crowded);
+        if (inView && !crowded) occupied.push(box);
+    }
+}
+
+function addRegionLabel(feature, layer, name) {
+    const centerLatitude = Number(feature.properties?.centerLatitude);
+    const centerLongitude = Number(feature.properties?.centerLongitude);
+    const position = feature.properties?.centerLatitude != null && feature.properties?.centerLongitude != null
+        && Number.isFinite(centerLatitude) && Number.isFinite(centerLongitude)
+        ? L.latLng(centerLatitude, centerLongitude) : layer.getBounds().getCenter();
+    const detail = regionDetail(feature);
+    const metric = props.regionIndicator ? detail[props.regionIndicator] : null;
+    const value = metric == null ? '' : `<em>${numberText(metric, 1)}</em>`;
+    const icon = L.divIcon({
+        className: 'region-relief-label-marker',
+        html: `<span class="region-relief-pin"></span><span class="region-relief-leader"></span><span class="region-relief-label">${escapeHtml(name)}${value}</span>`,
+        iconSize: [1, 1], iconAnchor: [0, 0]
+    });
+    const marker = L.marker(position, { icon, interactive: false, keyboard: false });
+    marker.addTo(regionLabelLayer);
+    regionLabelEntries.push({ marker, position, name });
+}
+
+function fitRegions() {
+    if (map && regionLayer?.getBounds().isValid()) {
+        map.fitBounds(regionLayer.getBounds(), { padding: [36, 38], maxZoom: 8 });
+    }
+}
+
 function renderRegions() {
     if (!map || !props.regions) return;
     regionLayer?.remove();
+    regionLabelLayer?.remove();
+    regionLabelLayer = props.relief ? L.layerGroup() : null;
+    regionLabelEntries = [];
     regionLayer = L.geoJSON(props.regions, {
+        renderer: reliefRenderer || undefined,
         style: regionStyle,
         onEachFeature(feature, layer) {
             const name = feature.properties?.regionName || feature.properties?.name || feature.properties?.NAME;
-            if (name) layer.bindTooltip(name, props.showRegionLabels ? {
+            if (name && props.relief && props.showRegionLabels) addRegionLabel(feature, layer, name);
+            if (name && !props.relief) layer.bindTooltip(name, props.showRegionLabels ? {
                 permanent: true,
                 direction: 'center',
                 className: 'region-name-label'
             } : undefined);
             layer.bindPopup(popupContent(feature), { closeButton: true, maxWidth: 260 });
             layer.on({
-                mouseover() { layer.setStyle({ color: '#20262b', weight: 2.3, fillOpacity: props.outlineRegions ? 0 : .68 }); },
-                mouseout() { layer.setStyle(regionStyle(feature)); },
+                mouseover() {
+                    layer.setStyle(props.relief
+                        ? { color: '#e0fbff', weight: 2.8, fillOpacity: .98 }
+                        : { color: '#20262b', weight: 2.3, fillOpacity: props.outlineRegions ? 0 : .68 });
+                    layer.getElement()?.classList.add('is-region-hovered');
+                    regionLabelEntries.find((entry) => entry.name === name)?.marker.getElement()?.classList.add('is-label-highlight');
+                },
+                mouseout() {
+                    layer.setStyle(regionStyle(feature));
+                    layer.getElement()?.classList.remove('is-region-hovered');
+                    regionLabelEntries.find((entry) => entry.name === name)?.marker.getElement()?.classList.remove('is-label-highlight');
+                },
                 click() {
                     selectRegion(name);
                     emit('region-click', { name, feature, details: regionDetail(feature), layer });
@@ -102,7 +164,15 @@ function renderRegions() {
             });
         }
     });
-    if (layerVisibility.regions) regionLayer.addTo(map);
+    if (layerVisibility.regions) {
+        regionLayer.addTo(map);
+        regionLabelLayer?.addTo(map);
+        if (props.relief && !initialRegionFit && regionLayer.getBounds().isValid()) {
+            fitRegions();
+            initialRegionFit = true;
+        }
+        requestAnimationFrame(refreshRegionLabels);
+    }
 }
 
 function renderRoads() {
@@ -135,7 +205,8 @@ function renderAssets() {
 }
 
 onMounted(() => {
-    map = L.map(element.value, { zoomControl: false, attributionControl: false, preferCanvas: true, minZoom: mapConfig.minZoom, maxZoom: mapConfig.maxZoom }).setView(props.center, props.zoom);
+    map = L.map(element.value, { zoomControl: false, attributionControl: false, preferCanvas: true, minZoom: mapConfig.minZoom, maxZoom: mapConfig.maxZoom, zoomSnap: props.relief ? .25 : 1 }).setView(props.center, props.zoom);
+    reliefRenderer = props.relief ? L.svg({ padding: .2 }) : null;
     ({ satellite, electronic } = createBaseLayers());
     baseLayer = null;
     if (!['administrative', 'none'].includes(props.defaultBase)) {
@@ -146,14 +217,19 @@ onMounted(() => {
     if (layerVisibility.assets) assetLayer.addTo(map);
     routeLayer = L.layerGroup().addTo(map);
     renderRegions(); renderRoads(); renderAssets();
+    map.on('zoomend moveend', refreshRegionLabels);
+    map.on('resize', () => {
+        if (props.relief && layerVisibility.regions && regionLayer?.getBounds().isValid()) {
+            fitRegions();
+        }
+        refreshRegionLabels();
+    });
 });
 onBeforeUnmount(() => { map?.remove(); map = null; });
 watch(() => props.regions, renderRegions, { deep: true });
 watch(() => props.regionDetails, renderRegions, { deep: true });
 watch(() => props.showRegionLabels, renderRegions);
-watch(() => [props.outlineRegions, props.regionIndicator], () => {
-    regionLayer?.eachLayer((item) => item.setStyle(regionStyle(item.feature)));
-});
+watch(() => [props.outlineRegions, props.regionIndicator], renderRegions);
 watch(() => [props.roads, props.roadResults], renderRoads, { deep: true });
 watch(() => props.assets, renderAssets, { deep: true });
 
@@ -171,6 +247,10 @@ function drawRoutes(paths = []) {
     if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 13 });
 }
 function focus(lat, lng, zoom = 13) { map?.flyTo([Number(lat), Number(lng)], zoom, { duration: .5 }); }
+function reset() {
+    if (props.relief && layerVisibility.regions) fitRegions();
+    else map?.setView(props.center, props.zoom);
+}
 function selectRegion(name) {
     selectedRegionName = name || null;
     regionLayer?.eachLayer((item) => item.setStyle(regionStyle(item.feature)));
@@ -181,8 +261,16 @@ function toggleLayer(name, show) {
     if (!layer) return;
     layerVisibility[name] = show;
     if (show) layer.addTo(map); else map.removeLayer(layer);
+    if (name === 'regions' && regionLabelLayer) {
+        if (show) { regionLabelLayer.addTo(map); requestAnimationFrame(refreshRegionLabels); }
+        else map.removeLayer(regionLabelLayer);
+    }
+    if (name === 'regions' && show && props.relief && !initialRegionFit) {
+        fitRegions();
+        initialRegionFit = true;
+    }
 }
-defineExpose({ zoomIn: () => map?.zoomIn(), zoomOut: () => map?.zoomOut(), reset: () => map?.setView(props.center, props.zoom), setBase, drawRoutes, focus, toggleLayer, selectRegion });
+defineExpose({ zoomIn: () => map?.zoomIn(), zoomOut: () => map?.zoomOut(), reset, setBase, drawRoutes, focus, toggleLayer, selectRegion });
 </script>
 
 <template><div ref="element" :class="className"></div></template>

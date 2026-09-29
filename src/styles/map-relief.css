@@ -1,0 +1,144 @@
+/* 首页行政区模式：深色底盘、区县浮雕和引线标签。 */
+.map-panel { overflow: clip; }
+
+.map-panel.is-administrative {
+    background: radial-gradient(ellipse at 50% 42%, #143650 0%, #071a2d 48%, #020911 100%);
+}
+
+.overview-map.is-administrative {
+    background-color: #041321;
+    background-image:
+        radial-gradient(ellipse at 52% 42%, rgba(38, 115, 152, .27), transparent 60%),
+        linear-gradient(rgba(45, 153, 190, .095) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45, 153, 190, .095) 1px, transparent 1px),
+        linear-gradient(180deg, #092238, #030c18);
+    background-size: auto, 36px 36px, 36px 36px, auto;
+}
+
+.map-grid-overlay.is-relief-grid {
+    opacity: .6;
+    background-image:
+        radial-gradient(ellipse at 50% 48%, transparent 35%, rgba(0, 5, 13, .7) 100%),
+        linear-gradient(rgba(72, 191, 222, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(72, 191, 222, .035) 1px, transparent 1px);
+    background-size: auto, 72px 72px, 72px 72px;
+}
+
+.overview-map .relief-region-shape {
+    stroke-linejoin: round;
+    filter:
+        drop-shadow(0 3px 0 #082237)
+        drop-shadow(0 6px 0 #061a2b)
+        drop-shadow(0 12px 8px rgba(0, 3, 12, .88))
+        drop-shadow(0 0 4px rgba(64, 223, 255, .52));
+    transition: fill .24s ease, fill-opacity .2s ease, stroke .2s ease, stroke-width .2s ease, filter .2s ease;
+}
+
+.overview-map .relief-region-shape.is-region-hovered {
+    filter:
+        drop-shadow(0 4px 0 #0d3852)
+        drop-shadow(0 8px 0 #082336)
+        drop-shadow(0 15px 13px rgba(0, 3, 12, .95))
+        drop-shadow(0 0 9px rgba(112, 239, 255, .95));
+}
+
+.region-relief-label-marker,
+.region-relief-label-marker * { pointer-events: none !important; }
+.region-relief-label-marker { border: 0; background: transparent; }
+
+.region-relief-pin {
+    position: absolute;
+    left: -5px;
+    top: -5px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #d9fbff;
+    border-radius: 50%;
+    background: #25d7f4;
+    box-shadow: 0 0 0 4px rgba(42, 210, 246, .15), 0 0 13px 3px rgba(56, 223, 255, .86);
+}
+
+.region-relief-leader {
+    position: absolute;
+    left: 5px;
+    top: -19px;
+    width: 23px;
+    height: 1px;
+    transform: rotate(-34deg);
+    transform-origin: left center;
+    background: linear-gradient(90deg, rgba(82, 222, 255, .95), rgba(82, 222, 255, .38));
+    box-shadow: 0 0 5px rgba(68, 218, 255, .65);
+}
+
+.region-relief-label {
+    position: absolute;
+    left: 23px;
+    top: -41px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 22px;
+    padding: 2px 6px;
+    border: 1px solid rgba(91, 219, 255, .55);
+    border-radius: 3px;
+    color: #e2f8ff;
+    background: linear-gradient(110deg, rgba(13, 53, 76, .97), rgba(3, 24, 43, .92));
+    box-shadow: 0 0 10px rgba(21, 174, 221, .26), 0 5px 12px rgba(0, 4, 12, .5);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.region-relief-label em {
+    padding-left: 6px;
+    border-left: 1px solid rgba(103, 211, 240, .4);
+    color: #a7efff;
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+}
+
+.region-relief-label-marker.is-label-suppressed .region-relief-label,
+.region-relief-label-marker.is-label-suppressed .region-relief-leader { display: none; }
+.region-relief-label-marker.is-label-highlight .region-relief-label { display: flex; border-color: #c1f6ff; box-shadow: 0 0 18px rgba(70, 228, 255, .72); }
+.region-relief-label-marker.is-label-highlight .region-relief-leader { display: block; }
+.region-relief-label-marker.is-label-highlight .region-relief-pin { background: #f3ffff; box-shadow: 0 0 0 6px rgba(75, 226, 255, .2), 0 0 18px 5px #59e5ff; }
+
+/* 地图模式三选一；业务叠加仅出现在影像或电子地图中。 */
+.map-layer-popover { width: 250px; z-index: 800; }
+.map-layer-section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.map-layer-section-title small { color: #7398af; font-size: 10px; }
+.map-base-options { gap: 6px; }
+.map-base-options button { min-height: 46px; padding: 5px 3px; font-size: 11px; }
+.map-base-options button.is-active { border-color: #5be1fa; color: #e1faff; background: rgba(23, 111, 152, .55); }
+.map-layer-popover label { display: flex; align-items: center; gap: 5px; min-height: 26px; }
+.map-layer-popover input[type='checkbox'] { accent-color: #42cfff; }
+.map-layer-hint { margin: 0; color: #83a9bd; font-size: 11px; line-height: 1.6; }
+
+.indicator-switcher { align-items: center; gap: 2px; }
+.indicator-heading { padding: 0 7px; color: #83aabd; font-size: 11px; white-space: nowrap; }
+.indicator-button { min-width: 82px; padding: 7px 8px; }
+.map-relief-hint {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    z-index: 500;
+    padding: 7px 10px;
+    border: 1px solid rgba(67, 173, 212, .22);
+    border-radius: 4px;
+    color: #9ac8da;
+    background: rgba(8, 28, 44, .82);
+    font-size: 11px;
+    backdrop-filter: blur(8px);
+}
+
+@media (max-width: 1450px) {
+    .indicator-heading { display: none; }
+    .indicator-button { min-width: 74px; padding: 7px 5px; font-size: 11px; }
+    .map-relief-hint { max-width: 205px; text-align: right; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .overview-map .relief-region-shape { transition: none; }
+}

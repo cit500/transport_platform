@@ -9,7 +9,7 @@
 - `GET /map/roads`
 - `GET /map/assets`
 
-`/dashboard/bootstrap` 中的 `heavyResults` 和 `damageResults` 以当前全部桥隧为底册，对每处设施分别读取最近一次成功评估；新任务只覆盖其涉及的设施，其余设施沿用自身上次结果，从未评估的设施保留在列表中且结果为 `null`。`passSummary` 的 `totalCount` 为全部设施数，`assessedCount` 为已有通行结论的设施数，通行率仅以已评估设施为分母。`damageDistribution` 按当前设施最新受损概率统计 DS0（0–<20%）、DS1（20–<40%）、DS2（40–<60%）、DS3（60–<80%）、DS4（80–100%），未评估设施不计入五级饼图。`regions` 同样按区划保留最近一次成功韧性结果；`resilienceOverall` 读取最近一次重庆市总体结果。`/map/regions` 仅附加韧性指数、路网连通度和灾害恢复能力三项指标。
+`/dashboard/bootstrap` 中的 `heavyResults` 和 `damageResults` 以当前全部桥隧为底册，对每处设施分别读取最近一次成功评估；新任务只覆盖其涉及的设施，其余设施沿用自身上次结果，从未评估的设施保留在列表中且结果为 `null`。`passSummary` 的 `totalCount` 为全部设施数，`assessedCount` 为已有通行结论的设施数，通行率仅以已评估设施为分母。`damageDistribution` 按当前设施最新受损概率统计 DS0（0–<20%）、DS1（20–<40%）、DS2（40–<60%）、DS3（60–<80%）、DS4（80–100%），未评估设施不计入五级饼图。`regions` 同样按区划保留最近一次成功韧性结果；`resilienceOverall` 读取最近一次重庆市总体结果。`/map/regions` 提供区县中心经纬度，并附加韧性指数、路网连通度和灾害恢复能力三项指标。
 
 ## 基础数据管理
 
