@@ -23,8 +23,8 @@
     :root { --header-height: 62px; }
     /* 调整左侧列行比例，上方更小，下方更大 */
     .dashboard-left-column { grid-template-rows: .72fr 2.28fr; }
-    /* 调整右侧列三行比例（韧性概况增加，数字人降低） */
-    .dashboard-right-column { grid-template-rows: 1fr 1.1fr 0.7fr; }
+    /* 调整右侧列三行比例（韧性概况与助手面板保持可用高度） */
+    .dashboard-right-column { grid-template-rows: 1fr 1.05fr 0.85fr; }
     /* 缩小面板标题高度、底部间距和字体 */
     .tech-panel-title { height: 25px; margin-bottom: 3px; font-size: 12px; }
     /* 调整演示标签和助手状态位置，向上移动 */
@@ -33,22 +33,16 @@
     .vehicle-summary { min-height: 36px; margin-bottom: 2px; }
     /* 缩小通行率图表行和仪表盘高度 */
     .pass-rate-row, .pass-gauge { height: 68px; }
-    /* 调整结果列表滚动区高度计算 */
-    .result-scroll { height: calc(100% - 143px); }
     /* 缩小风险统计行和饼图高度 */
     .risk-summary-row, .risk-pie-chart { height: 86px; }
-    /* 调整区域风险列表滚动区高度计算 */
-    .region-risk-scroll, .asset-damage-list { height: calc(100% - 117px); }
     /* 缩小韧性摘要区和仪表盘高度 */
     .resilience-summary, .resilience-gauge { height: 105px; }
     /* 缩小韧性进度条间距 */
     .resilience-bars { gap: 5px; }
-    /* 缩小助手舞台区高度 */
-    .assistant-stage { height: 84px; }
-    /* 缩小助手头像（缩放82%） */
-    .assistant-avatar { transform: scale(.82); }
-    /* 调整聊天区域高度计算 */
-    .assistant-chat { height: calc(100% - 213px); }
+    /* 缩小助手舞台区高度和头像 */
+    .assistant-stage { height: 70px; }
+    .assistant-avatar { transform: scale(.7); }
+    /* 聊天区已改为弹性布局，无需固定高度计算 */
 }
 
 /* 当屏幕宽度小于等于1280px时的适配（小屏场景） */

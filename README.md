@@ -20,6 +20,14 @@ $env:PLANT_DB_PASSWORD = 'your-password'
 mvn spring-boot:run
 ```
 
+数字人助手使用智谱 GLM 大模型（glm-4-flash，支持联网搜索与数据库只读工具调用），后端代码预留 Kimi 等兼容模型接口。API Key 通过环境变量 `PLANT_LLM_API_KEY` 注入，不将真实密钥写入仓库；未配置时助手自动回退预置问答。
+
+本地密钥可保存在 Git 忽略的 `.env.llm.local` 中；启动后端前，在项目根目录执行以下命令加载到当前 PowerShell 会话（不会自动加载）：
+
+```powershell
+$env:PLANT_LLM_API_KEY = (Get-Content -LiteralPath .env.llm.local -Raw).Trim() -replace '^PLANT_LLM_API_KEY=', ''
+```
+
 ```powershell
 npm install
 npm run dev

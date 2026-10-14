@@ -432,14 +432,12 @@ button:disabled { opacity: .52; cursor: not-allowed; }
 .resilience-kpi-grid span,
 .resilience-kpi-grid small,
 .capacity-mapping span,
-.region-hint,
-.assistant-disclaimer { font-size: 11px; line-height: 1.5; }
+.region-hint { font-size: 11px; line-height: 1.5; }
 .heavy-asset-item strong,
 .recommendation-item strong,
 .od-result-item strong,
 .critical-road-item strong { font-size: 13px; }
 .region-risk-row small,
-.selected-region-heading span,
 .resilience-bar-row strong,
 .assistant-avatar > span,
 .assistant-input-row button,
@@ -474,7 +472,6 @@ button:disabled { opacity: .52; cursor: not-allowed; }
 .map-caption,
 .map-legend-item,
 .ticker-event,
-.selected-region-heading span,
 .resilience-bar-row,
 .assistant-bubble { font-size: 12px; }
 .result-name strong,

@@ -31,12 +31,12 @@
     --v2-orange: #ff9748;
     /* 辅助色（红色）：用于危险/错误状态 */
     --v2-red: #ff5669;
-    /* 顶部导航栏高度：响应式，最小64px，首选7.2vh，最大74px */
-    --header-height: clamp(64px, 7.2vh, 74px);
+    /* 顶部导航栏高度：响应式，最小58px，首选6.4vh，最大70px */
+    --header-height: clamp(58px, 6.4vh, 70px);
     /* 左右侧边栏宽度：响应式，最小330px，首选20.5vw，最大398px */
     --side-width: clamp(330px, 20.5vw, 398px);
-    /* 页面元素间距：响应式，最小8px，首选0.65vw，最大12px */
-    --page-gap: clamp(8px, 0.65vw, 12px);
+    /* 页面元素间距：响应式，最小8px，首选0.55vw，最大10px */
+    --page-gap: clamp(8px, 0.55vw, 10px);
     /* 全局字体族：优先使用微软雅黑、苹方、Segoe UI */
     font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
 }
@@ -259,11 +259,11 @@ button { color: inherit; }
 /* 列容器通用样式 */
 .dashboard-column { display: grid; gap: var(--page-gap); min-height: 0; }
 /* 左侧列：两行，上方占0.76份，下方占2.24份 */
-.dashboard-left-column { grid-template-rows: 0.9fr 2fr; }
-/* 右侧列：三行，比例为0.92:1:1.18 */
-.dashboard-right-column { grid-template-rows: 0.95fr 1.05fr 0.9fr; }
-/* 中间列：两行，上方自适应，下方固定38px（滚动条） */
-.dashboard-center-column { display: grid; grid-template-rows: minmax(0, 1fr) 38px; gap: var(--page-gap); min-width: 0; min-height: 0; }
+.dashboard-left-column { grid-template-rows: 0.8fr 2fr; }
+/* 右侧列：三行，比例为0.85:1.05:1.1 */
+.dashboard-right-column { grid-template-rows: 0.9fr 0.85fr 1.2fr; }
+/* 中间列：两行，上方自适应，下方固定32px（滚动条） */
+.dashboard-center-column { display: grid; grid-template-rows: minmax(0, 1fr) 32px; gap: var(--page-gap); min-width: 0; min-height: 0; }
 
 /* ==================== 可复用的科技风格面板 ==================== */
 /* 技术面板、地图面板、地质滚动条的共用样式 */
@@ -296,16 +296,16 @@ button { color: inherit; }
 .tech-panel-title {
     position: relative;         /* 相对定位 */
     z-index: 2;                 /* 层级2，在光晕之上 */
-    width: 60%;                 /* 宽度占父容器的48% */
-    height: 35px;               /* 固定高度 */
-    margin: 0 auto 6px;         /* 水平居中，底部外边距6px */
+    width: 60%;                 /* 宽度占父容器的60% */
+    height: 28px;               /* 固定高度 */
+    margin: 0 auto 4px;         /* 水平居中，底部外边距4px */
     display: flex;              /* Flex布局 */
     align-items: center;        /* 垂直居中 */
     justify-content: center;    /* 水平居中 */
     color: var(--v2-cyan);      /* 青色文字 */
-    font-size: 18px;            /* 字体大小 */
+    font-size: clamp(15px, .95vw, 18px); /* 响应式字体大小 */
     font-weight: 600;           /* 粗体 */
-    letter-spacing: .15em;      /* 字间距增加12% */
+    letter-spacing: .15em;      /* 字间距增加15% */
     /* 渐变背景 */
     background: linear-gradient(180deg, rgba(17, 76, 119, .75), rgba(5, 28, 53, .1));
     clip-path: polygon(0 0, 100% 0, 86% 100%, 14% 100%); /* 梯形裁剪 */
@@ -316,8 +316,8 @@ button { color: inherit; }
 .demo-badge, .assistant-status {
     position: absolute;         /* 绝对定位 */
     z-index: 3;                 /* 层级3，在标题之上 */
-    right: 12px;                /* 距右侧12px */
-    top: 9px;                   /* 距顶部9px */
+    right: 10px;                /* 距右侧10px */
+    top: 7px;                   /* 距顶部7px */
     padding: 2px 7px;           /* 内边距 */
     color: #729bb5;             /* 灰蓝色文字 */
     border: 1px solid rgba(71, 153, 197, .24); /* 半透明边框 */
@@ -333,10 +333,16 @@ button { color: inherit; }
 .scroll-region::-webkit-scrollbar-thumb, .assistant-chat::-webkit-scrollbar-thumb { background: rgba(49, 189, 245, .36); }
 
 /* ==================== 数据概览面板 ==================== */
+/* 所有面板统一弹性列布局：固定区与弹性区分工明确，杜绝 calc 魔法数字造成的相互挤压 */
+.overview-panel, .heavy-panel, .risk-panel, .resilience-panel { display: flex; flex-direction: column; min-height: 0; }
+/* 弹性面板内的标题与固定高度区域不参与收缩 */
+.tech-panel-title { flex: 0 0 auto; }
+.vehicle-summary, .pass-rate-row, .mini-section-heading, .risk-summary-row { flex: 0 0 auto; }
 /* 数据网格容器 */
 .overview-grid {
-    height: calc(100% - 42px);  /* 高度减去标题区域 */
-    padding: 4px 14px 12px;     /* 上4px，左右14px，下12px */
+    flex: 1 1 auto;             /* 弹性占据标题之外的剩余空间 */
+    min-height: 0;              /* 允许收缩，空间不足时内部自适应 */
+    padding: 4px 12px 10px;     /* 上4px，左右12px，下10px */
     display: grid;              /* Grid布局 */
     grid-template-columns: 1.2fr 1fr 1fr; /* 三列，第一列稍宽 */
     grid-template-rows: 1fr 1fr;       /* 两行等分 */
@@ -347,7 +353,7 @@ button { color: inherit; }
 .overview-metric {
     position: relative;         /* 相对定位 */
     min-width: 0;               /* 允许收缩 */
-    padding: 8px 8px 6px;       /* 上8px，左右8px，下6px */
+    padding: 6px 7px 5px;       /* 上6px，左右7px，下5px */
     overflow: hidden;           /* 隐藏溢出 */
     border: 1px solid rgba(45, 150, 207, .38); /* 半透明青色边框 */
     /* 对角渐变背景 */
@@ -356,11 +362,11 @@ button { color: inherit; }
 /* 指标卡片左上角装饰线 */
 .overview-metric::before { content: ''; position: absolute; left: 0; top: 0; width: 22px; height: 2px; background: var(--v2-cyan); }
 /* 指标标签文字 */
-.overview-metric span { display: block; color: var(--v2-text-soft); font-size: 15px; white-space: nowrap; }
+.overview-metric span { display: block; color: var(--v2-text-soft); font-size: 13px; white-space: nowrap; }
 /* 指标数值文字（大号黄色） */
-.overview-metric strong { display: inline-block; margin-top: 4px; color: var(--v2-yellow); font-family: "Segoe UI", sans-serif; font-size: clamp(16px, 1.3vw, 25px); font-weight: 500; text-shadow: 0 0 9px rgba(228, 238, 79, .35); }
+.overview-metric strong { display: inline-block; margin-top: 3px; color: var(--v2-yellow); font-family: "Segoe UI", sans-serif; font-size: clamp(16px, 1.3vw, 25px); font-weight: 500; text-shadow: 0 0 9px rgba(228, 238, 79, .35); }
 /* 指标单位文字 */
-.overview-metric small { margin-left: 4px; color: #72a7c7; font-size: 15px; }
+.overview-metric small { margin-left: 4px; color: #72a7c7; font-size: 12px; }
 /* 主指标卡片（行政区数）：跨两行，居中显示 */
 .overview-primary { grid-row: 1 / span 2; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 /* 主指标标签字体 */
@@ -384,15 +390,15 @@ button { color: inherit; }
 /* 小操作按钮（参数按钮） */
 .tiny-action { border: 1px solid rgba(54, 182, 235, .45); background: rgba(18, 80, 117, .34); color: var(--v2-cyan); font-size: 10px; padding: 4px 7px; cursor: pointer; }
 /* 通行率图表行 */
-.pass-rate-row { height: 130px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 8px;}
+.pass-rate-row { height: 112px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 8px;}
 /* 单个通行率仪表盘 */
-.pass-gauge { min-width: 0px; height: 120px; }
+.pass-gauge { min-width: 0px; height: 104px; }
 /* 小标题行（桥隧通行结果标题） */
 .mini-section-heading { margin: 0 12px 4px; padding: 3px 2px 4px; display: flex; justify-content: space-between; color: #8cb5cd; border-bottom: 1px solid rgba(51, 158, 211, .25); font-size: 12px; }
-/* 结果列表滚动区域 */
-.result-scroll { height: calc(120% - 188px); margin: 0 10px; overflow-y: auto; }
+/* 结果列表滚动区域：弹性占据剩余空间 */
+.result-scroll { flex: 1 1 auto; min-height: 0; margin: 0 10px; overflow-y: auto; }
 /* 结果行（单个桥隧通行结果） */
-.result-row { display: grid; grid-template-columns: minmax(0, 1.4fr) 44px 62px; gap: 5px; align-items: center; padding: 6px 6px; border-bottom: 1px solid rgba(44, 130, 176, .17); font-size: 12px; }
+.result-row { display: grid; grid-template-columns: minmax(0, 1.4fr) 44px 62px; gap: 5px; align-items: center; padding: 5px 6px; border-bottom: 1px solid rgba(44, 130, 176, .17); font-size: 12px; }
 /* 结果行悬停效果 */
 .result-row:hover { background: rgba(30, 133, 190, .12); }
 /* 结果名称容器 */
@@ -415,19 +421,19 @@ button { color: inherit; }
 
 /* ==================== 区域风险概况面板 ==================== */
 /* 风险统计行 */
-.risk-summary-row { height: 100px; display: grid; grid-template-columns: 42% 58%; padding: 0 12px; }
+.risk-summary-row { height: 110px; display: grid; grid-template-columns: 45% 50%; padding: 0 10px; }
 /* 风险饼图 */
 .risk-pie-chart { min-width: 0; height: 100px; }
 /* 风险图例容器 */
-.risk-legend-summary { align-self: center; display: grid; gap: 5px; }
+.risk-legend-summary { align-self: center; display: grid; gap: 2px; }
 /* 单个风险图例项 */
-.risk-summary-item { display: grid; grid-template-columns: 8px 1fr auto; gap: 5px; align-items: center; color: var(--v2-text-soft); font-size: 12px; }
+.risk-summary-item { display: grid; grid-template-columns: 8px 1fr auto; gap: 5px; align-items: center; color: var(--v2-text-soft); font-size: 10px; }
 /* 风险图例颜色点 */
 .risk-summary-item i { width: 10px; height: 10px; border-radius: 50%; }
 /* 风险图例数量 */
 .risk-summary-item strong { color: #d6ecf5; font-size: 12px; font-weight: 500; }
-/* 区域风险列表滚动区 */
-.region-risk-scroll { height: calc(100% - 139px); margin: 0 10px 8px; overflow-y: auto; }
+/* 区域风险列表滚动区：弹性占据剩余空间 */
+.region-risk-scroll { flex: 1 1 auto; min-height: 0; margin: 0 10px 8px; overflow-y: auto; }
 /* 单个区域风险行 */
 .region-risk-row { display: grid; grid-template-columns: 1fr 58px 36px; gap: 5px; align-items: center; padding: 6px 5px; border-bottom: 1px solid rgba(38, 132, 181, .18); font-size: 10px; cursor: pointer; }
 /* 区域风险行悬停效果 */
@@ -436,8 +442,8 @@ button { color: inherit; }
 .region-risk-row strong { color: #a8d2e7; font-size: 12px; font-weight: 500; }
 /* 区域风险分数 */
 .region-risk-row small { color: #577e97;font-size: 9px; }
-.asset-damage-list { height: calc(100% - 139px); margin: 0 10px 8px; overflow-y: auto; }
-.asset-damage-row { display: grid; grid-template-columns: minmax(0, 1fr) 54px 42px; gap: 8px; align-items: center; min-height: 37px; padding: 6px 7px; border-bottom: 1px solid rgba(79, 137, 183, .16); }
+.asset-damage-list { flex: 1 1 auto; min-height: 0; margin: 0 10px 8px; overflow-y: auto; }
+.asset-damage-row { display: grid; grid-template-columns: minmax(0, 1fr) 54px 42px; gap: 8px; align-items: center; min-height: 34px; padding: 5px 7px; border-bottom: 1px solid rgba(79, 137, 183, .16); }
 .asset-damage-row strong { display: block; min-width: 0; overflow: hidden; color: #d1e8f6; font-size: 12px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .asset-damage-score { color: #d9eafe; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
 .asset-damage-level { padding: 2px 0; border: 1px solid; border-radius: 4px; font-size: 11px; text-align: center; }
@@ -547,16 +553,16 @@ button { color: inherit; }
 
 /* ==================== 区域韧性概况面板 ==================== */
 /* 韧性面板底部内边距 */
-.resilience-panel { padding-bottom: 8px; }
-/* 当前区域标题行 */
-.selected-region-heading { margin: 1px 14px 4px; display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 7px; border-bottom: 1px solid rgba(47, 158, 211, .25); }
-/* 标题提示文字 */
-.selected-region-heading span { display: block; color: var(--v2-text-muted); font-size: 9px; }
-/* 区域名称 */
-.selected-region-heading strong { color: #d4eef8; font-size: 16px; font-weight: 500; }
-.resilience-reset { padding: 4px 7px; border: 1px solid rgba(91, 157, 255, .36); border-radius: 4px; color: #91bded; background: rgba(35, 71, 116, .2); font-size: 11px; cursor: pointer; }
-.resilience-reset:hover { color: #fff; border-color: #5b9dff; }
-.resilience-radar { width: calc(100% - 14px); height: calc(100% - 78px); min-height: 165px; margin: 0 7px; }
+.resilience-panel { padding-bottom: 2px; }
+/* 雷达图外层容器：承载右上角重置按钮，弹性填充面板剩余空间 */
+/* 原 */
+.resilience-radar-wrap { position: relative; flex: 1 1 auto; min-height: 120px; margin: 0 7px; }
+/* 新 */
+.resilience-radar-wrap { position: relative; flex: 0 0 auto; height: clamp(170px, 26vh, 230px); margin: 0 7px; }
+.resilience-radar { position: absolute; inset: 0; }
+/* 选中区县后显示的重置按钮：雷达图区域右上角图例样式，与左上角区域名称胶囊同高同款 */
+.radar-reset-region { position: absolute; z-index: 2; top: 6px; right: 8px; padding: 4px 10px; color: #8fdfff; border: 1px solid rgba(68, 201, 251, .35); border-radius: 3px; background: rgba(3, 30, 54, .88); font-size: 13px; line-height: 1.2; cursor: pointer; }
+.radar-reset-region:hover { color: #fff; border-color: var(--v2-cyan); }
 /* 等级标签通用样式 */
 .level-badge { padding: 3px 7px; border: 1px solid currentColor; font-size: 9px !important; }
 /* 良好等级颜色（青色） */
@@ -591,16 +597,27 @@ button { color: inherit; }
 .region-hint { position: absolute; bottom: 7px; left: 0; right: 0; margin: 0; text-align: center; color: #476f89; font-size: 8px; }
 
 /* ==================== 数字人助手面板 ==================== */
-/* 助手面板底部内边距 */
-.assistant-panel { padding-bottom: 7px; }
+/* 助手面板：弹性列布局，聊天区自动占据剩余空间，任何视口高度下都不会挤压其他区域 */
+.assistant-panel { display: flex; flex-direction: column; min-height: 0; padding-bottom: 7px; }
+/* 助手面板标题固定高度 */
+.assistant-panel .tech-panel-title { flex: 0 0 auto; }
 /* 助手状态标签 */
 .assistant-status { color: var(--v2-green); }
 /* 助手状态指示灯 */
 .assistant-status i { display: inline-block; width: 5px; height: 5px; margin-right: 4px; border-radius: 50%; background: var(--v2-green); box-shadow: 0 0 6px var(--v2-green); }
-/* 助手舞台区（头像+气泡） */
-.assistant-stage { height: 104px; display: grid; grid-template-columns: 42% 58%; align-items: center; padding: 0 12px; }
+/* 助手形象折叠按钮：悬浮于对话框右上角，纯图标（↑收起 / ↓展开），悬停提示文字 */
+.assistant-collapse { position: absolute; top: -8px; right: -8px; z-index: 2; width: 20px; height: 20px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(71, 153, 197, .4); background: rgba(2, 21, 39, .95); color: #75a9c4; cursor: pointer; }
+.assistant-collapse:hover { color: var(--v2-cyan); border-color: var(--v2-cyan); }
+/* 收起状态箭头：向上 */
+.assistant-collapse::before { content: ''; width: 7px; height: 7px; border-top: 2px solid currentColor; border-right: 2px solid currentColor; transform: rotate(-45deg); }
+/* 展开状态箭头：向下 */
+.assistant-collapse.is-collapsed::before { transform: rotate(135deg); }
+/* 助手舞台区（头像+气泡）：固定高度，不参与弹性伸缩 */
+.assistant-stage { flex: 0 0 auto; height: 84px; display: grid; grid-template-columns: 42% 58%; align-items: center; padding: 0 12px; }
+/* 舞台区折叠状态：整个隐藏，聊天区自动接管全部空间 */
+.assistant-stage.is-collapsed { display: none; }
 /* 头像容器 */
-.assistant-avatar { position: relative; width: 88px; height: 88px; margin: 0 auto; display: flex; justify-content: center; }
+.assistant-avatar { position: relative; width: 88px; height: 88px; margin: 0 auto; display: flex; justify-content: center; transform: scale(.85); }
 /* 头像底部标签 */
 .assistant-avatar > span { position: absolute; bottom: -1px; padding: 2px 7px; color: #8fdfff; background: rgba(3, 30, 54, .88); border: 1px solid rgba(68, 201, 251, .35); font-size: 9px; z-index: 4; }
 /* 头像轨道（旋转圆环） */
@@ -614,31 +631,32 @@ button { color: inherit; }
 /* 头像身体 */
 .avatar-body { position: absolute; top: 46px; width: 53px; height: 35px; border-radius: 48% 48% 8px 8px; background: linear-gradient(180deg, rgba(65, 206, 247, .9), rgba(13, 71, 111, .7)); clip-path: polygon(27% 0, 73% 0, 100% 100%, 0 100%); z-index: 2; }
 /* 对话气泡 */
-.assistant-bubble { position: relative; padding: 10px; color: #9dc5d8; border: 1px solid rgba(49, 162, 214, .33); background: rgba(8, 45, 75, .48); font-size: 12px; line-height: 1.65; }
+.assistant-bubble { position: relative; padding: 9px 10px; color: #9dc5d8; border: 1px solid rgba(49, 162, 214, .33); background: rgba(8, 45, 75, .48); font-size: 12px; line-height: 1.6; }
 /* 对话气泡小三角 */
 .assistant-bubble::before { content: ''; position: absolute; left: -8px; top: 22px; width: 14px; height: 14px; border-left: 1px solid rgba(49, 162, 214, .33); border-bottom: 1px solid rgba(49, 162, 214, .33); background: #082c49; transform: rotate(45deg); }
-/* 聊天区域 */
-.assistant-chat { height: calc(100% - 247px); min-height: 42px; margin: 0 12px 6px; padding: 7px; overflow-y: auto; border: 1px solid rgba(41, 141, 194, .23); background: rgba(1, 15, 29, .55); }
+/* 聊天区外层容器：承载右上角折叠按钮，弹性填充舞台区之外的剩余空间 */
+.assistant-chat-wrap { position: relative; flex: 1 1 auto; min-height: 36px; margin: 0 12px 6px; display: flex; }
+/* 聊天区域：占据容器全部空间，消息增多时内部滚动 */
+.assistant-chat { flex: 1 1 auto; min-width: 0; padding: 7px; overflow-y: auto; border: 1px solid rgba(41, 141, 194, .23); background: rgba(1, 15, 29, .55); }
 /* 聊天消息通用样式 */
-.chat-message { max-width: 88%; margin-bottom: 6px; padding: 5px 7px; font-size: 10px; line-height: 1.45; }
+.chat-message { max-width: 88%; margin-bottom: 5px; padding: 5px 8px; font-size: 12px; line-height: 1.5; }
 /* 助手消息样式 */
 .assistant-message { color: #9ec8dc; background: rgba(17, 71, 108, .43); border-left: 2px solid var(--v2-cyan); }
 /* 用户消息样式 */
 .user-message { margin-left: auto; color: #d8eaf2; background: rgba(31, 91, 124, .6); text-align: right; border-right: 2px solid #e0d955; }
-/* 快捷问题按钮容器 */
-.assistant-prompts { display: flex; gap: 4px; padding: 0 12px 6px; overflow: hidden; }
+/* 快捷问题按钮容器：固定高度，可换行 */
+.assistant-prompts { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 6px; }
 /* 快捷问题按钮 */
-.assistant-prompts button { flex: 1; min-width: 0; padding: 5px 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid rgba(47, 159, 210, .27); background: rgba(10, 54, 87, .42); color: #75a9c4; cursor: pointer; font-size: 10px; }
+.assistant-prompts button { flex: 1 1 30%; min-width: 0; padding: 5px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid rgba(47, 159, 210, .27); background: rgba(10, 54, 87, .42); color: #75a9c4; cursor: pointer; font-size: 11px; }
 /* 快捷问题按钮悬停效果 */
 .assistant-prompts button:hover { color: var(--v2-cyan); border-color: rgba(67, 211, 255, .55); }
-/* 输入行容器 */
-.assistant-input-row { height: 29px; display: flex; margin: 0 12px; border: 1px solid rgba(49, 165, 216, .35); background: rgba(2, 18, 34, .7); }
+/* 输入行容器：固定高度 */
+.assistant-input-row { flex: 0 0 auto; height: 32px; display: flex; margin: 0 12px; border: 1px solid rgba(49, 165, 216, .35); background: rgba(2, 18, 34, .7); }
 /* 输入框 */
-.assistant-input-row input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 8px; color: #c6e3ee; background: transparent; font-size: 10px; }
+.assistant-input-row input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 8px; color: #c6e3ee; background: transparent; font-size: 12px; }
 /* 发送按钮 */
-.assistant-input-row button { width: 48px; border: 0; background: linear-gradient(180deg, rgba(25, 122, 174, .75), rgba(12, 70, 108, .75)); color: #cbeefa; cursor: pointer; font-size: 9px; }
-/* 免责声明文字 */
-.assistant-disclaimer { display: block; margin-top: 4px; text-align: center; color: #3f657d; font-size: 8px; }
+.assistant-input-row button { width: 52px; border: 0; background: linear-gradient(180deg, rgba(25, 122, 174, .75), rgba(12, 70, 108, .75)); color: #cbeefa; cursor: pointer; font-size: 11px; }
+.assistant-input-row button:disabled { opacity: .6; cursor: default; }
 
 /* ==================== 提示消息和动画 ==================== */
 /* 提示消息容器 */

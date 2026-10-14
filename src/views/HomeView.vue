@@ -1,11 +1,12 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import PlatformHeader from '../components/PlatformHeader.vue';
 import TransportMap from '../components/TransportMap.vue';
 import EChart from '../components/EChart.vue';
 import { usePlatformStore, useUiStore } from '../stores/platform.js';
+import { api } from '../services/api.js';
 
 const platform = usePlatformStore();
 const ui = useUiStore();
@@ -41,9 +42,19 @@ const radarMetrics = computed(() => [
     ['resilienceIndex','韧性指数'],['connectivityScore','路网连通度'],['recoveryCapacity','灾害恢复能力']
 ].map(([key, name]) => ({ name, value: metric.value[key] == null ? null : Number(metric.value[key]) })));
 const resilienceRadarOption = computed(() => ({
+    title: {
+        text: metric.value.regionName,
+        left: 8, top: 6,
+        textStyle: { color: '#8fdfff', fontSize: 13, fontWeight: 500 },
+        backgroundColor: 'rgba(3, 30, 54, .88)',
+        borderColor: 'rgba(68, 201, 251, .35)',
+        borderWidth: 1,
+        borderRadius: 3,
+        padding: [4, 10]
+    },
     tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br/>${radarMetrics.value.map((item) => `${item.name}：${item.value == null ? '暂无结果' : item.value.toFixed(1)}`).join('<br/>')}` },
     radar: {
-        center: ['50%', '53%'], radius: '56%', splitNumber: 4,
+        center: ['50%', '56%'], radius: '58%', splitNumber: 4,
         indicator: radarMetrics.value.map((item) => ({ name: `${item.name}\n${item.value == null ? '—' : item.value.toFixed(1)}`, max: 100 })),
         axisName: { color: '#a9c8df', fontSize: 12, lineHeight: 17 },
         axisLine: { lineStyle: { color: 'rgba(102, 153, 207, .35)' } },
@@ -59,7 +70,27 @@ const resilienceRadarOption = computed(() => ({
 const damageOption = computed(() => ({ color:(dashboard.value.damageDistribution||[]).map(x=>damageColors[x.name]), tooltip:{trigger:'item',formatter:(item)=>`${item.name}（${damageRanges[item.name]}）<br/>${item.value} 处`}, series:[{type:'pie',radius:['70%','90%'],label:{show:false},data:dashboard.value.damageDistribution||[]}]}));
 const gaugeOption = (value, name) => ({ series:[{type:'gauge',startAngle:210,endAngle:-30,radius:'92%',progress:{show:true,width:7},axisLine:{lineStyle:{width:7}},pointer:{show:false},axisTick:{show:false},splitLine:{show:false},axisLabel:{show:false},title:{offsetCenter:[0,'68%'],fontSize:11},detail:{offsetCenter:[0,'2%'],formatter:value==null?'暂无结果':'{value}%',fontSize:18},data:[{value:value==null?0:Number(Number(value).toFixed(1)),name}]}] });
 const assistantAnswers = computed(() => Object.fromEntries((dashboard.value.assistantQuestions||[]).map(x=>[x.questionCode,x.answerText])));
-function ask(code, text) { const question=text||message.value.trim(); if(!question)return; chat.push({role:'user',text:question}); chat.push({role:'assistant',text:assistantAnswers.value[code]||'您可以通过顶部导航进入重车、灾害和韧性评估模块。'}); message.value=''; }
+const assistantBusy = ref(false);
+const assistantStageCollapsed = ref(false);
+const chatScrollRef = ref();
+async function scrollChatToBottom() { await nextTick(); const el = chatScrollRef.value; if (el) el.scrollTop = el.scrollHeight; }
+async function ask(code, text) {
+    const question = (typeof text === 'string' ? text : '').trim() || message.value.trim();
+    if (!question || assistantBusy.value) return;
+    chat.push({ role: 'user', text: question });
+    message.value = '';
+    assistantBusy.value = true;
+    chat.push({ role: 'assistant', text: '正在思考…' });
+    const pending = chat[chat.length - 1];
+    scrollChatToBottom();
+    const history = chat.slice(0, -2).slice(-10).map((m) => ({ role: m.role, text: m.text }));
+    try {
+        const { answer } = await api('/assistant/chat', { method: 'POST', body: JSON.stringify({ question, history }) });
+        pending.text = answer || '抱歉，我暂时没有生成有效回答，请换个问法试试。';
+    } catch (e) {
+        pending.text = assistantAnswers.value[code] || `大模型服务暂不可用（${e.message}），请稍后重试。`;
+    } finally { assistantBusy.value = false; scrollChatToBottom(); }
+}
 function findRegion(){const name=search.value.trim();if(!name)return;const found=(dashboard.value.regions||[]).find(x=>x.regionName?.includes(name));if(found){setBaseLayer('administrative');selectedRegion.value=found;mapRef.value?.selectRegion(found.regionName);}else ui.toast('未找到匹配行政区');}
 function showOverall(){selectedRegion.value=null;mapRef.value?.selectRegion(null);}
 function setLayer(name, checked) {
@@ -131,7 +162,7 @@ onMounted(async()=>{try{await Promise.all([platform.loadDashboard(),platform.loa
  <section class="tech-panel risk-panel"><h2 class="tech-panel-title">灾害评估概况</h2><span class="demo-badge">桥隧受损</span>
   <div class="risk-summary-row"><EChart class="risk-pie-chart" :option="damageOption"/><div class="risk-legend-summary"><div v-for="item in dashboard.damageDistribution" :key="item.name" class="risk-summary-item"><i :style="{background:damageColors[item.name]}"></i><span>{{ item.name }}（{{ damageRanges[item.name] }}）</span><strong>{{ item.value }}处</strong></div></div></div>
   <div class="asset-damage-list scroll-region"><div v-for="asset in dashboard.damageResults" :key="asset.assetId" class="asset-damage-row" :title="asset.evaluatedAt ? `最近评估：${asset.evaluatedAt}` : '暂无评估结果'"><strong>{{ asset.assetName }}</strong><span class="asset-damage-score">{{ asset.damageProbability == null ? '—' : `${Number(asset.damageProbability).toFixed(1)}%` }}</span><span class="asset-damage-level" :style="{color:damageColors[asset.damageLevel]||'#7894aa',borderColor:damageColors[asset.damageLevel]||'#526f84'}">{{ asset.damageLevel||'暂无' }}</span></div><p v-if="!dashboard.damageResults?.length" class="empty-tip">暂无桥隧设施</p></div></section>
- <section class="tech-panel resilience-panel"><h2 class="tech-panel-title">区域韧性概况</h2><span class="demo-badge">区域结果</span><div class="selected-region-heading"><div><span>当前区域</span><strong>{{ metric.regionName }}</strong></div><button v-if="selectedRegion" class="resilience-reset" @click="showOverall">查看重庆市总体</button></div><EChart class="resilience-radar" :option="resilienceRadarOption"/></section>
- <section class="tech-panel assistant-panel"><h2 class="tech-panel-title">数字人助手</h2><span class="assistant-status"><i></i>在线</span><div class="assistant-stage"><div class="assistant-avatar"><div class="avatar-head"></div><div class="avatar-body"></div><span>韧安助手</span></div><div class="assistant-bubble">您好，我可以介绍平台功能和评估模块。</div></div><div class="assistant-chat"><div v-for="(m,i) in chat" :key="i" class="chat-message" :class="m.role==='assistant'?'assistant-message':'user-message'">{{ m.text }}</div></div><div class="assistant-prompts"><button @click="ask('platform','平台有哪些功能？')">平台有哪些功能？</button><button @click="ask('map','地图颜色代表什么？')">地图颜色代表什么？</button><button @click="ask('heavy','如何进行重车评估？')">如何进行重车评估？</button></div><form class="assistant-input-row" @submit.prevent="ask('',message)"><input v-model="message" placeholder="请输入您想了解的问题"><button>发送</button></form><small class="assistant-disclaimer">静态演示助手 · 暂未接入大模型</small></section>
+<section class="tech-panel resilience-panel"><h2 class="tech-panel-title">区域韧性概况</h2><span class="demo-badge">区域结果</span><div class="resilience-radar-wrap"><EChart class="resilience-radar" :option="resilienceRadarOption"/><button v-if="selectedRegion" class="radar-reset-region" @click="showOverall">查看重庆市总体</button></div></section>
+ <section class="tech-panel assistant-panel"><h2 class="tech-panel-title">数字人助手</h2><span class="assistant-status"><i></i>在线</span><div class="assistant-stage" :class="{'is-collapsed':assistantStageCollapsed}"><div class="assistant-avatar"><div class="avatar-head"></div><div class="avatar-body"></div><span>韧安助手</span></div><div class="assistant-bubble">您好，我可以介绍平台功能和评估模块。</div></div><div class="assistant-chat-wrap"><button class="assistant-collapse" :class="{'is-collapsed':assistantStageCollapsed}" :title="assistantStageCollapsed?'展开形象':'收起形象'" :aria-label="assistantStageCollapsed?'展开形象':'收起形象'" @click="assistantStageCollapsed=!assistantStageCollapsed"></button><div ref="chatScrollRef" class="assistant-chat"><div v-for="(m,i) in chat" :key="i" class="chat-message" :class="m.role==='assistant'?'assistant-message':'user-message'">{{ m.text }}</div></div></div><div class="assistant-prompts"><button @click="ask('platform','平台有哪些功能？')">平台有哪些功能？</button><button @click="ask('map','地图颜色代表什么？')">地图颜色代表什么？</button><button @click="ask('heavy','如何进行重车评估？')">如何进行重车评估？</button></div><form class="assistant-input-row" @submit.prevent="ask('',message)"><input v-model="message" :disabled="assistantBusy" placeholder="请输入您想了解的问题"><button :disabled="assistantBusy">{{ assistantBusy ? '…' : '发送' }}</button></form></section>
 </aside></main></div>
 </template>

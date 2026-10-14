@@ -12,3 +12,8 @@ backend/*.log
 exports/
 database/backups/
 .codex-ppt/
+
+.slidep/
+.workbuddy/
+.vscode/
+tergit branch -d master

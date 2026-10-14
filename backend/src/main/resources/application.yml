@@ -14,3 +14,20 @@ app:
     url: ${PLANT_DB_URL:jdbc:mysql://localhost:3306/transport_platform?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useCursorFetch=true&defaultFetchSize=500}
     username: ${PLANT_DB_USERNAME:root}
     password: ${PLANT_DB_PASSWORD:root}
+  llm:
+    # ==================== 当前生效：智谱 GLM（带联网搜索） ====================
+    # 通过环境变量 PLANT_LLM_API_KEY 配置密钥，不将真实密钥写入仓库
+    api-key: ${PLANT_LLM_API_KEY:}
+    provider: ${PLANT_LLM_PROVIDER:zhipu}
+    web-search: ${PLANT_LLM_WEB_SEARCH:true}
+    base-url: ${PLANT_LLM_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
+    # 模型选择：glm-4-plus（能力强，按量计费）/ glm-4-flash（免费）/ glm-4-air（轻量低价）
+    model: ${PLANT_LLM_MODEL:glm-4-flash}
+
+    # ============ 备用接口：Kimi（带联网搜索），切换时注释上面整段、取消本段注释 ============
+    # Key 在 platform.moonshot.cn 申请
+    # api-key: ${PLANT_LLM_API_KEY:sk-在这里填入KimiKey}
+    # provider: ${PLANT_LLM_PROVIDER:moonshot}
+    # web-search: ${PLANT_LLM_WEB_SEARCH:true}
+    # base-url: ${PLANT_LLM_BASE_URL:https://api.moonshot.cn/v1}
+    # model: ${PLANT_LLM_MODEL:kimi-k2-turbo-preview}

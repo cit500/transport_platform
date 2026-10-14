@@ -2,10 +2,10 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { GaugeChart, PieChart, RadarChart } from 'echarts/charts';
-import { TooltipComponent, RadarComponent } from 'echarts/components';
+import { TooltipComponent, RadarComponent, TitleComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 
-echarts.use([GaugeChart, PieChart, RadarChart, TooltipComponent, RadarComponent, CanvasRenderer]);
+echarts.use([GaugeChart, PieChart, RadarChart, TooltipComponent, RadarComponent, TitleComponent, CanvasRenderer]);
 const props = defineProps({ option: { type: Object, required: true } });
 const element = ref();
 let chart;

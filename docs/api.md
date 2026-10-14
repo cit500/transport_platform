@@ -54,3 +54,11 @@
 - `GET /resilience/bootstrap`、`POST /resilience/evaluate`、`GET /resilience/tasks/{id}`
 
 三类接口均把任务写入 `analysis_task`，把汇总和设施/区域级结果写入 `analysis_result`。当前规则用于跑通真实数据链路，不代表最终专业分析方法。
+
+## 数字人助手
+
+- `POST /assistant/chat`（请求体 `{"question":"...","history":[{"role":"user","text":"..."},{"role":"assistant","text":"..."}]}`）
+
+后端调用智谱 GLM 大模型（`glm-4-flash`，支持联网搜索；后端代码预留 Kimi 兼容接口，可在 `application.yml` 切换）生成回答。助手定位为通用智能对话 + 平台领域专家：系统提示词由四部分组成——通用助手人设（可回答任意领域问题、如实说明模型身份）、联网能力说明（`app.llm.web-search` 开启时具备联网搜索，实时信息先搜索再回答）、知识库语料（`backend/src/main/resources/kb/assistant-kb.md`，编辑后重启生效）、`overview()` 实时数据摘要（数据库不可用时自动跳过）；对话历史最多携带最近 10 条。
+
+助手还支持 **function calling 数据库只读工具**：模型可自动调用 `list_assets`（桥隧设施清单）、`region_resilience`（区县与总体韧性指标）、`heavy_pass_results`（最近重车通行结论）、`damage_results`（最近灾害受损结果）、`analysis_tasks`（历史任务记录）五个预定义只读查询（工具集在 `AssistantToolService`，条数有上限、不含任何写操作），最多执行 4 轮工具循环后生成最终回答。API Key 通过环境变量 `PLANT_LLM_API_KEY` 配置，真实密钥不写入仓库。未配置 Key 或调用失败时接口返回 502 及原因，前端自动回退到 `assistantQuestions` 预置问答。
