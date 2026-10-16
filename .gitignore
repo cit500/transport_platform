@@ -17,3 +17,4 @@ database/backups/
 .workbuddy/
 .vscode/
 tergit branch -d master
+DEPLOYMENT.private.local.md

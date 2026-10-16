@@ -9,7 +9,7 @@
 - `road_node`：节点主键、连接度和点几何。
 - `road_edge`：起止节点、道路描述、基础通行参数、长度、唯一统计行政区和线几何。
 - `region`：行政区边界。
-- `transport_asset`、`asset_road_relation`：桥隧及其道路绑定，本轮不调整详情结构。
+- `transport_asset`、`asset_road_relation`：桥隧及其道路绑定。
 
 ## 字段口径
 
@@ -28,7 +28,7 @@
 - `road_name`：道路中文或常用名称，例如“沪渝高速”。
 - `road_ref`：道路编号，例如“G50”。名称和编号含义不同，不合并。
 - `road_class`、`one_way`：基础道路分类与来源方向语义。
-- `lane_count`、`design_speed_kmh`：基础通行参数；可使用默认脚本补齐，后续可被核验数据覆盖。
+- `lane_count`、`design_speed_kmh`：基础通行参数；缺失值应在导入或核验阶段补齐。
 - `length_m`：由 `geom` 以米为单位刷新得到。
 - `source_bridge_flag`、`source_tunnel_flag`：只作为生成或核查桥隧候选数据的提示，不能代替正式设施及绑定关系。
 
@@ -38,21 +38,18 @@
 
 `road_edge` 不保存当前灾害状态、韧性分值或某次任务的通行结论。这些值具有时间和任务上下文，直接写入基础表会覆盖历史，并让不同业务相互污染。
 
-当前权威历史分别保存在：
+当前权威历史保存在 `analysis_task` 与 `analysis_result`。任务保存输入快照，结果通过 `result_scope`、`target_type`、`target_key` 和 JSON 内容区分汇总、设施或区域数据。当前服务将道路结果数组放在 SUMMARY 的 `result_json` 中，不使用独立的灾害道路表、韧性道路表或道路状态视图。
 
-- `disaster_road_result(task_id, road_edge_id)`
-- `resilience_road_result(task_id, road_edge_id)`
-
-两张表都已经按 `road_edge_id` 建立索引。视图 `v_road_edge_task_state` 提供统一查询入口，用于按道路查看历次灾害和韧性状态，但不复制数据。页面需要展示“当前状态”时，应明确选择一个已完成或已发布的任务，而不是修改 `road_edge`。
+页面需要展示道路状态时，应明确选择某次分析任务，再将返回的道路结果与固定路网叠加。首页设施和区域指标按对象读取最近一次成功结果。
 
 ## 维护流程
 
 首次导入或替换基础路网后按以下顺序执行：
 
 1. 导入稳定的节点 id、节点几何、道路边 id、起止节点和道路几何。
-2. 执行 `database/maintenance/refresh_road_derived_attributes.sql`，刷新连接度、长度和道路统计归属区。
-3. 按需执行 `database/maintenance/fill_road_default_attributes.sql`，只补齐缺失车道数和设计速度。
-4. 执行 `database/validation/validate_road_network.sql`，检查拓扑端点、几何、长度和派生属性。
+2. 执行 `database/maintenance/refresh_road.sql`，刷新连接度、长度和道路统计归属区。
+3. 核验道路车道数与设计速度，按数据来源补齐必要字段。
+4. 执行 `database/validation/check_database.sql`，检查拓扑端点、几何、长度和派生属性。
 5. 校验通过后将基础路网视为只读数据；日常灾害、路径和韧性任务只能写入任务及结果表。
 
 `from_node_id` 和 `to_node_id` 不由刷新脚本自动重建。若它们与几何端点不一致，说明导入拓扑存在错误，应回到导入数据修复，而不是让数据库根据最近节点静默改写连接关系。
