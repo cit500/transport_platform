@@ -106,14 +106,30 @@ mvn spring-boot:run
 
 ### 数字人助手
 
-默认模型配置为智谱 `glm-4-flash`，支持通过服务商联网搜索配置及五个预定义数据库只读工具获取信息。系统上下文由助手人设、平台知识库、实时数据摘要、最近 10 条历史消息和当前问题组成；最多执行 4 轮工具循环，回答采用非流式返回。
-知识库位于 `backend/src/main/resources/kb/assistant-kb.md`，启动时加载，修改后需要重新启动后端；使用 JAR 部署时需重新打包并部署。
-模型环境变量包括 `PLANT_LLM_API_KEY`、`PLANT_LLM_PROVIDER`、`PLANT_LLM_BASE_URL`、`PLANT_LLM_MODEL` 和 `PLANT_LLM_WEB_SEARCH`。模型不可用时，快捷问题可回退到预置答案，普通输入显示错误原因。工具接口的兼容性边界见阶段记录。
-本地可将密钥保存为 Git 忽略的 `.env.llm.local`，内容为 `PLANT_LLM_API_KEY=实际密钥`。此文件不会由 Spring Boot 自动加载；启动前可在项目根目录执行：
+当前生效配置为 Kimi（`kimi-k2.6`，服务商 Moonshot）；`application.yml` 中另保留智谱 GLM 的注释块，切换服务商时必须同时改 `api-key` / `provider` / `base-url` / `model`，两家密钥不通用，只改模型名会报 404 或鉴权失败。
+支持通过服务商联网搜索配置及五个预定义数据库只读工具获取信息。系统上下文由助手人设、平台知识库、实时数据摘要、最近 10 条历史消息和当前问题组成；最多执行 4 轮工具循环，回答采用非流式返回。
+
+**模型 ID 会随服务商迭代下线**（kimi-k2 系列已于 2026-05-25 停用，调用即返回 404 `resource_not_found_error`）。可用模型以账号实际权限为准：
 
 ```powershell
-$env:PLANT_LLM_API_KEY = (Get-Content -LiteralPath .env.llm.local -Raw).Trim() -replace '^PLANT_LLM_API_KEY=', ''
+curl -H "Authorization: Bearer $env:PLANT_LLM_API_KEY" https://api.moonshot.cn/v1/models
 ```
+
+Kimi k2.6 / k2.7 只接受 `temperature=1`；未显式配置 `PLANT_LLM_TEMPERATURE` 时，后端按 provider 自动取值（moonshot=1，zhipu=0.7）。
+知识库位于 `backend/src/main/resources/kb/assistant-kb.md`，启动时加载，修改后需要重新启动后端；使用 JAR 部署时需重新打包并部署。
+环境变量包括 `PLANT_LLM_API_KEY`、`PLANT_LLM_PROVIDER`、`PLANT_LLM_BASE_URL`、`PLANT_LLM_MODEL`、`PLANT_LLM_WEB_SEARCH`、`PLANT_LLM_TEMPERATURE`、`PLANT_LLM_MAX_TOKENS`；后端启动日志会打印生效的 provider / base-url / model / temperature，便于确认配置是否被正确覆盖。
+模型不可用时，快捷问题可回退到预置答案，普通输入显示错误原因。工具接口的兼容性边界见阶段记录。
+密钥不要写入 `application.yml`（该文件受 Git 跟踪）。本地保存到 Git 忽略的 `.env.llm.local`，每行一条 `键=值`：
+
+```dotenv
+PLANT_LLM_API_KEY=实际密钥
+PLANT_LLM_PROVIDER=moonshot
+PLANT_LLM_BASE_URL=https://api.moonshot.cn/v1
+PLANT_LLM_MODEL=kimi-k2.6
+PLANT_LLM_WEB_SEARCH=true
+```
+
+后端启动时由 `config/EnvFileLoader` 自动读取该文件（从工作目录向上最多 4 级查找，因此在 `backend/` 下执行 `mvn spring-boot:run` 也能找到项目根目录的文件），无需手动 `Set-Item`。**真实环境变量优先级高于文件内容**；也可用 `PLANT_ENV_FILE` 指向其他路径。日志会打印"已从 … 载入 N 项本地配置"，N 为 0 则说明没找到文件或键已被环境变量覆盖。
 
 ## 构建与部署
 

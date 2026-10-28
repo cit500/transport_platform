@@ -14,8 +14,26 @@
     background-position:0 0,25px 18px; background-size:54px 54px,74px 74px;
 }
 .disaster-main { position:relative; z-index:1; }
-.disaster-main .heavy-left-column { grid-template-rows:minmax(0,.86fr) minmax(0,1.42fr) minmax(0,.72fr); }
-.disaster-main .heavy-right-column { grid-template-rows:minmax(0,.65fr) minmax(0,1.1fr) minmax(0,.7fr); }
+/* 主体区高度扣除顶栏与模式条，防止整体向下溢出 */
+.disaster-workbench { display:flex; flex-direction:column; }
+.disaster-workbench .disaster-mode-bar { flex:none; }
+.disaster-workbench .disaster-main { flex:1 1 auto; min-height:0; height:auto; }
+
+/* 左列：模型面板弹性伸缩，输入/控制面板按内容定高，避免截断与空白 */
+.disaster-main .heavy-left-column { display:flex; flex-direction:column; }
+.disaster-main .heavy-left-column > .tech-panel { flex:none; }
+.disaster-main .heavy-left-column > .tech-panel:first-child { flex:1 1 auto; min-height:0; overflow-y:auto; }
+
+/* 右列：摘要按内容定高，结果详情占满剩余 */
+.disaster-main .heavy-right-column { display:flex; flex-direction:column; }
+.disaster-main .heavy-right-column .disaster-summary-panel { flex:none; }
+.disaster-main .heavy-right-column .disaster-result-panel { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+
+/* 面板内部超高时可滚动，标题吸附保持可见 */
+.disaster-main .heavy-column .tech-panel { scrollbar-width:thin; }
+.disaster-main .heavy-left-column > .tech-panel:first-child .tech-panel-title {
+    position:sticky; top:0; z-index:2; background:rgba(3,22,38,.96);
+}
 .scenario-brief {
     margin-top:8px; padding:8px 9px; border-left:2px solid var(--v2-cyan);
     background:rgba(13,77,121,.17); display:grid; gap:4px;
@@ -114,3 +132,349 @@
     .scenario-brief { padding:5px 7px; margin-top:5px; }
     .disaster-risk-orbit { width:112px; height:69px; margin-top:0; }
 }
+
+/* ===== 易损性模型化改造新增：模式条、模型卡、输入面板、结果项 ===== */
+.disaster-mode-bar {
+    display:flex; align-items:center; gap:9px; padding:6px 16px;
+    border-bottom:1px solid var(--v2-line); background:rgba(4,26,45,.72);
+}
+.disaster-mode-bar button {
+    padding:5px 16px; color:var(--v2-text-muted); font-size:12px; background:none;
+    border:1px solid var(--v2-line); cursor:pointer;
+}
+.disaster-mode-bar button.is-active {
+    color:#04131f; background:var(--v2-cyan); border-color:var(--v2-cyan);
+}
+.disaster-mode-bar .history-restore {
+    min-width:150px; height:26px; padding:0 8px; color:var(--v2-text-soft); font-size:11px;
+    background:rgba(6,40,66,.9); border:1px solid var(--v2-line);
+}
+.disaster-mode-bar .mode-hint { margin-left:auto; color:var(--v2-text-muted); font-size:11px; }
+
+.model-type-row { display:flex; gap:6px; margin-bottom:8px; }
+.model-type-row button {
+    flex:1; padding:5px 4px; color:var(--v2-text-muted); font-size:11px; background:none;
+    border:1px solid var(--v2-line); cursor:pointer;
+}
+.model-type-row button.is-active { color:var(--v2-cyan); border-color:var(--v2-line-bright); background:rgba(11,64,102,.6); }
+
+.model-meta { margin-top:7px; padding:7px 8px; border:1px solid var(--v2-line); background:rgba(6,40,66,.5); }
+.model-badges { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px; }
+.model-badge { padding:1px 6px; color:#04131f; font-size:10px; }
+.model-badge.ok { background:var(--v2-green); }
+.model-badge.warn { background:var(--v2-yellow); }
+.model-badge.draft { background:var(--v2-blue); }
+.model-badge.muted { background:rgba(140,170,195,.35); color:var(--v2-text-soft); }
+.model-line { margin:2px 0; color:var(--v2-text-muted); font-size:10px; }
+.model-limit { margin-top:5px; padding-top:5px; border-top:1px dashed var(--v2-line); color:var(--v2-text-muted); font-size:10px; line-height:1.5; }
+.research-toggle { display:flex; align-items:center; gap:6px; margin-top:8px; color:var(--v2-text-muted); font-size:10px; }
+.research-toggle input { width:12px; height:12px; }
+
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.panel-hint { margin:6px 0 0; color:var(--v2-text-muted); font-size:10px; line-height:1.5; }
+.panel-error { margin:6px 0 0; color:var(--v2-red); font-size:10px; }
+.upload-button {
+    display:block; margin-top:7px; padding:7px; text-align:center; color:var(--v2-cyan); font-size:11px;
+    border:1px dashed var(--v2-line-bright); cursor:pointer;
+}
+.upload-button input { display:none; }
+.gm-result { margin-top:7px; padding:6px 8px; border:1px solid var(--v2-line); background:rgba(6,40,66,.5); }
+.gm-result p { margin:2px 0; color:var(--v2-text-muted); font-size:10px; }
+.gm-result strong { color:var(--v2-yellow); font-size:12px; font-weight:500; }
+
+.debris-llm-button { width:100%; margin-bottom:7px; }
+.context-source { margin:0 0 7px; padding:5px 7px; font-size:10px; border-left:2px solid var(--v2-cyan); background:rgba(6,40,66,.5); color:var(--v2-text-muted); }
+.context-source[data-source="FALLBACK"] { border-left-color:var(--v2-yellow); color:var(--v2-yellow); }
+.debris-field-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.debris-raw {
+    max-height:130px; margin:6px 0 0; padding:7px; overflow:auto; color:var(--v2-text-muted);
+    font-size:10px; line-height:1.5; white-space:pre-wrap; word-break:break-all;
+    background:rgba(2,18,32,.8); border:1px solid var(--v2-line);
+}
+
+.asset-filter-row { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+.asset-filter-row button {
+    padding:2px 7px; color:var(--v2-text-muted); font-size:10px; background:none;
+    border:1px solid var(--v2-line); cursor:pointer;
+}
+.asset-filter-row button.is-active { color:var(--v2-cyan); border-color:var(--v2-line-bright); }
+.disaster-asset-list { max-height:100%; overflow-y:auto; }
+.disaster-asset-item { padding:7px 8px; margin-bottom:6px; border-left:2px solid var(--v2-line-bright); background:rgba(6,40,66,.42); }
+.disaster-asset-item[data-status="BLOCKED"] { border-left-color:var(--v2-red); }
+.disaster-asset-item[data-status="CONDITIONAL"] { border-left-color:var(--v2-yellow); }
+.disaster-asset-item[data-status="PASS"] { border-left-color:var(--v2-green); }
+.disaster-asset-item header { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.disaster-asset-item header strong { color:var(--v2-text-soft); font-size:11px; font-weight:500; }
+.ds-bar { display:flex; height:6px; margin-top:6px; overflow:hidden; background:rgba(28,78,109,.3); }
+.ds-bar i { display:block; height:100%; }
+.ds-text { margin:3px 0 0; color:var(--v2-text-muted); font-size:9px; }
+.ds-meta { margin:3px 0 0; color:var(--v2-text-muted); font-size:10px; }
+.ds-reason { margin:3px 0 0; color:var(--v2-text-muted); font-size:10px; line-height:1.5; }
+.ds-action { margin:3px 0 0; color:var(--v2-cyan); font-size:10px; }
+.extrapolated-tag { padding:0 4px; margin-left:3px; color:var(--v2-orange); font-size:9px; border:1px solid var(--v2-orange); }
+
+.curve-panel { padding:8px 10px 0; display:flex; flex-direction:column; height:calc(100% - 38px); box-sizing:border-box; }
+.disaster-main .heavy-bottom-panel > div:not(.bottom-tabs) { height:calc(100% - 38px); overflow-y:auto; box-sizing:border-box; }
+.curve-caption { margin:0 0 4px; color:var(--v2-text-muted); font-size:10px; }
+.derivation-flow { flex-wrap:wrap; }
+.derivation-item {
+    flex:1 1 30%; padding:7px 8px; border:1px solid var(--v2-line); background:rgba(5,36,61,.58);
+}
+.derivation-item span { display:block; color:var(--v2-text-muted); font-size:10px; }
+.derivation-item strong { display:block; margin-top:3px; color:var(--v2-cyan); font-size:11px; font-weight:400; }
+.damage-chart-row { grid-template-columns:repeat(6,1fr); }
+
+/* ===== 布局调整：顶部任务条、可拖拽底部栏、结果详情弹窗 ===== */
+.mode-switch-group { display:flex; gap:6px; }
+.mode-bar-divider { width:1px; height:18px; background:var(--v2-line); }
+.mode-bar-field { display:flex; align-items:center; gap:6px; color:var(--v2-text-muted); font-size:11px; white-space:nowrap; }
+.mode-bar-field input {
+    width:170px; height:26px; padding:0 8px; color:var(--v2-text-soft); font-size:11px;
+    background:rgba(6,40,66,.9); border:1px solid var(--v2-line);
+}
+.mode-bar-field select {
+    max-width:200px; height:26px; padding:0 6px; color:var(--v2-text-soft); font-size:11px;
+    background:rgba(6,40,66,.9); border:1px solid var(--v2-line);
+}
+
+/* 列布局已在上文改为 flex 自适应（模型面板伸缩、其余按内容定高） */
+
+/* 底部指标栏改为显式高度 + 可拖拽 */
+.disaster-main .heavy-bottom-panel { min-height:0; max-height:none; flex:none; }
+.disaster-y-resizer {
+    flex:none; height:9px; margin:-3px 0; display:flex; align-items:center; justify-content:center; gap:4px;
+    cursor:row-resize; border-top:1px solid var(--v2-line); background:rgba(6,32,54,.65);
+}
+.disaster-y-resizer i { width:14px; height:2px; background:rgba(67,217,255,.45); }
+.disaster-y-resizer:hover i { background:var(--v2-cyan); }
+
+/* 结果条目可点击 */
+.disaster-asset-item.clickable { cursor:pointer; transition:border-color .15s, background .15s; }
+.disaster-asset-item.clickable:hover { background:rgba(10,60,98,.62); }
+
+/* 设施详情弹窗 */
+.asset-detail-overlay {
+    position:fixed; inset:0; z-index:1200; display:grid; place-items:center;
+    background:rgba(1,8,16,.66); backdrop-filter:blur(2px);
+}
+.asset-detail-modal {
+    width:min(680px, 86vw); max-height:82vh; display:flex; flex-direction:column;
+    border:1px solid var(--v2-line-bright); background:#03141f;
+    box-shadow:0 0 34px rgba(20,117,174,.35), inset 0 0 24px rgba(30,178,249,.07);
+}
+.asset-detail-head {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; border-bottom:1px solid var(--v2-line); background:rgba(6,40,66,.6);
+}
+.asset-detail-head > div { display:flex; align-items:center; gap:9px; }
+.asset-detail-head strong { color:#e0f6ff; font-size:14px; font-weight:500; }
+.asset-detail-close {
+    width:26px; height:26px; border:1px solid var(--v2-line); background:none;
+    color:var(--v2-text-muted); font-size:12px; cursor:pointer;
+}
+.asset-detail-close:hover { color:#fff; border-color:var(--v2-cyan); }
+.asset-detail-body { padding:12px 14px; overflow-y:auto; display:grid; gap:12px; }
+.asset-detail-block h3 {
+    margin:0 0 7px; padding-left:8px; border-left:2px solid var(--v2-cyan);
+    color:var(--v2-cyan); font-size:12px; font-weight:500;
+}
+.asset-detail-grid {
+    display:grid; grid-template-columns:84px 1fr 84px 1fr; gap:6px 10px;
+    padding:8px 10px; border:1px solid var(--v2-line); background:rgba(5,36,61,.5);
+}
+.asset-detail-grid span { color:var(--v2-text-muted); font-size:11px; }
+.asset-detail-grid strong { color:var(--v2-text-soft); font-size:11px; font-weight:500; }
+.asset-detail-grid .warn-text { color:var(--v2-orange); }
+.asset-ds-row { display:grid; grid-template-columns:110px 1fr 52px; align-items:center; gap:8px; margin-bottom:5px; }
+.asset-ds-label { color:var(--v2-text-muted); font-size:11px; }
+.asset-ds-track { height:9px; background:rgba(28,78,109,.3); overflow:hidden; }
+.asset-ds-track i { display:block; height:100%; }
+.asset-ds-row strong { color:var(--v2-text-soft); font-size:11px; font-weight:500; text-align:right; }
+.asset-exceed-row { display:flex; flex-wrap:wrap; gap:5px 14px; margin-top:7px; padding-top:7px; border-top:1px dashed var(--v2-line); }
+.asset-exceed-row span { color:var(--v2-text-muted); font-size:10px; }
+.asset-reason { margin:0; color:var(--v2-text-muted); font-size:11px; line-height:1.6; }
+.asset-action { margin:0; color:var(--v2-cyan); font-size:12px; line-height:1.6; }
+
+/* ============ 2026-10-28 重构：评估面板 / 震中圆环 / DS 图例 / 保存弹窗 ============ */
+
+/* 参数面板：灾害类型切换 */
+.hazard-type-row { display:flex; gap:6px; margin-bottom:10px; }
+.hazard-type-row button {
+    flex:1 1 0; padding:6px 8px; border:1px solid var(--v2-line); background:rgba(5,36,61,.6);
+    color:var(--v2-text-muted); font-size:11px; cursor:pointer;
+}
+.hazard-type-row button:hover { color:var(--v2-cyan); border-color:var(--v2-line-bright); }
+.hazard-type-row button.is-active { color:var(--v2-cyan); border-color:var(--v2-cyan); background:rgba(11,64,102,.7); }
+
+/* 参数面板：同行多控件 */
+.field-row-3 { display:grid; grid-template-columns:1fr 1fr auto; gap:6px; align-items:end; }
+.field-row-2 { display:grid; grid-template-columns:1fr auto; gap:6px; align-items:end; margin-top:8px; }
+.field-row-2 .upload-button { width:auto; padding:6px 12px; white-space:nowrap; }
+
+/* 评估面板：首行三个操作按钮 */
+.asset-action-row { display:grid; grid-template-columns:1fr auto auto; gap:6px; margin-top:8px; }
+.asset-action-button {
+    padding:6px 10px; border:1px solid var(--v2-line); background:rgba(5,36,61,.65);
+    color:var(--v2-text-muted); font-size:11px; cursor:pointer; white-space:nowrap;
+}
+.asset-action-button:hover { color:var(--v2-cyan); border-color:var(--v2-line-bright); }
+.asset-action-button.is-active { color:var(--v2-orange); border-color:var(--v2-orange); background:rgba(255,151,72,.1); }
+.asset-action-button.primary { color:var(--v2-cyan); border-color:var(--v2-line-bright); background:rgba(11,64,102,.7); }
+.asset-action-button:disabled { opacity:.45; cursor:not-allowed; }
+.asset-add-dropdown {
+    margin-top:6px; max-height:158px; overflow-y:auto;
+    border:1px solid var(--v2-line-bright); background:rgba(5,36,61,.92);
+}
+.asset-add-option {
+    display:flex; justify-content:space-between; gap:8px; width:100%; padding:5px 8px;
+    border:none; background:none; color:var(--v2-text-soft); font-size:11px;
+    text-align:left; cursor:pointer;
+}
+.asset-add-option:hover { background:rgba(11,64,102,.7); color:var(--v2-cyan); }
+.asset-add-option small { color:var(--v2-text-muted); font-size:9px; }
+.asset-order {
+    flex:none; width:17px; height:17px; border:1px solid var(--v2-line); border-radius:50%;
+    color:var(--v2-text-muted); font-size:9px; line-height:16px; text-align:center;
+}
+
+/* 摘要面板：四宫格 */
+.summary-metric-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-top:10px; }
+.summary-metric-grid > div {
+    padding:7px 9px; border:1px solid var(--v2-line); background:rgba(5,36,61,.55);
+}
+.summary-metric-grid span { display:block; color:var(--v2-text-muted); font-size:10px; }
+.summary-metric-grid strong {
+    display:block; margin-top:3px; color:var(--v2-text-soft); font-size:13px; font-weight:500;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* 地图拾取提示条 */
+.map-pick-banner {
+    position:absolute; left:50%; top:12px; transform:translateX(-50%); z-index:500;
+    display:flex; align-items:center; gap:10px; padding:5px 12px;
+    border:1px solid var(--v2-orange); border-radius:3px;
+    background:rgba(6,30,52,.9); color:var(--v2-orange); font-size:11px;
+}
+.map-pick-banner .text-action { margin:0; color:var(--v2-text-muted); }
+
+/* 左列布局：参数面板定高可滚，两个评估面板均分剩余空间 */
+.disaster-main .heavy-left-column > .tech-panel:first-child { flex:0 0 auto; max-height:46%; overflow-y:auto; }
+.disaster-main .heavy-left-column > .tech-panel:first-child .tech-panel-title { position:static; }
+.disaster-main .heavy-left-column > .tech-panel.asset-eval-panel { flex:1 1 0; min-height:0; display:flex; flex-direction:column; }
+
+.tech-panel-subtitle { margin:10px 0 6px; color:var(--v2-text-soft); font-size:11px; font-weight:500; letter-spacing:.06em; }
+.pick-button { width:100%; margin:6px 0 2px; }
+
+/* 桥隧评估面板 */
+.asset-add-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-top:6px; }
+.asset-add-select {
+    min-width:0; padding:6px 7px; border:1px solid var(--v2-line);
+    background:rgba(5,36,61,.65); color:var(--v2-text-soft); font-size:11px;
+}
+.asset-add-select:focus { outline:none; border-color:var(--v2-line-bright); }
+.map-pick-button {
+    padding:6px 10px; border:1px solid var(--v2-line); background:rgba(5,36,61,.65);
+    color:var(--v2-text-muted); font-size:11px; cursor:pointer; white-space:nowrap;
+}
+.map-pick-button:hover { color:var(--v2-cyan); border-color:var(--v2-line-bright); }
+.map-pick-button.is-active { color:var(--v2-orange); border-color:var(--v2-orange); background:rgba(255,151,72,.1); }
+.asset-selected-list {
+    flex:1 1 auto; min-height:64px; margin-top:8px; overflow-y:auto;
+    border:1px solid var(--v2-line); background:rgba(6,40,66,.4);
+}
+.asset-selected-item { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:5px 8px; border-bottom:1px dashed var(--v2-line); }
+.asset-selected-item:last-child { border-bottom:none; }
+.asset-selected-main { display:flex; align-items:center; gap:6px; min-width:0; }
+.asset-selected-main strong {
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    color:var(--v2-text-soft); font-size:11px; font-weight:500;
+}
+.asset-selected-item .damage-badge { margin:0; }
+.asset-selected-side { display:flex; align-items:center; gap:6px; flex:none; }
+.asset-pass-text { color:var(--v2-text-muted); font-size:10px; white-space:nowrap; }
+.asset-remove-button {
+    width:16px; height:16px; padding:0; border:1px solid var(--v2-line); background:none;
+    color:var(--v2-text-muted); font-size:9px; line-height:1; cursor:pointer;
+}
+.asset-remove-button:hover { color:var(--v2-red); border-color:var(--v2-red); }
+.asset-panel-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
+.asset-panel-meta .research-toggle { margin:0; }
+.asset-model-name {
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    color:var(--v2-cyan); font-size:10px;
+}
+.asset-eval-panel .task-status { margin-top:8px; }
+.asset-run-button { width:100%; margin-top:8px; }
+.asset-eval-panel .empty-tip { padding:14px 8px; text-align:center; }
+
+/* 风险详情：类型徽章 / 详情入口 / 当前选中 */
+.asset-type-chip {
+    padding:1px 5px; border:1px solid var(--v2-line); border-radius:2px;
+    color:var(--v2-text-muted); font-size:9px; flex:none;
+}
+.asset-inspect-button {
+    padding:0 4px; margin-left:4px; border:1px solid var(--v2-line); background:none;
+    color:var(--v2-text-muted); font-size:10px; line-height:1.4; cursor:pointer; border-radius:2px;
+}
+.asset-inspect-button:hover { color:var(--v2-cyan); border-color:var(--v2-cyan); }
+.disaster-asset-item.is-current { border-left-color:var(--v2-cyan); background:rgba(11,64,102,.55); }
+
+/* 底部「评估结果」页签：曲线 + DS 概率图例 */
+.assessment-result-row { display:flex; gap:12px; }
+.assessment-result-row .curve-panel { flex:1 1 auto; min-width:0; padding-top:24px; }
+.assessment-result-row .curve-panel .fragility-curve { margin-top:10px; }
+.asset-selected-item { cursor:pointer; }
+.asset-selected-item:hover { background:rgba(10,60,98,.5); }
+.ds-legend {
+    flex:0 0 216px; padding:8px 0 8px 12px; border-left:1px solid var(--v2-line);
+    display:flex; flex-direction:column; gap:6px; overflow-y:auto;
+}
+.ds-legend h3 { margin:0 0 2px; color:var(--v2-text-soft); font-size:11px; font-weight:500; }
+.ds-legend-row { display:flex; align-items:center; gap:7px; }
+.ds-legend-color { width:9px; height:9px; border-radius:2px; flex:none; }
+.ds-legend-label { flex:1 1 auto; color:var(--v2-text-muted); font-size:10px; }
+.ds-legend-row strong { color:var(--v2-text-soft); font-size:11px; font-weight:500; }
+.ds-legend-exceed { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; padding-top:6px; border-top:1px dashed var(--v2-line); }
+.ds-legend-exceed span { color:var(--v2-text-muted); font-size:9px; }
+.ds-legend .extrapolated-tag { margin:2px 0 0; align-self:flex-start; }
+
+/* 摘要面板补充行 */
+.summary-rows { margin-top:9px; display:flex; flex-direction:column; gap:5px; }
+.summary-rows > div { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.summary-rows span { color:var(--v2-text-muted); font-size:10px; }
+.summary-rows strong { color:var(--v2-text-soft); font-size:11px; font-weight:400; text-align:right; }
+.disaster-summary-panel .primary-run-button { width:100%; margin-top:12px; }
+
+/* 保存任务弹窗 */
+.save-task-overlay {
+    position:fixed; inset:0; z-index:1200; background:rgba(2,14,26,.74);
+    display:flex; align-items:center; justify-content:center;
+}
+.save-task-modal {
+    width:min(430px, calc(100vw - 48px)); padding:20px 22px;
+    border:1px solid var(--v2-line-bright); border-radius:8px;
+    background:#072238; box-shadow:0 18px 60px rgba(0,0,0,.5);
+}
+.save-task-modal h3 { margin:0 0 12px; color:#e0f6ff; font-size:14px; font-weight:500; }
+.save-task-modal .field-label { margin-bottom:8px; }
+.save-task-modal .panel-hint { margin:4px 0 0; }
+.save-task-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+
+/* 地图：震中标记与距离环、拾取光标、选中设施 */
+.epicenter-marker-wrap { background:none; border:none; }
+.epicenter-marker { position:relative; display:flex; width:16px; height:16px; align-items:center; justify-content:center; }
+.epicenter-marker::before {
+    content:''; position:absolute; inset:0; border-radius:50%;
+    background:rgba(255,86,105,.35);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .epicenter-marker::before { animation:epicenter-pulse 1.6s ease-out infinite; }
+}
+.epicenter-marker i {
+    position:relative; width:8px; height:8px; border-radius:50%;
+    background:#ff5669; box-shadow:0 0 0 2px rgba(255,255,255,.7);
+}
+@keyframes epicenter-pulse { 0% { transform:scale(.5); opacity:.9; } 100% { transform:scale(2.4); opacity:0; } }
+.is-picking { cursor:crosshair !important; }
+.asset-marker.is-selected { box-shadow:0 0 0 3px #50d7f3; transform:scale(1.14); z-index:600; }
+

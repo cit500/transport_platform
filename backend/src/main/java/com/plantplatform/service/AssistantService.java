@@ -4,65 +4,79 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 数字人助手：调用大模型生成回答（OpenAI 兼容接口，当前接入智谱 GLM，代码预留 Kimi 接口）。
+ * 数字人助手：调用大模型生成回答（OpenAI 兼容接口，支持智谱 GLM 与 Kimi/Moonshot，按配置切换）。
  *
  * 系统提示词由通用人设、知识库语料（kb/assistant-kb.md）、实时数据摘要组成；
  * 通过 function calling 支持数据库只读工具，并按服务商注入联网搜索工具。
- * API Key 通过环境变量 PLANT_LLM_API_KEY 或 application.yml 的 app.llm.api-key 配置。
+ * 密钥、地址与模型由 {@link LlmClient} 统一管理，本类只负责提示词与工具循环。
  */
 @Service
 public class AssistantService {
-    /** application.yml 中的占位 Key，检测到它即视为未配置。 */
-    private static final String PLACEHOLDER_KEY = "sk-xxxxxxxxxxxxxxxxxxxxxxxx";
+
+    private static final Logger log = LoggerFactory.getLogger(AssistantService.class);
+    private static final int MAX_TOOL_ROUNDS = 4;
 
     private final DashboardDataService dashboard;
     private final AssistantToolService toolService;
-    private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-    private final String apiKey;
-    private final String baseUrl;
-    private final String model;
-    /** 大模型服务商：zhipu（智谱 GLM，当前默认）/ moonshot（Kimi），决定联网搜索工具的注入格式。 */
-    private final String provider;
+    private final LlmClient llm;
+    private final ObjectMapper mapper;
     /** 是否启用服务商自带联网搜索（两家均支持）。 */
     private final boolean webSearch;
+    /** 采样温度：服务商限制不同（Kimi k2.6/k2.7 只接受 1，智谱常用 0.7），未配置时按 provider 取值。 */
+    private final double temperature;
+    /** 单次回答最大 token；思考型模型会把推理 token 计入上限。 */
+    private final int maxTokens;
     /** 知识库语料：classpath 下 kb/assistant-kb.md，启动时加载一次，随时可编辑扩充。 */
     private final String knowledgeBase;
 
     public AssistantService(DashboardDataService dashboard,
                             AssistantToolService toolService,
-                            @Value("${app.llm.api-key:}") String apiKey,
-                            @Value("${app.llm.base-url:https://open.bigmodel.cn/api/paas/v4}") String baseUrl,
-                            @Value("${app.llm.model:glm-4-flash}") String model,
-                            @Value("${app.llm.provider:zhipu}") String provider,
-                            @Value("${app.llm.web-search:true}") boolean webSearch) {
+                            LlmClient llm,
+                            @Value("${app.llm.web-search:true}") boolean webSearch,
+                            @Value("${app.llm.temperature:}") String temperature,
+                            @Value("${app.llm.max-tokens:2048}") int maxTokens) {
         this.dashboard = dashboard;
         this.toolService = toolService;
-        this.apiKey = apiKey == null ? "" : apiKey.trim();
-        this.baseUrl = baseUrl == null || baseUrl.isBlank() ? "https://open.bigmodel.cn/api/paas/v4" : baseUrl.trim();
-        this.model = model == null || model.isBlank() ? "glm-4-flash" : model.trim();
-        this.provider = provider == null || provider.isBlank() ? "zhipu" : provider.trim().toLowerCase();
+        this.llm = llm;
+        this.mapper = llm.mapper();
         this.webSearch = webSearch;
+        this.temperature = resolveTemperature(temperature, llm);
+        this.maxTokens = maxTokens > 0 ? maxTokens : 2048;
         this.knowledgeBase = loadKnowledgeBase();
+        log.info("数字人助手：temperature={}, max-tokens={}, 联网搜索={}, 知识库 {} 字符",
+                this.temperature, this.maxTokens, this.webSearch, this.knowledgeBase.length());
+        if (!configured()) {
+            log.warn("未检测到 PLANT_LLM_API_KEY，数字人助手将不可用，前端快捷问题会回退预置答案");
+        }
+    }
+
+    /**
+     * 解析温度：显式配置优先；留空时按服务商取安全默认值。
+     * Kimi k2.6/k2.7 对 temperature 做了严格校验（仅允许 1），沿用智谱的 0.7 会直接报 invalid_request_error。
+     */
+    private static double resolveTemperature(String configured, LlmClient llm) {
+        if (configured != null && !configured.isBlank()) {
+            try {
+                return Double.parseDouble(configured.trim());
+            } catch (NumberFormatException ignored) { /* 配置非法时回退到默认值 */ }
+        }
+        return llm.defaultTemperature();
     }
 
     /** 是否已配置真实 API Key；未配置时接口直接报错，前端回退预置问答。 */
-    public boolean configured() { return !apiKey.isEmpty() && !PLACEHOLDER_KEY.equals(apiKey); }
+    public boolean configured() { return llm.configured(); }
 
-    public String model() { return model; }
+    public String model() { return llm.model(); }
 
     /**
      * 对话主流程：系统提示词 + 最近历史 + 当前问题 → 调用大模型。
@@ -70,10 +84,8 @@ public class AssistantService {
      * 最多执行 {@value #MAX_TOOL_ROUNDS} 轮，拿到工具结果后继续生成最终回答。
      * history 每项形如 {role:'user'|'assistant', text:'...'}，最多携带最近 10 条。
      */
-    private static final int MAX_TOOL_ROUNDS = 4;
-
     public String chat(String question, List<Map<String,Object>> history) throws Exception {
-        if (!configured()) throw new IllegalStateException("未配置大模型 API Key，请在 backend/src/main/resources/application.yml 的 app.llm.api-key 或环境变量 PLANT_LLM_API_KEY 中填写。");
+        if (!configured()) throw llm.notConfigured();
 
         ArrayNode messages = mapper.createArrayNode();
         messages.addObject().put("role", "system").put("content", systemPrompt());
@@ -90,17 +102,16 @@ public class AssistantService {
 
         for (int round = 0; round <= MAX_TOOL_ROUNDS; round++) {
             ObjectNode payload = mapper.createObjectNode();
-            payload.put("model", model);
+            payload.put("model", llm.model());
             payload.set("messages", messages);
-            payload.put("temperature", 0.7);
-            payload.put("max_tokens", 2048);
+            payload.put("temperature", temperature);
+            payload.put("max_tokens", maxTokens);
             payload.put("stream", false);
             payload.set("tools", toolPayload());
 
-            HttpResponse<String> response = http.send(request(payload), HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                throw new IllegalStateException("大模型接口返回 " + response.statusCode() + "：" + truncate(response.body()));
-            }
+            LlmClient.LlmResponse response = llm.chatCompletions(payload);
+            if (response.status() != 200) throw llm.failure(response);
+
             JsonNode message = mapper.readTree(response.body()).path("choices").path(0).path("message");
             JsonNode toolCalls = message.path("tool_calls");
 
@@ -130,6 +141,7 @@ public class AssistantService {
     /** 组装 tools：数据库只读工具 + 服务商自带联网搜索（按 provider 注入对应格式）。 */
     private ArrayNode toolPayload() {
         ArrayNode tools = toolService.toolDefinitions();
+        String provider = llm.provider();
         if (webSearch && "zhipu".equals(provider)) {
             ObjectNode webSearchTool = tools.addObject();
             webSearchTool.put("type", "web_search");
@@ -144,28 +156,19 @@ public class AssistantService {
         return tools;
     }
 
-    private HttpRequest request(ObjectNode payload) throws Exception {
-        return HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl.replaceAll("/+$", "") + "/chat/completions"))
-                .timeout(Duration.ofSeconds(90))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload), StandardCharsets.UTF_8))
-                .build();
-    }
-
     /**
      * 系统提示词 = 通用助手人设 + 联网能力说明 + 数据库工具说明 + 知识库语料 + 实时数据摘要。
      * 助手定位：通用智能对话 + 平台领域专家，不限定只能聊平台。
      */
     private String systemPrompt() {
+        String model = llm.model();
         StringBuilder prompt = new StringBuilder();
         prompt.append("你是\"韧安助手\"，交通网络多灾韧性评价可视化平台的数字人助手，底层由平台接入的大模型驱动（当前模型：")
               .append(model).append("）。\n\n");
         prompt.append("""
                 你的定位是一个通用智能助手：任何领域的问题都正常、完整地回答——写代码、查概念、闲聊、翻译都可以，不必把话题拉回平台；被问到"你是什么模型/底层模型"时如实说明（""")
               .append(model).append("，平台通过官方 API 接入）。\n");
-        if (webSearch && ("zhipu".equals(provider) || "moonshot".equals(provider))) {
+        if (webSearch && ("zhipu".equals(llm.provider()) || "moonshot".equals(llm.provider()))) {
             prompt.append("你具备联网搜索能力：天气、新闻、时事等实时信息应先联网搜索再回答，并注明信息来源与时效。\n");
         } else {
             prompt.append("当前你暂无联网与实时数据能力，遇到天气、新闻、股价等实时信息需求时明确说明\"无法获取实时数据\"，绝不编造具体数值。\n");
@@ -201,6 +204,4 @@ public class AssistantService {
             return "";
         }
     }
-
-    private String truncate(String text) { return text == null ? "" : (text.length() > 300 ? text.substring(0, 300) + "…" : text); }
 }

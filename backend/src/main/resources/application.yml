@@ -15,19 +15,30 @@ app:
     username: ${PLANT_DB_USERNAME:root}
     password: ${PLANT_DB_PASSWORD:root}
   llm:
-    # ==================== 当前生效：智谱 GLM（带联网搜索） ====================
-    # 通过环境变量 PLANT_LLM_API_KEY 配置密钥，不将真实密钥写入仓库
+    # ==================== 当前生效：Kimi（Moonshot） ====================
+    # 密钥只通过环境变量 PLANT_LLM_API_KEY 注入：本文件受 Git 跟踪，禁止写真实密钥
     api-key: ${PLANT_LLM_API_KEY:}
-    provider: ${PLANT_LLM_PROVIDER:zhipu}
+    provider: ${PLANT_LLM_PROVIDER:moonshot}
     web-search: ${PLANT_LLM_WEB_SEARCH:true}
-    base-url: ${PLANT_LLM_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
-    # 模型选择：glm-4-plus（能力强，按量计费）/ glm-4-flash（免费）/ glm-4-air（轻量低价）
-    model: ${PLANT_LLM_MODEL:glm-4-flash}
+    base-url: ${PLANT_LLM_BASE_URL:https://api.moonshot.cn/v1}
+    # 可用模型以 GET https://api.moonshot.cn/v1/models 为准（随账号与版本变化）。
+    # kimi-k2 系列（kimi-k2-turbo-preview / kimi-k2-0905-preview / kimi-k2-thinking 等）
+    # 已于 2026-05-25 下线，调用会返回 404 resource_not_found_error。
+    model: ${PLANT_LLM_MODEL:kimi-k2.6}
+    # Kimi k2.6 / k2.7 只接受 temperature=1，填 0.7 会报 invalid_request_error。
+    # 留空则由 AssistantService 按 provider 自动取值（moonshot=1，zhipu=0.7）。
+    temperature: ${PLANT_LLM_TEMPERATURE:}
+    # 思考型模型会把推理 token 计入上限，回答较长时适当调大
+    max-tokens: ${PLANT_LLM_MAX_TOKENS:4096}
 
-    # ============ 备用接口：Kimi（带联网搜索），切换时注释上面整段、取消本段注释 ============
-    # Key 在 platform.moonshot.cn 申请
-    # api-key: ${PLANT_LLM_API_KEY:sk-在这里填入KimiKey}
-    # provider: ${PLANT_LLM_PROVIDER:moonshot}
+    # ============ 备用：智谱 GLM（带联网搜索） ============
+    # 切换服务商必须同时改 provider / base-url / model / temperature 和 PLANT_LLM_API_KEY，
+    # 两家密钥不通用，只改 model 会出现 404 或鉴权失败。
+    # api-key: ${PLANT_LLM_API_KEY:}
+    # provider: ${PLANT_LLM_PROVIDER:zhipu}
     # web-search: ${PLANT_LLM_WEB_SEARCH:true}
-    # base-url: ${PLANT_LLM_BASE_URL:https://api.moonshot.cn/v1}
-    # model: ${PLANT_LLM_MODEL:kimi-k2-turbo-preview}
+    # base-url: ${PLANT_LLM_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
+    # 模型选择：glm-4-plus（能力强，按量计费）/ glm-4-flash（免费）/ glm-4-air（轻量低价）
+    # model: ${PLANT_LLM_MODEL:glm-4-flash}
+    # temperature: ${PLANT_LLM_TEMPERATURE:0.7}
+    # max-tokens: ${PLANT_LLM_MAX_TOKENS:2048}

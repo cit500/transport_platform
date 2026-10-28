@@ -10,6 +10,10 @@ const props = defineProps({
     roads: Object,
     assets: { type: Array, default: () => [] },
     roadResults: { type: Array, default: () => [] },
+    epicenter: { type: Object, default: null },
+    pickMode: { type: String, default: '' },
+    selectedAssetId: { type: [Number, String], default: null },
+    interactiveRegions: { type: Boolean, default: true },
     defaultLayerVisibility: {
         type: Object,
         default: () => ({ regions: true, roads: true, assets: true })
@@ -23,7 +27,7 @@ const props = defineProps({
     zoom: { type: Number, default: 8 },
     className: { type: String, default: 'heavy-map' }
 });
-const emit = defineEmits(['region-click', 'asset-click']);
+const emit = defineEmits(['region-click', 'asset-click', 'map-click']);
 const element = ref();
 let map;
 let regionLayer;
@@ -33,6 +37,7 @@ let regionLabelEntries = [];
 let roadLayer;
 let assetLayer;
 let routeLayer;
+let epicenterLayer;
 let baseLayer;
 let satellite;
 let electronic;
@@ -76,7 +81,9 @@ function regionStyle(feature) {
         weight: selected ? 2.6 : props.decoratedRegions ? 1.45 : 1.15,
         opacity: .96,
         fillColor: metricColor(value),
-        fillOpacity: props.outlineRegions ? 0 : props.decoratedRegions ? (selected ? .95 : .83) : (selected ? .72 : .56)
+        fillOpacity: props.outlineRegions ? 0 : props.decoratedRegions ? (selected ? .95 : .83) : (selected ? .72 : .56),
+        // 非交互时让点击穿透到地图，避免区县多边形拦截坐标拾取
+        interactive: props.interactiveRegions
     };
 }
 function popupContent(feature) {
@@ -143,6 +150,7 @@ function renderRegions() {
                 direction: 'center',
                 className: 'region-name-label'
             } : undefined);
+            if (!props.interactiveRegions) return;
             layer.bindPopup(popupContent(feature), { closeButton: true, maxWidth: 260 });
             layer.on({
                 mouseover() {
@@ -184,7 +192,7 @@ function renderRoads() {
             const row = resultMap.get(Number(feature.properties?.id));
             const status = row?.status || row?.passabilityStatus;
             const colors = { BLOCKED: '#ff5669', CONDITIONAL: '#efd253', REDUCED: '#ff9748', PASS: '#35da87' };
-            return { color: colors[status] || '#2d84af', weight: row ? 2.8 : 1.2, opacity: row ? .9 : .48 };
+            return { color: colors[status] || '#4fb6e8', weight: row ? 2.8 : 1.6, opacity: row ? .9 : .72, interactive: false };
         }
     });
     if (layerVisibility.roads) roadLayer.addTo(map);
@@ -196,12 +204,45 @@ function renderAssets() {
     assetLayer ||= L.layerGroup();
     props.assets.forEach((asset) => {
         if (asset.latitude == null || asset.longitude == null) return;
-        const icon = L.divIcon({ className: 'heavy-asset-marker-wrap', html: `<span class="asset-marker status-${asset.status || 'PENDING_DATA'}">${asset.assetType === 'BRIDGE' ? '桥' : '隧'}</span>`, iconSize: [19, 19], iconAnchor: [10, 10] });
+        const selected = props.selectedAssetId != null && String(asset.id ?? asset.assetId) === String(props.selectedAssetId);
+        const icon = L.divIcon({
+            className: 'heavy-asset-marker-wrap',
+            html: `<span class="asset-marker status-${asset.status || 'PENDING_DATA'}${selected ? ' is-selected' : ''}">${asset.assetType === 'BRIDGE' ? '桥' : '隧'}</span>`,
+            iconSize: [19, 19], iconAnchor: [10, 10]
+        });
         const marker = L.marker([Number(asset.latitude), Number(asset.longitude)], { icon }).addTo(assetLayer);
         marker.bindTooltip(String(asset.assetName || asset.name || '交通设施'));
         marker.on('click', () => emit('asset-click', asset));
     });
     if (layerVisibility.assets && !map.hasLayer(assetLayer)) assetLayer.addTo(map);
+}
+
+function renderEpicenter() {
+    if (!map) return;
+    epicenterLayer?.remove();
+    epicenterLayer = null;
+    const center = props.epicenter;
+    if (!center || center.latitude == null || center.longitude == null) return;
+    epicenterLayer = L.layerGroup().addTo(map);
+    (center.ringsKm || []).forEach((km) => {
+        L.circle([Number(center.latitude), Number(center.longitude)], {
+            radius: Number(km) * 1000,
+            color: '#ff8c5a',
+            weight: 1,
+            opacity: .75,
+            dashArray: '6 6',
+            fillColor: '#ff8c5a',
+            fillOpacity: .05
+        }).addTo(epicenterLayer).bindTooltip(`${km} km`);
+    });
+    const icon = L.divIcon({
+        className: 'epicenter-marker-wrap',
+        html: '<span class="epicenter-marker"><i></i></span>',
+        iconSize: [18, 18], iconAnchor: [9, 9]
+    });
+    L.marker([Number(center.latitude), Number(center.longitude)], { icon, interactive: true })
+        .addTo(epicenterLayer)
+        .bindTooltip(String(center.label || '灾害源'), { direction: 'top', offset: [0, -10] });
 }
 
 onMounted(() => {
@@ -216,7 +257,8 @@ onMounted(() => {
     assetLayer = L.layerGroup();
     if (layerVisibility.assets) assetLayer.addTo(map);
     routeLayer = L.layerGroup().addTo(map);
-    renderRegions(); renderRoads(); renderAssets();
+    renderRegions(); renderRoads(); renderAssets(); renderEpicenter();
+    map.on('click', (event) => emit('map-click', { latitude: event.latlng.lat, longitude: event.latlng.lng }));
     map.on('zoomend moveend', refreshRegionLabels);
     map.on('resize', () => {
         if (props.decoratedRegions && layerVisibility.regions && regionLayer?.getBounds().isValid()) {
@@ -232,6 +274,11 @@ watch(() => props.showRegionLabels, renderRegions);
 watch(() => [props.outlineRegions, props.regionIndicator], renderRegions);
 watch(() => [props.roads, props.roadResults], renderRoads, { deep: true });
 watch(() => props.assets, renderAssets, { deep: true });
+watch(() => props.selectedAssetId, renderAssets, { deep: true });
+watch(() => props.epicenter, renderEpicenter, { deep: true });
+watch(() => props.pickMode, (mode) => {
+    element.value?.classList.toggle('is-picking', Boolean(mode));
+});
 
 function setBase(type) {
     if (!map) return;

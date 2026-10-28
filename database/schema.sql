@@ -140,6 +140,42 @@ CREATE TABLE IF NOT EXISTS asset_road_relation (
     CONSTRAINT ck_asset_road_type CHECK (relation_type IN ('PRIMARY', 'ADJACENT'))
 ) ENGINE=InnoDB COMMENT='桥隧可绑定多边，每条道路边只能属于一个桥隧';
 
+CREATE TABLE IF NOT EXISTS fragility_model (
+    id             BIGINT       NOT NULL AUTO_INCREMENT,
+    hazard_type    VARCHAR(20)  NOT NULL COMMENT 'EARTHQUAKE或DEBRIS_FLOW',
+    asset_type     VARCHAR(20)  NOT NULL COMMENT 'BRIDGE或TUNNEL',
+    asset_id       VARCHAR(80)  NOT NULL COMMENT '来源模型库中的资产标识，平台内不参与业务关联',
+    platform_asset_id BIGINT    NULL COMMENT '绑定的平台设施 transport_asset.id；NULL 表示该资产类型的默认曲线',
+    asset_name     VARCHAR(200) NOT NULL,
+    model_id       VARCHAR(120) NOT NULL,
+    model_version  VARCHAR(40)  NOT NULL,
+    status         VARCHAR(30)  NOT NULL COMMENT 'PUBLISHED、RESEARCH_REFERENCE、UNREGISTERED_RESEARCH或PLATFORM_DEFAULT',
+    evaluable      BOOLEAN      NOT NULL DEFAULT TRUE COMMENT 'false表示归档模型，禁止用于评估',
+    published      BOOLEAN      NOT NULL DEFAULT FALSE,
+    allow_research BOOLEAN      NOT NULL DEFAULT FALSE COMMENT '未发布模型需界面显式授权后才可评估',
+    im_type        VARCHAR(30)  NOT NULL COMMENT 'PGA、TARGET_INPUT_PGA或DEBRIS_INTENSITY',
+    im_unit        VARCHAR(20)  NOT NULL DEFAULT 'g',
+    valid_min      DOUBLE       NULL COMMENT '模型验证范围下限，超出即标记外推',
+    valid_max      DOUBLE       NULL COMMENT '模型验证范围上限，超出即标记外推',
+    theta_ds1      DOUBLE       NOT NULL COMMENT 'DS1中位值',
+    theta_ds2      DOUBLE       NOT NULL,
+    theta_ds3      DOUBLE       NOT NULL,
+    theta_ds4      DOUBLE       NOT NULL,
+    beta_ds1       DOUBLE       NOT NULL COMMENT 'DS1对数标准差',
+    beta_ds2       DOUBLE       NOT NULL,
+    beta_ds3       DOUBLE       NOT NULL,
+    beta_ds4       DOUBLE       NOT NULL,
+    source_label   VARCHAR(120) NULL COMMENT '冻结研究库来源或平台默认值标记',
+    limitations    VARCHAR(1000) NULL COMMENT '模型适用边界，界面上随模型展示',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_fragility_model (hazard_type, asset_id, model_id, model_version),
+    KEY idx_fragility_lookup (hazard_type, asset_type, evaluable),
+    KEY idx_fragility_platform_asset (platform_asset_id),
+    CONSTRAINT ck_fragility_hazard CHECK (hazard_type IN ('EARTHQUAKE', 'DEBRIS_FLOW')),
+    CONSTRAINT ck_fragility_asset CHECK (asset_type IN ('BRIDGE', 'TUNNEL')),
+    CONSTRAINT ck_fragility_im CHECK (im_type IN ('PGA', 'TARGET_INPUT_PGA', 'DEBRIS_INTENSITY'))
+) ENGINE=InnoDB COMMENT='易损性模型；地震参数来自冻结研究库，泥石流为待标定的平台默认参数';
+
 CREATE TABLE IF NOT EXISTS analysis_task (
     id             BIGINT       NOT NULL AUTO_INCREMENT,
     task_type      VARCHAR(20)  NOT NULL COMMENT 'HEAVY、DISASTER、RESILIENCE或OTHER',

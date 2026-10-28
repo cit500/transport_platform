@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useClock } from '../composables/useClock.js';
 import { useUiStore } from '../stores/platform.js';
 
-const props = defineProps({ showAdminMenu: { type: Boolean, default: false } });
+defineProps({ showAdminMenu: { type: Boolean, default: false } });
 const router = useRouter();
 const route = useRoute();
 const ui = useUiStore();
@@ -20,10 +20,6 @@ function adminAction(action) {
 }
 
 function toggleAdminMenu() {
-    if (!props.showAdminMenu) {
-        ui.toast('请从首页进入数据管理');
-        return;
-    }
     adminOpen.value = !adminOpen.value;
 }
 
@@ -56,7 +52,7 @@ onUnmounted(() => {
             <button class="header-nav-item" :class="{ 'is-active': active === 'resilience' }" @click="go('resilience')">路网韧性评估</button>
             <div ref="adminWrap" class="admin-nav-wrap">
                 <button class="header-nav-item admin-nav-button" :class="{ 'is-active': active === 'admin-data' }" :aria-expanded="adminOpen" aria-haspopup="menu" @click.stop="toggleAdminMenu">管理员<span class="nav-chevron">⌄</span></button>
-                <div v-if="showAdminMenu" class="admin-menu" :class="{ 'is-open': adminOpen }" role="menu">
+                <div v-if="adminOpen" class="admin-menu" :class="{ 'is-open': adminOpen }" role="menu">
                     <button @click="adminAction('profile')">个人信息</button><button @click="adminAction('data')">数据管理</button><button @click="adminAction('settings')">系统设置</button>
                 </div>
             </div>

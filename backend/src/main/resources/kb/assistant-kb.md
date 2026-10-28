@@ -26,4 +26,4 @@
 
 前端 Vue 3 + Vue Router + Pinia + Leaflet + ECharts；后端 Java 17 + Spring Boot 3.2（Spring JDBC）；
 数据库 MySQL 8（库名 transport_platform，含空间扩展）；地图瓦片来自 Bigemap 本地服务。
-数字人助手本身由智谱 GLM 大模型（glm-4-flash，支持联网搜索）驱动：前端聊天面板 → 后端拼装上下文（本知识库 + 实时数据摘要）→ 通过 function calling 调用数据库只读工具核实数据 → 大模型生成回答；后端代码预留 Kimi 等兼容模型接口，切换只需改配置。
+数字人助手由平台接入的大模型驱动（OpenAI 兼容接口，可切换智谱 GLM 或 Kimi；具体模型名由后端 app.llm.model 决定，启动时日志会打印生效配置，被问到"你是什么模型"时以系统提示词中给出的当前模型名为准）：前端聊天面板 → 后端拼装上下文（本知识库 + 实时数据摘要）→ 通过 function calling 调用数据库只读工具核实数据 → 大模型生成回答。
