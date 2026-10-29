@@ -33,7 +33,7 @@
 | 后端框架 | Spring Boot | 3.2.5 |
 | 运行时 | Java（OpenJDK） | 17 |
 | 数据库 | MySQL | 8.0.46 |
-| AI 助手 | 智谱 GLM（glm-4-flash） | — |
+| AI 助手 | Moonshot Kimi（kimi-k2.6） | — |
 | Web 服务器 | Nginx | 1.24.0 |
 
 ---
@@ -181,9 +181,10 @@ User=root
 Environment=PLANT_DB_URL=jdbc:mysql://localhost:3306/transport_platform?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
 Environment=PLANT_DB_USERNAME=plant
 Environment="PLANT_DB_PASSWORD=<数据库密码>"
-Environment=PLANT_LLM_API_KEY=<智谱API密钥>
-Environment=PLANT_LLM_PROVIDER=zhipu
-Environment=PLANT_LLM_MODEL=glm-4-flash
+Environment=PLANT_LLM_API_KEY=<Moonshot API 密钥>
+Environment=PLANT_LLM_PROVIDER=moonshot
+Environment=PLANT_LLM_BASE_URL=https://api.moonshot.cn/v1
+Environment=PLANT_LLM_MODEL=kimi-k2.6
 ExecStart=/usr/bin/java -jar /opt/app/transport-resilience-backend-1.0.0.jar --server.port=8080
 Restart=on-failure
 RestartSec=10
@@ -209,9 +210,11 @@ sudo journalctl -u plant-backend -n 50 # 查看日志
 | PLANT_DB_URL | MySQL 连接串 | `jdbc:mysql://localhost:3306/transport_platform?...` |
 | PLANT_DB_USERNAME | 数据库用户名 | `plant` |
 | PLANT_DB_PASSWORD | 数据库密码 | `<数据库密码>` |
-| PLANT_LLM_API_KEY | 智谱 GLM API 密钥 | `<模型API密钥>` |
-| PLANT_LLM_PROVIDER | LLM 提供商 | `zhipu` |
-| PLANT_LLM_MODEL | 模型名称 | `glm-4-flash` |
+| PLANT_LLM_API_KEY | Moonshot API 密钥（与本地 `.env.llm.local` 同值） | `sk-...` |
+| PLANT_LLM_PROVIDER | LLM 提供商 | `moonshot` |
+| PLANT_LLM_BASE_URL | 接口地址 | `https://api.moonshot.cn/v1` |
+| PLANT_LLM_MODEL | 模型名称 | `kimi-k2.6` |
+| PLANT_LLM_TEMPERATURE | 不要设置：kimi-k2.6 只接受 1，留空由代码按 provider 自动取值 | — |
 
 ---
 
@@ -394,11 +397,11 @@ sudo chmod -R 755 /var/www/plant
 |----|------|----------|------|
 | 地图配置 | `.env.development` | `.env.production`（同值已写入构建产物） | 仓库外文件 |
 | 数据库凭据 | `application.yml` 默认 `root/root` | `plant` 用户，密码在 unit 内 | `/etc/systemd/system/plant-backend.service` |
-| 大模型 | moonshot `kimi-k2.6`（yml 默认） | **zhipu `glm-4-flash`**（systemd 覆盖） | 同上 |
+| 大模型 | moonshot `kimi-k2.6`（yml 默认） | **moonshot `kimi-k2.6`**（systemd 覆盖，2026-10-29 已与本地统一） | 同上 |
 | 数据库数据 | 本地测试数据 | 业务数据（12 条资产、7 条任务），**不可被本地种子覆盖** | MySQL `transport_platform` |
 | 离线瓦片 | 本地 Bigemap 服务 | `/opt/bm-server/tilesets`（6–12 级） | Docker bind mount |
 
-**改动大模型服务商时**：`provider` / `base-url` / `model` / `temperature` 与 API Key 必须同时改，两家密钥不通用。服务器当前为智谱，与本地 yml 默认的 Kimi 不同，修改 systemd 环境变量后需 `daemon-reload && restart`。
+**改动大模型服务商时**：`provider` / `base-url` / `model` / `temperature` 与 API Key 必须同时改，两家密钥不通用。2026-10-29 起服务器已与本地统一为 Moonshot `kimi-k2.6`；修改 systemd 环境变量后需 `daemon-reload && restart`，否则跑的还是内存中的旧配置。
 
 ---
 
@@ -434,6 +437,10 @@ server {
         proxy_pass http://127.0.0.1:3000/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        # bm-server 用绝对路径重定向（Location: /authorize），必须补回子路径前缀，
+        # 否则浏览器会跳到 /authorize 被 Vue Router 接管，管理页永远打不开
+        proxy_redirect ~^https?://[^/]+(/.*)$ /bigemap$1;
+        proxy_redirect ~^(/.*)$ /bigemap$1;
     }
 
     # 静态资源长缓存（Vite 构建的 assets 带 hash）
@@ -452,6 +459,8 @@ server {
 | `/api/*` | `http://127.0.0.1:8080` | Spring Boot 后端 |
 | `/bigemap/*` | `http://127.0.0.1:3000/` | Bigemap Server（Docker） |
 | `/assets/*` | 本地文件 + 长缓存 | 前端静态资源 |
+
+**管理页入口**：`http://47.108.214.99/bigemap/`（经 Nginx 反代，302 跳到 `/bigemap/authorize`）。不要用 `:3000`——该端口未在安全组放行，也不需要放行，走 80 反代即可。
 
 ---
 
@@ -581,6 +590,7 @@ rm /tmp/transport_platform.sql
 | 地图白屏/瓦片加载失败 | Bigemap Server 未启动或 token 不匹配 | `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/`；检查 `.env.production` 中 token |
 | 地图 401 未授权 | access_token 与服务器不匹配 | 在 Bigemap 管理页面获取正确 token，更新 `.env.production` |
 | 地图 401 且带任何 token 都失败 | Bigemap 账号授权被禁用/过期 | `docker exec bm-server grep -o '"disabled":[a-z]*' /root/.bm-server/app.db`，出现 `true` 说明账号已禁，需在管理页重新登录授权 |
+| Bigemap 管理页打不开、跳回平台首页 | Nginx 反代丢失 Location 前缀，`/authorize` 被 Vue Router 接管 | `curl -I http://127.0.0.1/bigemap/` 的 Location 必须是 `/bigemap/authorize`；否则给 `/bigemap/` 块补 `proxy_redirect ~^(/.*)$ /bigemap$1;` 并 `nginx -s reload` |
 | AI 助手无响应 | `PLANT_LLM_API_KEY` 未设置或密钥失效 | `sudo journalctl -u plant-backend | grep -i llm` |
 | API 404 | Nginx 未配 `/api/` 代理 | 检查 Nginx 配置中 `location /api/` 的 `proxy_pass` |
 
