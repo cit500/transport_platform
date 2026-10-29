@@ -16,7 +16,6 @@ database/backups/
 .slidep/
 .workbuddy/
 .vscode/
-tergit branch -d master
 DEPLOYMENT.private.local.md
 
 # 外部算法参考包：仅本地保留，不纳入版本库

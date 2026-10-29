@@ -109,7 +109,7 @@ sudo mysql -u plant -p'<数据库密码>' -e "USE transport_platform; SHOW TABLE
 rm /tmp/transport_platform.sql
 ```
 
-### 3.3 数据库表清单（9 张表）
+### 3.3 数据库表清单（10 张表）
 
 | 表名 | 用途 |
 |------|------|
@@ -117,11 +117,36 @@ rm /tmp/transport_platform.sql
 | analysis_task | 分析任务 |
 | asset_road_relation | 资产-道路关联 |
 | bridge_detail | 桥梁详情 |
+| fragility_model | 易损性模型（灾害评估，2026-10 新增） |
 | region | 行政区划 |
 | road_edge | 路段边 |
 | road_node | 路段节点 |
 | transport_asset | 交通资产 |
 | tunnel_detail | 隧道详情 |
+
+### 3.4 增量表迁移：fragility_model
+
+灾害风险评估的易损性曲线依赖此表。表缺失时接口不报错，但**所有桥隧会显示「待补数据」**，排查时容易被误判为算法问题。从旧库升级必须单独执行本节。
+
+```sql
+-- 1. 建表（幂等；语句取自 schema.sql 第 143-177 行）
+CREATE TABLE IF NOT EXISTS fragility_model ( ... );
+-- 旧库已有本表但缺 platform_asset_id 列时，改用维护脚本：
+-- mysql -uplant -p transport_platform < database/maintenance/alter_fragility_platform_asset.sql
+
+-- 2. 灌入模型参数（幂等，按唯一键更新，可重复执行）
+-- mysql -uplant -p transport_platform < database/maintenance/seed_fragility_models.sql
+```
+
+验证（应返回 4 行、合计 8 条模型）：
+
+```sql
+SELECT hazard_type, asset_type, COUNT(*),
+       SUM(published) AS published, SUM(allow_research) AS research
+FROM fragility_model GROUP BY hazard_type, asset_type;
+```
+
+预期：`EARTHQUAKE/BRIDGE` 4 条（3 发布）、`EARTHQUAKE/TUNNEL` 2 条（均需授权）、`DEBRIS_FLOW` 桥隧各 1 条。
 
 ---
 
@@ -356,10 +381,24 @@ sudo chmod -R 755 /var/www/plant
 
 | 配置项 | 本地开发值 | 生产值 |
 |--------|-----------|--------|
-| Bigemap URL | `http://127.0.0.1:9000` | `http://47.108.214.99/bigemap` |
+| Bigemap URL | `http://127.0.0.1:9000` | `http://47.108.214.99/bigemap`（Nginx 反代 `127.0.0.1:3000`） |
 | Bigemap Token | `<本地地图访问令牌>` | `<生产地图访问令牌>` |
 | 卫星图层 ID | `bigemap.7f604xec` | `bigemap.ax3i19u5` |
 | 电子图层 ID | `bigemap.7lurvljd` | `bigemap.4aelfhj2` |
+
+### 6.4 本地与服务器完整差异清单
+
+除地图外，以下配置**只存在于服务器**，不在版本库中，`git pull` / 重新部署都不会覆盖，请勿误删：
+
+| 项 | 本地 | 云服务器 | 载体 |
+|----|------|----------|------|
+| 地图配置 | `.env.development` | `.env.production`（同值已写入构建产物） | 仓库外文件 |
+| 数据库凭据 | `application.yml` 默认 `root/root` | `plant` 用户，密码在 unit 内 | `/etc/systemd/system/plant-backend.service` |
+| 大模型 | moonshot `kimi-k2.6`（yml 默认） | **zhipu `glm-4-flash`**（systemd 覆盖） | 同上 |
+| 数据库数据 | 本地测试数据 | 业务数据（12 条资产、7 条任务），**不可被本地种子覆盖** | MySQL `transport_platform` |
+| 离线瓦片 | 本地 Bigemap 服务 | `/opt/bm-server/tilesets`（6–12 级） | Docker bind mount |
+
+**改动大模型服务商时**：`provider` / `base-url` / `model` / `temperature` 与 API Key 必须同时改，两家密钥不通用。服务器当前为智谱，与本地 yml 默认的 Kimi 不同，修改 systemd 环境变量后需 `daemon-reload && restart`。
 
 ---
 
@@ -465,23 +504,49 @@ sudo mysql -u plant -p'<数据库密码>' -e "USE transport_platform; SHOW TABLE
 npm run dev
 # 3. 构建生产版本（自动加载 .env.production）
 npm run build
-# 4. 上传
-scp -r dist\* admin@47.108.214.99:/var/www/plant/
+
+# 4. 校验产物里的地图配置必须是生产值（写死进 bundle，错了地图直接失效）
+Select-String -Path dist\assets\TransportMap-*.js -Pattern 'http://47.108.214.99/bigemap|bigemap\.ax3i19u5|bigemap\.4aelfhj2'
+
+# 5. 上传
+scp -r dist\* admin@47.108.214.99:/tmp/plant-new/
 ```
 
 ```bash
-# 5. 服务器修复权限
-sudo chmod -R 755 /var/www/plant
+# 6. 清空旧 assets 再替换（直接覆盖会让历史 chunk 无限累积，旧文件名长期可访问）
+sudo rm -rf /var/www/plant/assets
+sudo cp -a /tmp/plant-new/. /var/www/plant/ && sudo rm -rf /tmp/plant-new
+sudo chown -R admin:admin /var/www/plant
+sudo find /var/www/plant -type d -exec chmod 755 {} \;
+sudo find /var/www/plant -type f -exec chmod 644 {} \;
+
+# 7. 验证：首页 200，且 index.html 引用的 chunk 全部 200
+curl -s http://47.108.214.99/ | grep -oE '(src|href)="/assets/[^"]+"'
 ```
 
 ### 9.3 后端更新部署流程
 
 ```powershell
-# 1. 本地打包
+# 1. 本地打包（必须带 clean，否则 target/classes 里的旧资源不会刷新）
 cd backend && mvn clean package -DskipTests
-# 2. 上传
-scp target/transport-resilience-backend-1.0.0.jar admin@47.108.214.99:/opt/app/
+
+# 2. 上传前校验 jar 内配置（2026-10-29 曾因 application.yml 混入杂字符导致启动失败）
+unzip -p target\transport-resilience-backend-1.0.0.jar BOOT-INF/classes/application.yml | Select-Object -First 6
 ```
+
+```bash
+# 3. 备份旧包后替换（失败可 cp 备份包回 /opt/app 再 restart 回滚）
+cp /opt/app/transport-resilience-backend-1.0.0.jar /opt/backup/backend-$(date +%Y%m%d-%H%M).jar
+sudo systemctl daemon-reload
+sudo systemctl restart plant-backend
+
+# 4. 验证
+systemctl is-active plant-backend && ss -lntp | grep 8080
+curl -s http://127.0.0.1:8080/api/disaster/bootstrap | head -c 200
+```
+
+**注意**：unit 文件改动后必须 `daemon-reload`，否则 `systemctl cat` 看到的是磁盘版本、实际运行的仍是内存中的旧版本（`status` 会提示 "changed on disk"）。
+
 
 ```bash
 # 3. 服务器重启后端
@@ -515,6 +580,7 @@ rm /tmp/transport_platform.sql
 | 502 Bad Gateway | 后端进程崩溃 | `sudo journalctl -u plant-backend -n 50` |
 | 地图白屏/瓦片加载失败 | Bigemap Server 未启动或 token 不匹配 | `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/`；检查 `.env.production` 中 token |
 | 地图 401 未授权 | access_token 与服务器不匹配 | 在 Bigemap 管理页面获取正确 token，更新 `.env.production` |
+| 地图 401 且带任何 token 都失败 | Bigemap 账号授权被禁用/过期 | `docker exec bm-server grep -o '"disabled":[a-z]*' /root/.bm-server/app.db`，出现 `true` 说明账号已禁，需在管理页重新登录授权 |
 | AI 助手无响应 | `PLANT_LLM_API_KEY` 未设置或密钥失效 | `sudo journalctl -u plant-backend | grep -i llm` |
 | API 404 | Nginx 未配 `/api/` 代理 | 检查 Nginx 配置中 `location /api/` 的 `proxy_pass` |
 
