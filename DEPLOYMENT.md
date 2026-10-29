@@ -460,7 +460,18 @@ server {
 | `/bigemap/*` | `http://127.0.0.1:3000/` | Bigemap Server（Docker） |
 | `/assets/*` | 本地文件 + 长缓存 | 前端静态资源 |
 
-**管理页入口**：`http://47.108.214.99/bigemap/`（经 Nginx 反代，302 跳到 `/bigemap/authorize`）。不要用 `:3000`——该端口未在安全组放行，也不需要放行，走 80 反代即可。
+**管理页入口必须是 `:3000`，不能走 `/bigemap/` 子路径。** bm-server 是单端口应用：授权页的表单 action 与 OAuth 回调地址都由容器内 `app.json` 的 `url`（即 `BS_URL`）拼成**绝对地址**，子路径反代下会被拼坏——实测把 `url` 改成 `http://47.108.214.99/bigemap` 后，它会生成 `/bigemap/bigemap/...` 的双前缀，反而更糟。`/bigemap/` 只用于取瓦片（瓦片路径由前端拼接，不依赖该配置）。
+
+管理页两种打开方式：
+
+1. **SSH 隧道**（无需改安全组，一次性授权够用）：
+   ```powershell
+   ssh -i D:\LYC\Downloads\LYC.pem -L 3000:127.0.0.1:3000 root@47.108.214.99
+   ```
+   保持窗口不关，浏览器打开 `http://localhost:3000/`。此时 `url` 为 `http://localhost:3000`，与访问地址一致，OAuth 回调能正确返回。
+2. **阿里云安全组放行 TCP 3000**，然后直接访问 `http://47.108.214.99:3000/`（需把 `app.json` 的 `url` 同步改为该地址）。
+
+管理密码见容器环境变量 `BS_PWD`（当前为 `password`）。
 
 ---
 
@@ -590,7 +601,7 @@ rm /tmp/transport_platform.sql
 | 地图白屏/瓦片加载失败 | Bigemap Server 未启动或 token 不匹配 | `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/`；检查 `.env.production` 中 token |
 | 地图 401 未授权 | access_token 与服务器不匹配 | 在 Bigemap 管理页面获取正确 token，更新 `.env.production` |
 | 地图 401 且带任何 token 都失败 | Bigemap 账号授权被禁用/过期 | `docker exec bm-server grep -o '"disabled":[a-z]*' /root/.bm-server/app.db`，出现 `true` 说明账号已禁，需在管理页重新登录授权 |
-| Bigemap 管理页打不开、跳回平台首页 | Nginx 反代丢失 Location 前缀，`/authorize` 被 Vue Router 接管 | `curl -I http://127.0.0.1/bigemap/` 的 Location 必须是 `/bigemap/authorize`；否则给 `/bigemap/` 块补 `proxy_redirect ~^(/.*)$ /bigemap$1;` 并 `nginx -s reload` |
+| Bigemap 管理页打不开、跳回平台首页 | 管理页走了 `/bigemap/` 子路径，表单 action 被拼成平台根路径 | 管理页只能用 `:3000`（SSH 隧道或安全组放行），详见 §7；`/bigemap/` 仅供取瓦片 |
 | AI 助手无响应 | `PLANT_LLM_API_KEY` 未设置或密钥失效 | `sudo journalctl -u plant-backend | grep -i llm` |
 | API 404 | Nginx 未配 `/api/` 代理 | 检查 Nginx 配置中 `location /api/` 的 `proxy_pass` |
 
