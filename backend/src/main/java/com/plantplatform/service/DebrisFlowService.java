@@ -75,6 +75,13 @@ public class DebrisFlowService {
             }
             """;
 
+    /**
+     * 单次请求的 max_tokens。调用走 {@link LlmClient#completeStructured}，会显式关闭
+     * 思考模式，该额度全部用于正文 JSON（实测正文 300~500 token），2000 足够且不浪费。
+     * 若哪天退回普通思考调用，需注意 Kimi 的推理 token 也计入此上限，取值过小会导致正文为空。
+     */
+    private static final int MAX_TOKENS = 2048;
+
     public DebrisFlowService(LlmClient llm) { this.llm = llm; }
 
     /**
@@ -103,8 +110,9 @@ public class DebrisFlowService {
             return out;
         }
         try {
-            // 温度必须用服务商可接受的值（Kimi 只允许 1），否则会被直接拒绝
-            String raw = llm.complete(SYSTEM_PROMPT, userPrompt, llm.defaultTemperature(), 2048);
+            // 本调用只需要按固定结构填值，不需要长链推理：显式关闭思考模式，
+            // 温度随之固定为服务商非思考模式唯一可接受的 0.6。
+            String raw = llm.completeStructured(SYSTEM_PROMPT, userPrompt, MAX_TOKENS);
             Map<String,Object> data = parse(raw);
             out.put("source", "LLM");
             out.put("message", "已由大模型按固定结构给出环境参数，请核对后使用");
@@ -132,6 +140,11 @@ public class DebrisFlowService {
         Map<String,Object> data = fallbackData();
         try {
             JsonNode root = llm.mapper().readTree(text);
+            // 模型有时会自造中文键名，此时所有字段都会取默认值，必须明确判为失败，
+            // 否则会把"默认参数"伪装成"大模型给出的参数"。
+            if (!root.has("rainfall") && !root.has("terrain") && !root.has("material")) {
+                throw new IllegalStateException("返回的 JSON 缺少约定字段 rainfall/terrain/material");
+            }
             data.put("last6hMm", clamp(node(root, "rainfall", "last6hMm"), 0, 800, fallback("last6hMm")));
             data.put("last24hMm", clamp(node(root, "rainfall", "last24hMm"), 0, 1500, fallback("last24hMm")));
             data.put("intensityMmH", clamp(node(root, "rainfall", "intensityMmH"), 0, 300, fallback("intensityMmH")));
@@ -151,6 +164,9 @@ public class DebrisFlowService {
             data.put("sources", sources(root));
         } catch (Exception e) {
             log.warn("泥石流参数 JSON 解析失败，回退默认值：{}", e.getMessage());
+            // 抛出而不是静默返回默认值：调用方据此把 source 标为 FALLBACK 并给出原因，
+            // 避免把默认参数显示成"大模型结果"。
+            throw new IllegalStateException("大模型返回内容不符合约定结构（" + e.getMessage() + "）");
         }
         return data;
     }

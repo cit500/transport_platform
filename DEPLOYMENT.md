@@ -214,7 +214,16 @@ sudo journalctl -u plant-backend -n 50 # 查看日志
 | PLANT_LLM_PROVIDER | LLM 提供商 | `moonshot` |
 | PLANT_LLM_BASE_URL | 接口地址 | `https://api.moonshot.cn/v1` |
 | PLANT_LLM_MODEL | 模型名称 | `kimi-k2.6` |
-| PLANT_LLM_TEMPERATURE | 不要设置：kimi-k2.6 只接受 1，留空由代码按 provider 自动取值 | — |
+| PLANT_LLM_TEMPERATURE | 不要设置：kimi-k2.6 思考模式只接受 1、非思考模式只接受 0.6，留空由代码按模式自动取值 | — |
+
+> **Kimi 思考模式的两条硬约束**（2026-11-03 实测，踩过坑）：
+> 1. **思考模式的推理 token 计入 `max_tokens`**。`kimi-k2.6` 处理同一个泥石流取数提示词，推理长度在 1727~4096 token 之间波动；`max_tokens` 给小了推理会吃满配额，返回 `finish_reason=length` 且 `content` 为空字符串，单次耗时还会涨到 56~108 秒。
+> 2. **关闭思考后只接受 `temperature=0.6`**（思考模式是 1.0）。两者混用会直接返回 `invalid temperature: only 0.6 is allowed for this model`。
+>
+> 因此代码里分两条路：数字人助手走 `complete()`（思考开启、温度 1.0，回答质量优先）；
+> 泥石流环境参数这类**结构化取数**走 `completeStructured()`（`thinking:{"type":"disabled"}`、温度 0.6），
+> 实测耗时从 56~108 秒降到 3.5~8 秒且不再出现空正文。
+> 新增结构化取数功能时不要直接调 `complete()`，否则会复现同样的截断问题。
 
 ---
 
@@ -604,7 +613,10 @@ rm /tmp/transport_platform.sql
 | 地图 401 未授权 | access_token 与服务器不匹配 | 在 Bigemap 管理页面获取正确 token，更新 `.env.production` |
 | 地图 401 且带任何 token 都失败 | Bigemap 账号授权被禁用/过期 | `docker exec bm-server grep -o '"disabled":[a-z]*' /root/.bm-server/app.db`，出现 `true` 说明账号已禁，需在管理页重新登录授权 |
 | Bigemap 管理页打不开、跳回平台首页 | 管理页走了 `/bigemap/` 子路径，表单 action 被拼成平台根路径 | 管理页只能用 `:3000`（SSH 隧道或安全组放行），详见 §7；`/bigemap/` 仅供取瓦片 |
-| AI 助手无响应 | `PLANT_LLM_API_KEY` 未设置或密钥失效 | `sudo journalctl -u plant-backend | grep -i llm` |
+| AI 助手无响应 | `PLANT_LLM_API_KEY` 未设置或密钥失效 | `sudo journalctl -u plant-backend \| grep -i llm` |
+| 泥石流「用大模型获取环境数据」提示"大模型未返回有效内容 / 输出被 max_tokens 截断" | 走的思考模式，推理 token 吃满了 `max_tokens` | 该接口应调 `LlmClient.completeStructured()`（关闭思考）；若被改回 `complete()` 会复现，见 §4.5 |
+| 大模型报 `invalid temperature: only 0.6 is allowed` | 关闭思考后传了温度 1.0 | 非思考模式固定 0.6，见 §4.5 |
+| 大模型报 `reached organization max RPM: 3` | 账号限流（该 Key 实测 **3 次/分钟**） | 等 1~2 秒重试；演示时避免连续快速点击取数 |
 | API 404 | Nginx 未配 `/api/` 代理 | 检查 Nginx 配置中 `location /api/` 的 `proxy_pass` |
 
 ---
