@@ -504,8 +504,15 @@ button { color: inherit; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: rgba(2, 19, 37, .97); color: #ccecf8; border: 1px solid rgba(67, 217, 255, .48); }
 .leaflet-popup-content-wrapper { border-radius: 2px; box-shadow: 0 0 20px rgba(31, 157, 220, .34); }
 .leaflet-popup-close-button { color: #7dddfd !important; }
-.region-map-popup { min-width: 190px; display: grid; gap: 6px; }
-.region-map-popup > strong { padding-bottom: 5px; color: var(--v2-cyan); font-size: 14px; border-bottom: 1px solid rgba(67, 217, 255, .24); }
+/* 区县弹卡外框：Leaflet 默认内容边距 13px 19px 过宽，收紧到 10px 11px，
+   配合 160px 内容宽 → 整卡 160+22+4 = 186px（原 232px 的 80%） */
+.leaflet-popup-content { margin: 10px 11px; line-height: 1.4; }
+.region-map-popup { width: 160px; display: grid; gap: 6px; }
+.region-map-popup > strong {
+    /* 右上角关闭按钮占 18px，标题右侧留 8px 避让；11 字县名 13px 恰为 143px */
+    padding: 0 8px 5px 0; color: var(--v2-cyan); font-size: 13px;
+    border-bottom: 1px solid rgba(67, 217, 255, .24); white-space: nowrap;
+}
 /* 三行两列：标签列放宽（"灾害恢复能力"6 字需 ~74px 以上），数值列收窄，两列按 1.6 : 1 分配 */
 .region-map-popup > div { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 7px; align-items: center; }
 .region-map-popup span { color: #719bb2; white-space: nowrap; }
