@@ -237,12 +237,14 @@ function renderEpicenter() {
     (center.ringsKm || []).forEach((km) => {
         L.circle([Number(center.latitude), Number(center.longitude)], {
             radius: Number(km) * 1000,
-            color: '#ff8c5a',
-            weight: 1,
-            opacity: .75,
-            dashArray: '6 6',
-            fillColor: '#ff8c5a',
-            fillOpacity: .05
+            color: '#ff6b35',
+            weight: 1.5,
+            // 影像底图偏暗，原来的 0.75 透明度线条发虚；描边提到 1（实线感），
+            // 环带填充略提一点以便分辨三级影响圈
+            opacity: 1,
+            dashArray: '5 5',
+            fillColor: '#ff6b35',
+            fillOpacity: .08
         }).addTo(epicenterLayer).bindTooltip(`${km} km`);
     });
     const icon = L.divIcon({
