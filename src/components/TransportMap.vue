@@ -77,11 +77,13 @@ function regionStyle(feature) {
     const value = detail[props.regionIndicator];
     return {
         className: props.decoratedRegions ? 'district-region-shape' : '',
+        // 参照层去彩色化：仅轮廓模式（与卫星底图搭配）用灰白虚线，
+        // 避免与路网数据层的彩色编码抢视觉；装饰模式（首页）保持青色实线。
         color: props.decoratedRegions ? (selected ? '#d8fbff' : '#50d7f3')
-            // 仅轮廓模式多与卫星底图搭配，深灰在影像上不可见，改用亮蓝细线
-            : props.outlineRegions ? (selected ? '#eafcff' : '#6fc7e8')
+            : props.outlineRegions ? (selected ? '#e6edf3' : '#9aa8b6')
             : (selected ? '#15191d' : '#3c444b'),
-        weight: selected ? 2.6 : props.decoratedRegions ? 1.45 : props.outlineRegions ? 1.4 : 1.15,
+        weight: selected ? 2.6 : props.decoratedRegions ? 1.45 : props.outlineRegions ? 1.2 : 1.15,
+        dashArray: props.outlineRegions && !props.decoratedRegions ? '5 4' : undefined,
         opacity: .96,
         fillColor: metricColor(value),
         fillOpacity: props.outlineRegions ? 0 : props.decoratedRegions ? (selected ? .95 : .83) : (selected ? .72 : .56),
@@ -189,12 +191,16 @@ function renderRoads() {
     if (!map || !props.roads) return;
     roadLayer?.remove();
     const resultMap = new Map(props.roadResults.map((item) => [Number(item.roadEdgeId || item.id), item]));
+    // 路网着色按"任务"区分：各页面自己决定传入的 roadResults。
+    // 有结果行的路走状态色标（任务数据层），无结果的路用中性蓝灰低透明度
+    // （表示"存在但无信息"），不与行政边界（灰白虚线）和灾害源高亮抢视觉。
+    // 后续韧性模块若需连续指标/关键性排名着色，在 row 分支里扩展映射即可。
     roadLayer = L.geoJSON(props.roads, {
         style(feature) {
             const row = resultMap.get(Number(feature.properties?.id));
             const status = row?.status || row?.passabilityStatus;
             const colors = { BLOCKED: '#ff5669', CONDITIONAL: '#efd253', REDUCED: '#ff9748', PASS: '#35da87' };
-            return { color: colors[status] || '#4fb6e8', weight: row ? 2.8 : 1.6, opacity: row ? .9 : .72, interactive: false };
+            return { color: colors[status] || '#8fb4cf', weight: row ? 2.8 : 1.6, opacity: row ? .9 : .58, interactive: false };
         }
     });
     if (layerVisibility.roads) roadLayer.addTo(map);
