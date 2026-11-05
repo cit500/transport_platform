@@ -124,7 +124,9 @@ function addRegionLabel(feature, layer, name) {
     const value = metric == null ? '' : `<em>${numberText(metric, 1)}</em>`;
     const icon = L.divIcon({
         className: 'district-label-marker',
-        html: `<span class="district-pin"></span><span class="district-leader"></span><span class="district-label">${escapeHtml(name)}${value}</span>`,
+        // 圆点锚仅与"带指标数值"的标签搭配（首页）；纯名称标签（灾害页等）不加点，
+        // 各元素均为绝对定位，去掉 pin 不影响引线与名称牌的位置
+        html: `${value ? '<span class="district-pin"></span>' : ''}<span class="district-leader"></span><span class="district-label">${escapeHtml(name)}${value}</span>`,
         iconSize: [1, 1], iconAnchor: [0, 0]
     });
     const marker = L.marker(position, { icon, interactive: false, keyboard: false });
