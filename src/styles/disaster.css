@@ -478,3 +478,13 @@
 .is-picking { cursor:crosshair !important; }
 .asset-marker.is-selected { box-shadow:0 0 0 3px #50d7f3; transform:scale(1.14); z-index:600; }
 
+/* 地图图层弹层（复用 heavy-layer-popover 骨架，仅做本页微调） */
+.disaster-map-panel .heavy-layer-popover { top:118px; }
+.disaster-map-panel .map-base-options { grid-template-columns:repeat(2,1fr); gap:6px; }
+.disaster-map-panel .map-base-options button { min-height:32px; line-height:1.2; }
+.disaster-map-panel .heavy-layer-popover label {
+    display:flex; align-items:center; gap:7px; min-height:24px; cursor:pointer;
+}
+.disaster-map-panel .heavy-layer-popover label.is-locked { opacity:.55; cursor:not-allowed; }
+.disaster-map-panel .heavy-layer-popover input[type='checkbox'] { accent-color:#42cfff; flex:none; }
+

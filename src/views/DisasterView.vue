@@ -43,6 +43,27 @@ const logs = ref([]);
 const mapRef = ref();
 const saveDialog = reactive({ open: false, name: '', saving: false });
 
+// ------------------------------------------------------------------ 地图图层
+const layerOpen = ref(false);
+const baseType = ref('satellite');            // 卫星 / 电子，不提供无底图模式
+const regionLabels = ref(false);              // 区县名称标签（默认关闭，保持原视图）
+const overlays = reactive({ regions: true, roads: true, assets: true });
+
+function setBaseLayer(name) {
+    if (!['satellite', 'electronic'].includes(name)) return;
+    baseType.value = name;
+    mapRef.value?.setBase(name);
+}
+function setOverlay(name, checked) {
+    overlays[name] = checked;
+    mapRef.value?.toggleLayer(name, checked);
+}
+// 复位 = 聚焦当前灾害源（震中/泥石流源），比回到固定初始视图更符合本页语义
+function focusHazard() {
+    if (form.latitude == null || form.longitude == null) return;
+    mapRef.value?.focus(form.latitude, form.longitude, 9);
+}
+
 // 地图区与底部指标栏之间的可拖拽分隔
 const centerCol = ref();
 const bottomHeight = ref(230);
@@ -429,7 +450,8 @@ onMounted(async () => {
                 <TransportMap ref="mapRef" :regions="mapData.regions" :roads="mapData.roads"
                               :assets="mapAssets" :epicenter="epicenter"
                               :pick-mode="pickMode" :selected-asset-id="selectedAssetId"
-                              :interactive-regions="false"
+                              :interactive-regions="false" :outline-regions="true"
+                              :region-indicator="''" :show-region-labels="regionLabels"
                               @map-click="onMapClick" @asset-click="onAssetClick" />
                 <div class="map-grid-overlay"></div>
                 <div class="heavy-map-caption">
@@ -437,9 +459,32 @@ onMounted(async () => {
                     <span>{{ hazardLabel }}评估 · {{ mergedSummary?.level || '待评估' }}</span>
                 </div>
                 <div class="heavy-map-tools">
-                    <button @click="mapRef.zoomIn()">＋</button>
-                    <button @click="mapRef.zoomOut()">−</button>
-                    <button @click="mapRef.reset()">⌄</button>
+                    <button title="放大地图" aria-label="放大地图" @click="mapRef.zoomIn()">＋</button>
+                    <button title="缩小地图" aria-label="缩小地图" @click="mapRef.zoomOut()">−</button>
+                    <button title="聚焦灾害源" aria-label="聚焦灾害源" @click="focusHazard">⌂</button>
+                    <button title="图层控制" aria-label="图层控制" :aria-expanded="layerOpen"
+                            @click="layerOpen = !layerOpen">▱</button>
+                </div>
+                <div class="heavy-layer-popover" :class="{ 'is-open': layerOpen }">
+                    <strong>地图模式</strong>
+                    <div class="map-base-options" role="radiogroup" aria-label="地图模式">
+                        <button type="button" role="radio" :aria-checked="baseType === 'satellite'"
+                                :class="{ 'is-active': baseType === 'satellite' }"
+                                @click="setBaseLayer('satellite')">卫星地图</button>
+                        <button type="button" role="radio" :aria-checked="baseType === 'electronic'"
+                                :class="{ 'is-active': baseType === 'electronic' }"
+                                @click="setBaseLayer('electronic')">电子地图</button>
+                    </div>
+                    <strong>叠加图层</strong>
+                    <label><input type="checkbox" :checked="overlays.regions"
+                                  @change="setOverlay('regions', $event.target.checked)"> 行政边界</label>
+                    <label><input v-model="regionLabels" type="checkbox"> 区县名称标签</label>
+                    <label><input type="checkbox" :checked="overlays.roads"
+                                  @change="setOverlay('roads', $event.target.checked)"> 路网</label>
+                    <label :class="{ 'is-locked': pickMode.startsWith('asset-') }"
+                           :title="pickMode.startsWith('asset-') ? '点选模式下桥隧标记保持显示' : ''">
+                        <input type="checkbox" :checked="overlays.assets" :disabled="pickMode.startsWith('asset-')"
+                               @change="setOverlay('assets', $event.target.checked)"> 桥隧标记</label>
                 </div>
                 <div v-if="pickMode" class="map-pick-banner">
                     {{ pickMode === 'epicenter' ? `在地图上点击选取${hazardLabel}源位置`

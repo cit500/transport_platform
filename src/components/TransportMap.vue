@@ -77,8 +77,11 @@ function regionStyle(feature) {
     const value = detail[props.regionIndicator];
     return {
         className: props.decoratedRegions ? 'district-region-shape' : '',
-        color: props.decoratedRegions ? (selected ? '#d8fbff' : '#50d7f3') : (selected ? '#15191d' : '#3c444b'),
-        weight: selected ? 2.6 : props.decoratedRegions ? 1.45 : 1.15,
+        color: props.decoratedRegions ? (selected ? '#d8fbff' : '#50d7f3')
+            // 仅轮廓模式多与卫星底图搭配，深灰在影像上不可见，改用亮蓝细线
+            : props.outlineRegions ? (selected ? '#eafcff' : '#6fc7e8')
+            : (selected ? '#15191d' : '#3c444b'),
+        weight: selected ? 2.6 : props.decoratedRegions ? 1.45 : props.outlineRegions ? 1.4 : 1.15,
         opacity: .96,
         fillColor: metricColor(value),
         fillOpacity: props.outlineRegions ? 0 : props.decoratedRegions ? (selected ? .95 : .83) : (selected ? .72 : .56),
@@ -137,19 +140,18 @@ function renderRegions() {
     if (!map || !props.regions) return;
     regionLayer?.remove();
     regionLabelLayer?.remove();
-    regionLabelLayer = props.decoratedRegions ? L.layerGroup() : null;
+    // 名称标签层：装饰模式（首页）与普通模式（灾害页等）都可用；
+    // 普通模式下未传 regionDetails/regionIndicator，标签只显示区县名。
+    regionLabelLayer = (props.decoratedRegions || props.showRegionLabels) ? L.layerGroup() : null;
     regionLabelEntries = [];
     regionLayer = L.geoJSON(props.regions, {
         renderer: regionSvgRenderer || undefined,
         style: regionStyle,
         onEachFeature(feature, layer) {
             const name = feature.properties?.regionName || feature.properties?.name || feature.properties?.NAME;
-            if (name && props.decoratedRegions && props.showRegionLabels) addRegionLabel(feature, layer, name);
-            if (name && !props.decoratedRegions) layer.bindTooltip(name, props.showRegionLabels ? {
-                permanent: true,
-                direction: 'center',
-                className: 'region-name-label'
-            } : undefined);
+            if (name && props.showRegionLabels) addRegionLabel(feature, layer, name);
+            // 悬停提示仅在关闭标签时绑定，避免标签与气泡同时出现
+            if (name && !props.decoratedRegions && !props.showRegionLabels) layer.bindTooltip(name);
             if (!props.interactiveRegions) return;
             layer.bindPopup(popupContent(feature), { closeButton: true, maxWidth: 260 });
             layer.on({
