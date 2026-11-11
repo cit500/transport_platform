@@ -8,7 +8,7 @@
 这个包是**给协作者对齐用的**，不是打包好的可执行安装程序。里面有三样东西：
 
 1. **完整源码**（前端 Vue 3 + 后端 Spring Boot）：看清现有模块怎么分层、接口怎么定、地图怎么用；
-2. **数据库全量导出**（`database/handoff/transport_platform_20261105.sql`，含 10 张表结构与全部数据）：导入后能直接复现当前界面的数据状态，也能看懂分析任务/结果如何落库；
+2. **数据库全量导出**（`database/handoff/transport_platform_20261111.sql`，含 10 张表结构与全部数据）：导入后能直接复现当前界面的数据状态，也能看懂分析任务/结果如何落库；
 3. **技术文档**（`docs/`）：总体架构、接口、数据模型、灾害模块实现基线。
 
 **开发具体模块时请遵循两条约定**：专业算法口径以外部方法包为准（见 §9，本次未随包提供，需另索要）；数据与界面展示以本平台为准。
@@ -66,7 +66,7 @@ docs/                     技术文档（见 §3 阅读顺序）
 
 ```bash
 mysql -uroot -p -e "CREATE DATABASE transport_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
-mysql -uroot -p transport_platform < database/handoff/transport_platform_20261105.sql
+mysql -uroot -p transport_platform < database/handoff/transport_platform_20261111.sql
 ```
 
 **启动后端**（默认 `localhost:3306` / `root` / `root`，可用环境变量覆盖）
@@ -98,9 +98,9 @@ npm run dev                          # 监听 3000，/api 代理到 8080
 | 表 | 行数 | 用途与口径 |
 |---|---|---|
 | `region` | 37 | 重庆区县，含中心点坐标与指标字段 |
-| `road_node` | 8,516 | 路网节点（稳定编码、经纬度） |
-| `road_edge` | 10,496 | 路网边（OSM 原始边，含方向、车道、速度、容量、`physical_road_id` 物理道路分组、WKT 线形，经度在前） |
-| `transport_asset` | 10 | 桥隧设施台账（类型、名称、坐标、状态） |
+| `road_node` | 8,488 | 路网节点（稳定编码、经纬度） |
+| `road_edge` | 11,742 | 路网边（OSM 原始边，含方向、车道、限速、WKT 线形 `geom`（经度在前）、`source_bridge_flag`/`source_tunnel_flag`；单向 10,652 / 双向 1,090，无缺速度与车道数据；无 capacity_vph 列） |
+| `transport_asset` | 11 | 桥隧设施台账（类型、名称、坐标、状态） |
 | `bridge_detail` / `tunnel_detail` | 7 / 5 | 桥梁/隧道专业属性（结构类型、跨径、长度、等级等） |
 | `asset_road_relation` | 21 | 桥隧 ↔ 路网边绑定。**规则：一条边只能被一个设施占用**，首条为主边并决定统计行政区 |
 | `fragility_model` | 8 | 易损性模型（地震桥梁 4 + 地震隧道 2 + 泥石流桥/隧各 1），存对数正态中位值 θ、离散度 β、适用 IM 类型与来源标注 |
