@@ -19,7 +19,7 @@ let observer;
 
 const option = computed(() => {
     const rows = (props.curves || []).filter((row) => !row.invalid);
-    const axis = rows.map((row) => row.im);
+    const axis = rows.map((row) => Number(row.im));
     const colors = ['#829BAA', '#668AA0', '#52768F', '#405D79'];
     const series = [1, 2, 3, 4].map((ds) => ({
         name: `P(DS≥DS${ds})`,
@@ -30,13 +30,28 @@ const option = computed(() => {
         itemStyle: { color: colors[ds - 1] },
         data: rows.map((row) => row[`exceedanceDS${ds}`])
     }));
-    if (props.currentIm != null && series.length) {
+    // x 轴是类目轴：markLine 的 xAxis 会被解释为"类目下标"而非数值，
+    // 必须把当前 IM 换算成最近采样点的下标，否则虚线永远贴在最左侧。
+    // 采样点由后端线性等距生成（validMin→validMax），按下标换算足够精确。
+    let imIndex = null;
+    let outOfRange = false;
+    if (props.currentIm != null && axis.length >= 2) {
+        const min = axis[0];
+        const max = axis[axis.length - 1];
+        outOfRange = props.currentIm < min || props.currentIm > max;
+        const clamped = Math.min(Math.max(props.currentIm, min), max);
+        imIndex = Math.round(((clamped - min) / (max - min)) * (axis.length - 1));
+    }
+    if (imIndex != null && series.length) {
         series[0].markLine = {
             silent: true,
             symbol: 'none',
-            label: { formatter: `当前 ${props.currentIm} ${props.unit}`, color: '#D85A30', fontSize: 11 },
+            label: {
+                formatter: `当前 ${props.currentIm} ${props.unit}${outOfRange ? '（超出曲线范围）' : ''}`,
+                color: '#D85A30', fontSize: 11
+            },
             lineStyle: { color: '#D85A30', type: 'dashed', width: 1 },
-            data: [{ xAxis: props.currentIm }]
+            data: [{ xAxis: imIndex }]
         };
     }
     return {
