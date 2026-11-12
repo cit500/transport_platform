@@ -1,0 +1,44 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>节点安排与需确认事项</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>04 · Schedule</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 24 }}>
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>两个时间节点</Text>
+    <Box style={{ flexDirection: 'row', gap: 16, marginTop: 14 }}>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 14 }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1E4FA8' }}>10 月底 — 11 月初</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>各模块由调研与方案设计转入程序落实阶段，目前三条线均已进入该阶段</Text>
+      </Box>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 14 }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1E4FA8' }}>年底前</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>交付研究报告、汇报 PPT 与阶段性成果材料，配合后续评审与验收</Text>
+      </Box>
+    </Box>
+
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8', marginTop: 26 }}>需要拍板的三件事</Text>
+    <Box style={{ marginTop: 14 }}>
+      <Box style={{ background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 14, marginBottom: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A2230' }}>1　韧性指标口径</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>平台展示改用周星羽的结构 / 冗余 / 运营三维体系，还是由研究侧给出一套映射到平台现有展示的换算规范</Text>
+      </Box>
+      <Box style={{ background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 14, marginBottom: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A2230' }}>2　韧性集成方式</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>Java 重写 / Python 服务独立部署由平台调用（同时满足合同架构要求）/ 离线计算后导入结果</Text>
+      </Box>
+      <Box style={{ background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 14 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A2230' }}>3　重车模块路线</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>维持确定性通行判定，还是按刘所意见拓展到概率可靠度评估（刘张浩已交接模型方案资料）</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>17 / 18</Text>
+  </Box>
+</Slide>

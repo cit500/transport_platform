@@ -1,0 +1,51 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>合同要求：要建一套什么平台</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>01 · Contract Scope</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 20 }}>
+    <Text style={{ fontSize: 19, color: '#1A2230', marginBottom: 16 }}>合同对平台的规定可归为两类：架构合规、功能完整</Text>
+    <Box style={{ flexDirection: 'row', gap: 32 }}>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>架构要求</Text>
+        <Box style={{ marginTop: 12 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>① 前后端分离 · 双语言协同</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginBottom: 12 }}>前端 Vue + JavaScript；后端 Java 管业务与调度，Python 管数据处理、格式转换与批量模型计算</Text>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>② Linux 环境独立部署</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginBottom: 12 }}>在主流 Linux 服务器完成独立部署与稳定运行，服务解耦、接口规范统一</Text>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>③ 标准化数据体系</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginBottom: 12 }}>道路、桥梁、隧道的空间信息、工程属性、运行状态统一管理，数据完整可追溯</Text>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>④ 模块化、可扩展</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5 }}>支持后续模型迭代、功能新增与外部系统对接</Text>
+        </Box>
+      </Box>
+
+      <Box style={{ flex: 1, borderLeft: '1px solid #D6DCE5', paddingLeft: 32 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>功能要求</Text>
+        <Box style={{ marginTop: 12 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>① 三类核心业务模块</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginBottom: 12 }}>重载运输管控、多灾场景路网韧性评估、应急通行保障与路径方案对比</Text>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>② 任务全流程闭环</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginBottom: 12 }}>任务提交、参数配置、异步计算、运行状态监控、结果输出</Text>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>③ GIS 可视化与交互</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginBottom: 12 }}>离线地图、多图层分级渲染、设施查询联动，成果标准化导出</Text>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1A2230', marginBottom: 4 }}>④ 交付物与验收方式</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5 }}>源码与部署脚本、5 本技术文档、示范成果、总结报告；资料审查 + 现场演示 + 双方现场评审</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 13, paddingBottom: 13, paddingLeft: 20, marginTop: 18 }}>
+      <Text style={{ fontSize: 18, color: '#1A2230' }}>架构与功能同为验收依据；目前框架已成型，Python 协同服务、权限管理、异步调度与成果导出仍待补齐</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>05 / 18</Text>
+  </Box>
+</Slide>

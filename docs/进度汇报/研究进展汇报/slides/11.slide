@@ -1,0 +1,76 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>平台开发进展（李应聪）</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>03 · Platform</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 24, flexDirection: 'row', gap: 36 }}>
+    <Box style={{ flex: 1 }}>
+      <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>本阶段已完成</Text>
+      <Box style={{ marginTop: 16 }}>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>数据库改造</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>规范为 9 张核心表，建立桥隧—路网绑定关系</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>数字人助手</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>接入联网大模型，支持上下文记忆与联网搜索</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>云端部署</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>阿里云 Ubuntu 环境，公网可直接访问</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>GIS 可视化</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>离线瓦片、多图层叠加、风险分级渲染</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>工程规范</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>界面风格统一，纳入 Git + GitHub 版本管理</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>灾害模块</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>完成专业化重构，可与易损性成果衔接</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, borderLeft: '1px solid #D6DCE5', paddingLeft: 36 }}>
+      <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>下一阶段：把三个专项模块做通</Text>
+      <Box style={{ marginTop: 16 }}>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>重车通行</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>路径规划算法在真实路网跑通，设计功能界面</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>灾害对接</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>与莫东霖对接输入输出与结果展示</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>韧性对接</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>与周星羽对齐指标口径与界面设计</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>架构补齐</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>Python 辅助计算服务、用户权限管理</Text>
+        </Box>
+        <Box style={{ flexDirection: 'row', gap: 12 }}>
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', width: 86 }}>能力补齐</Text>
+          <Text style={{ fontSize: 17, color: '#4A5568', flex: 1, lineHeight: 1.5 }}>成果导出、异步任务调度与运行监控</Text>
+        </Box>
+      </Box>
+    </Box>
+  </Box>
+
+  <Box style={{ background: '#E8EFF8', paddingTop: 14, paddingBottom: 14, paddingLeft: 20 }}>
+    <Text style={{ fontSize: 19, color: '#1A2230' }}>平台框架与数据底座已成型，下一阶段的重点是把三个专项模块真正做通</Text>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>11 / 18</Text>
+  </Box>
+</Slide>

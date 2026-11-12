@@ -1,5 +1,9 @@
 # 接口说明
 
+## 基础路径规划
+
+`POST /api/heavy/plan`：输入起终点经纬度，从完整数据库路网按双向简化 Dijkstra 计算距离最短路径，返回实际道路几何、总里程、途经边数及沿线桥隧去重清单。该接口只读，不执行车辆通行评估或保存任务。字段和验证范围见 [路径规划说明](route-planning.md)。
+
 统一前缀：`/api`
 
 ## 首页与地图
@@ -48,6 +52,17 @@
 ```
 
 ## 分析任务
+
+### 重车单设施通行模拟
+
+- `GET /heavy/assets/{id}/context` 读取数据库设施档案及版本指纹。
+- `POST /heavy/assets/{id}/assess` 接收 `{scenarioId, vehicle}`，只读生成随机模拟草稿，四种结论为 `PASS`、`CONDITIONAL`、`BLOCKED`、`PENDING_DATA`。
+- `POST /heavy/assessment-saves` 接收 `{scenarioId, vehicle, draftToken, overrideStatus?, overrideReason?}`，保存参数与结论快照。调整已保存记录时传 `savedAssessmentId`，追加历史。有效状态与原结论不同需填写理由。
+- `POST /heavy/assessment-validations` 接收 `{scenarioId, vehicle, savedAssessmentIds}`，返回同一情景与车辆、设施档案未变的 `validAssessmentIds`。
+
+方法为 `RANDOM_SIMULATION_V1`，结果显式保存 `simulated=true`。模拟任务使用 `OTHER` 类型、设施结果使用 `HEAVY_SIMULATION` 标记。车辆字段、草稿有效期和界面同步规则见 [路径规划说明](route-planning.md)。
+
+### 现有分析接口
 
 - `POST /heavy/evaluate`、`GET /heavy/tasks/{id}`
 - `GET /disaster/bootstrap`、`POST /disaster/evaluate`、`POST /disaster/save`、`GET /disaster/tasks/{id}`

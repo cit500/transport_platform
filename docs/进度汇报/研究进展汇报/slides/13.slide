@@ -1,0 +1,75 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>路网韧性评价进展（周星羽）</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>03 · Network Resilience</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 22 }}>
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>已完成：路网韧性初步模拟</Text>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 }}>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 12, height: 78 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E4FA8' }}>路网建模</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', marginTop: 6 }}>节点、路段与桥隧绑定</Text>
+      </Box>
+      <Text style={{ fontSize: 22, color: '#8B97A8' }}>→</Text>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 12, height: 78 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E4FA8' }}>损伤模拟</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', marginTop: 6 }}>按易损性结果抽样</Text>
+      </Box>
+      <Text style={{ fontSize: 22, color: '#8B97A8' }}>→</Text>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 12, height: 78 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E4FA8' }}>维修恢复</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', marginTop: 6 }}>工期排序与状态更新</Text>
+      </Box>
+      <Text style={{ fontSize: 22, color: '#8B97A8' }}>→</Text>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 12, height: 78 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1E4FA8' }}>韧性评价</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', marginTop: 6 }}>功能曲线与恢复时间</Text>
+      </Box>
+    </Box>
+    <Text style={{ fontSize: 17, color: '#4A5568', marginTop: 12 }}>已获得路网灾后功能恢复曲线，为后续指标拓展与结果接入奠定基础</Text>
+
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8', marginTop: 22 }}>下一步一：拓展路网功能指标（结构 · 冗余 · 运营）</Text>
+    <Box style={{ flexDirection: 'row', gap: 14, marginTop: 12 }}>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', padding: 12, height: 104 }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1E4FA8' }}>结构功能 N</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>连通性 · 网络效率<br />结构熵 · 介数</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', padding: 12, height: 104 }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1E4FA8' }}>冗余功能 D</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>独立通道 · 替代路径<br />聚类系数</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', padding: 12, height: 104 }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1E4FA8' }}>运营功能 T</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>通行能力 · 需求服务<br />通行效率 · 拥堵影响</Text>
+      </Box>
+      <Box style={{ flex: 1.3, background: '#F7F9FC', border: '1px dashed #1E4FA8', padding: 12, height: 104 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1.4 }}>分层赋权 → 综合功能曲线 F(t)</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>统一灾前基准，固定 OD 需求与评价权重</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', gap: 14, marginTop: 16 }}>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A2230' }}>下一步二：识别关键桥隧</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>双图建模：Space-L 做交通与功能计算，Space-R 做桥隧位置分析；结合介数、多跳桥接与关闭后的功能损失排序</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A2230' }}>下一步三：桥隧风险分级</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>损伤概率 → 失效后果 → 恢复期损失 → 按概率加权划分低、中、高风险并输出空间分布</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 12, paddingBottom: 12, paddingLeft: 20, marginTop: 14 }}>
+      <Text style={{ fontSize: 18, color: '#1A2230' }}>计算流程已跑通，指标仍在拓展；平台展示口径应待这套体系定稿后再对齐</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>13 / 18</Text>
+  </Box>
+</Slide>

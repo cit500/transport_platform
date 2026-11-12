@@ -1,0 +1,65 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>桥隧灾害评估进展（莫东霖）</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>03 · Hazard Assessment</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 22 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <Box style={{ flex: 1, background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 12, height: 96 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8' }}>灾害输入</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>地震动、降雨与地形条件</Text>
+      </Box>
+      <Text style={{ fontSize: 22, color: '#8B97A8' }}>→</Text>
+      <Box style={{ flex: 1, background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 12, height: 96 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8' }}>结构分析</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>响应计算、冲击与损伤分析</Text>
+      </Box>
+      <Text style={{ fontSize: 22, color: '#8B97A8' }}>→</Text>
+      <Box style={{ flex: 1, background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 12, height: 96 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8' }}>损伤状态</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>DS0—DS4 损伤等级与概率</Text>
+      </Box>
+      <Text style={{ fontSize: 22, color: '#8B97A8' }}>→</Text>
+      <Box style={{ flex: 1, background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 12, height: 96 }}>
+        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1E4FA8' }}>通行能力</Text>
+        <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>向路网韧性模块供数</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', gap: 36, marginTop: 24 }}>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>已取得的成果</Text>
+        <Box style={{ marginTop: 14 }}>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>地震·桥梁：完成简化单柱桥墩地震响应及易损性计算</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>地震·隧道：完成典型隧道地震响应计算，形成阶段性易损性评估结果</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>泥石流·预测：基于降雨等因子开展发生倾向预测，得分尚未校准为概率</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>泥石流·桥梁：建立冲击荷载与桥墩损伤流程，实现条件易损性快速评估</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5 }}>泥石流·隧道：二维明洞与混凝土非线性损伤模型完成静力验证</Text>
+        </Box>
+      </Box>
+      <Box style={{ flex: 1, borderLeft: '1px solid #D6DCE5', paddingLeft: 36 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#D9534F' }}>存在的瓶颈</Text>
+        <Box style={{ marginTop: 14 }}>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>桥梁：损伤判据待完善，部分阈值缺标定依据</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>桥梁：目前主要考虑弯曲破坏，剪切等破坏模式尚未纳入</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>隧道：钢筋与地基参数待完善，动力冲击分析尚未开展</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5, marginBottom: 13 }}>隧道：DS0—DS4 工程损伤判据尚未建立</Text>
+          <Text style={{ fontSize: 17, color: '#1A2230', lineHeight: 1.5 }}>共性：模型与随机参数缺乏实际工程数据支撑</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 13, paddingBottom: 13, paddingLeft: 20, marginTop: 18 }}>
+      <Text style={{ fontSize: 19, color: '#1A2230' }}>地震链路已出阶段成果并可向平台供数；泥石流需在判据标定与动力分析上继续推进</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>12 / 18</Text>
+  </Box>
+</Slide>

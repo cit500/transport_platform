@@ -1,0 +1,23 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, flexDirection: 'row', alignItems: 'center', gap: 72 }}>
+  <Box style={{ width: 300 }}>
+    <Text style={{ fontSize: 44, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1.2 }}>目录</Text>
+    <Text style={{ fontSize: 16, color: '#8B97A8', marginTop: 12, letterSpacing: 2 }}>CONTENTS</Text>
+  </Box>
+  <Box style={{ flex: 1 }}>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 24, paddingBottom: 24, borderBottom: '1px solid #E5E7EB' }}>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1E4FA8', width: 70 }}>01</Text>
+      <Text style={{ fontSize: 24, color: '#1A2230', flex: 1 }}>项目概况与目标</Text>
+      <Text style={{ fontSize: 17, color: '#8B97A8' }}>03 - 06</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 24, paddingBottom: 24, borderBottom: '1px solid #E5E7EB' }}>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1E4FA8', width: 70 }}>02</Text>
+      <Text style={{ fontSize: 24, color: '#1A2230', flex: 1 }}>分工与进度</Text>
+      <Text style={{ fontSize: 17, color: '#8B97A8' }}>07 - 14</Text>
+    </Box>
+    <Box style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 24, paddingBottom: 24 }}>
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1E4FA8', width: 70 }}>03</Text>
+      <Text style={{ fontSize: 24, color: '#1A2230', flex: 1 }}>后续工作安排</Text>
+      <Text style={{ fontSize: 17, color: '#8B97A8' }}>15 - 17</Text>
+    </Box>
+  </Box>
+</Slide>

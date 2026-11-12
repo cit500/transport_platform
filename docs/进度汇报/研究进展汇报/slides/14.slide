@@ -1,0 +1,52 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>三条线的衔接现状</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>03 · Integration</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 26 }}>
+    <Text style={{ fontSize: 20, color: '#1A2230', marginBottom: 20 }}>三条线各自推进，真正的难点在数据的传递与口径的统一</Text>
+
+    <Box style={{ flexDirection: 'row', alignItems: 'center', border: '1px solid #D6DCE5', padding: 16, height: 108, marginBottom: 14 }}>
+      <Box style={{ width: 230 }}>
+        <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1A2230' }}>灾害评估 → 平台</Text>
+      </Box>
+      <Text style={{ flex: 1, fontSize: 17, color: '#4A5568', lineHeight: 1.5 }}>地震易损性参数入库，平台按同一算法复刻，灾害模块已完成专业化重构</Text>
+      <Box style={{ width: 140, background: '#E8EFF8', border: '1px solid #1E4FA8', paddingTop: 10, paddingBottom: 10, alignItems: 'center' }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1E4FA8' }}>已打通</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', alignItems: 'center', border: '1px solid #D6DCE5', padding: 16, height: 108, marginBottom: 14 }}>
+      <Box style={{ width: 230 }}>
+        <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1A2230' }}>灾害评估 → 韧性</Text>
+      </Box>
+      <Text style={{ flex: 1, fontSize: 17, color: '#4A5568', lineHeight: 1.5 }}>会议已明确由易损性结果向韧性模块供数，采用 JSON 传递；实际数据流尚未跑通</Text>
+      <Box style={{ width: 140, background: '#F7F9FC', border: '1px dashed #8B97A8', paddingTop: 10, paddingBottom: 10, alignItems: 'center' }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#4A5568' }}>约定中</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', alignItems: 'center', border: '1px solid #D6DCE5', padding: 16, height: 108 }}>
+      <Box style={{ width: 230 }}>
+        <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1A2230' }}>韧性评价 → 平台</Text>
+      </Box>
+      <Text style={{ flex: 1, fontSize: 17, color: '#4A5568', lineHeight: 1.5 }}>平台韧性模块仍为演示值，需等周星羽的指标体系定稿后再统一展示口径</Text>
+      <Box style={{ width: 140, background: '#FCEBEB', border: '1px solid #D9534F', paddingTop: 10, paddingBottom: 10, alignItems: 'center' }}>
+        <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#D9534F' }}>未打通</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 14, paddingBottom: 14, paddingLeft: 20, marginTop: 20 }}>
+      <Text style={{ fontSize: 19, color: '#1A2230' }}>下一阶段的重点：把泥石流的最新成果接入平台，并确定韧性指标与平台展示的对齐方式</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>14 / 18</Text>
+  </Box>
+</Slide>

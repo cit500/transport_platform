@@ -1,0 +1,8 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, flexDirection: 'row', alignItems: 'center', gap: 48 }}>
+  <Text style={{ fontSize: 180, fontWeight: 'bold', color: '#E8EFF8', lineHeight: 1 }}>02</Text>
+  <Box style={{ flex: 1 }}>
+    <Text style={{ fontSize: 40, fontWeight: 'bold', color: '#1A2230', lineHeight: 1.3 }}>分工与进度</Text>
+    <Box style={{ width: 120, height: 4, background: '#1E4FA8', marginTop: 20 }} />
+    <Text style={{ fontSize: 20, color: '#4A5568', marginTop: 20, lineHeight: 1.6 }}>三人分工 · 进展时间轴 · 各模块进展</Text>
+  </Box>
+</Slide>

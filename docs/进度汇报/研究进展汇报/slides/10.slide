@@ -1,0 +1,40 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>阶段成果一览</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>02 · Milestones</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 30 }}>
+    <Text style={{ fontSize: 20, color: '#1A2230' }}>阶段成果集中在三处：数据底座成型、灾害链路打通、韧性模拟跑通</Text>
+
+    <Box style={{ flexDirection: 'row', gap: 40, marginTop: 50 }}>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 76, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1 }}>9</Text>
+        <Box style={{ height: 1, background: '#D6DCE5', marginTop: 14, marginBottom: 14 }} />
+        <Text style={{ fontSize: 18, color: '#4A5568', lineHeight: 1.5 }}>张核心数据表<br />由 40 余张规范而来，建立桥隧—路网绑定</Text>
+      </Box>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 76, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1 }}>2</Text>
+        <Box style={{ height: 1, background: '#D6DCE5', marginTop: 14, marginBottom: 14 }} />
+        <Text style={{ fontSize: 18, color: '#4A5568', lineHeight: 1.5 }}>类结构地震易损性成果<br />桥梁与隧道均形成阶段性评估结果</Text>
+      </Box>
+      <Box style={{ flex: 1 }}>
+        <Text style={{ fontSize: 76, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1 }}>1</Text>
+        <Box style={{ height: 1, background: '#D6DCE5', marginTop: 14, marginBottom: 14 }} />
+        <Text style={{ fontSize: 18, color: '#4A5568', lineHeight: 1.5 }}>套路网韧性初步模拟<br />已获得路网灾后功能恢复曲线</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 14, paddingBottom: 14, paddingLeft: 20, marginTop: 46 }}>
+      <Text style={{ fontSize: 19, color: '#1A2230' }}>平台已部署至阿里云（Ubuntu 24.04），公网可直接访问：http://47.108.214.99/</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>10 / 18</Text>
+  </Box>
+</Slide>

@@ -1,0 +1,15 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'center' }}>
+  <Box style={{ width: 88, height: 6, background: '#1E4FA8', marginBottom: 36 }} />
+  <Text style={{ fontSize: 60, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1.2 }}>
+    交通网络多灾韧性<br />评价可视化平台
+  </Text>
+  <Text style={{ fontSize: 26, color: '#4A5568', marginTop: 28, lineHeight: 1.5 }}>
+    阶段研究进展汇报 · 2026 年 7 月—11 月
+  </Text>
+  <Box style={{ marginTop: 72, paddingTop: 20, borderTop: '1px solid #D6DCE5', width: 760 }}>
+    <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.7 }}>
+      汇报人：李应聪　　方法研究：莫东霖、周星羽<br />
+      指导老师：李海涛、赵宇　　工程博士：刘张浩
+    </Text>
+  </Box>
+</Slide>

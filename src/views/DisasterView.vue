@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import PlatformHeader from '../components/PlatformHeader.vue';
 import TransportMap from '../components/TransportMap.vue';
+import MapLayerControl from '../components/MapLayerControl.vue';
+import { useMapPanelResize } from '../composables/useMapPanelResize.js';
 import HazardSourcePanel from '../components/disaster/HazardSourcePanel.vue';
 import AssetEvaluatePanel from '../components/disaster/AssetEvaluatePanel.vue';
 import RiskDetailPanel from '../components/disaster/RiskDetailPanel.vue';
@@ -55,6 +57,7 @@ function setBaseLayer(name) {
     mapRef.value?.setBase(name);
 }
 function setOverlay(name, checked) {
+    if (name === 'labels') { regionLabels.value = checked; return; }
     overlays[name] = checked;
     mapRef.value?.toggleLayer(name, checked);
 }
@@ -66,22 +69,9 @@ function focusHazard() {
 
 // 地图区与底部指标栏之间的可拖拽分隔
 const centerCol = ref();
-const bottomHeight = ref(230);
-function startResize(event) {
-    event.preventDefault();
-    const col = centerCol.value;
-    if (!col) return;
-    const rect = col.getBoundingClientRect();
-    const move = (ev) => {
-        bottomHeight.value = Math.min(Math.max(rect.bottom - ev.clientY, 120), rect.height * 0.55);
-    };
-    const up = () => {
-        window.removeEventListener('mousemove', move);
-        window.removeEventListener('mouseup', up);
-    };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
-}
+const { bottomHeight, maxHeight, startResize, resizeBottom } = useMapPanelResize(centerCol, mapRef);
+const layerItems = computed(() => [{key:'regions',label:'行政边界'},{key:'labels',label:'区县名称标签'},
+    {key:'roads',label:'路网'}, {key:'assets',label:'桥隧标记',disabled:pickMode.value.startsWith('asset-'),hint:'点选模式下桥隧标记保持显示'}]);
 
 const hazardLabel = computed(() => (mode.value === 'EARTHQUAKE' ? '地震' : '泥石流'));
 const DS_TEXT = ['基本完好', '轻微损伤', '中等损伤', '严重损伤', '毁坏'];
@@ -465,27 +455,8 @@ onMounted(async () => {
                     <button title="图层控制" aria-label="图层控制" :aria-expanded="layerOpen"
                             @click="layerOpen = !layerOpen">▱</button>
                 </div>
-                <div class="heavy-layer-popover" :class="{ 'is-open': layerOpen }">
-                    <strong>地图模式</strong>
-                    <div class="map-base-options" role="radiogroup" aria-label="地图模式">
-                        <button type="button" role="radio" :aria-checked="baseType === 'satellite'"
-                                :class="{ 'is-active': baseType === 'satellite' }"
-                                @click="setBaseLayer('satellite')">卫星地图</button>
-                        <button type="button" role="radio" :aria-checked="baseType === 'electronic'"
-                                :class="{ 'is-active': baseType === 'electronic' }"
-                                @click="setBaseLayer('electronic')">电子地图</button>
-                    </div>
-                    <strong>叠加图层</strong>
-                    <label><input type="checkbox" :checked="overlays.regions"
-                                  @change="setOverlay('regions', $event.target.checked)"> 行政边界</label>
-                    <label><input v-model="regionLabels" type="checkbox"> 区县名称标签</label>
-                    <label><input type="checkbox" :checked="overlays.roads"
-                                  @change="setOverlay('roads', $event.target.checked)"> 路网</label>
-                    <label :class="{ 'is-locked': pickMode.startsWith('asset-') }"
-                           :title="pickMode.startsWith('asset-') ? '点选模式下桥隧标记保持显示' : ''">
-                        <input type="checkbox" :checked="overlays.assets" :disabled="pickMode.startsWith('asset-')"
-                               @change="setOverlay('assets', $event.target.checked)"> 桥隧标记</label>
-                </div>
+                <MapLayerControl :open="layerOpen" :base="baseType" :overlays="{...overlays,labels:regionLabels}" :items="layerItems"
+                                 @base-change="setBaseLayer" @overlay-change="setOverlay($event.key,$event.checked)" @close="layerOpen=false" />
                 <div v-if="pickMode" class="map-pick-banner">
                     {{ pickMode === 'epicenter' ? `在地图上点击选取${hazardLabel}源位置`
                         : pickMode === 'asset-BRIDGE' ? '在地图上点击桥梁标记加入评估'
@@ -494,7 +465,9 @@ onMounted(async () => {
                 </div>
             </section>
 
-            <div class="disaster-y-resizer" title="拖动调整地图与指标栏高度" @mousedown="startResize">
+            <div class="disaster-y-resizer" role="separator" aria-label="调整地图与指标栏高度" aria-orientation="horizontal" tabindex="0"
+                 :aria-valuenow="Math.round(bottomHeight)" :aria-valuemin="120" :aria-valuemax="Math.round(maxHeight)"
+                 title="拖动调整地图与指标栏高度" @pointerdown="startResize" @keydown.up.prevent="resizeBottom(20)" @keydown.down.prevent="resizeBottom(-20)" style="touch-action:none">
                 <i></i><i></i><i></i>
             </div>
 

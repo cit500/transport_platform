@@ -1,0 +1,47 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>团队分工与各自负责内容</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>02 · Responsibilities</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 26, flexDirection: 'row', gap: 18 }}>
+    <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 18 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1E4FA8' }}>李应聪</Text>
+      <Text style={{ fontSize: 17, color: '#8B97A8', marginTop: 6 }}>软件平台开发 · 项目秘书</Text>
+      <Box style={{ height: 1, background: '#E5E7EB', marginTop: 14, marginBottom: 14 }} />
+      <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.6 }}>
+        平台架构、数据库体系与 GIS 可视化<br /><br />
+        三个专项模块的界面与任务流程<br /><br />
+        与算法模块对接输入输出，整合汇报材料
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 18 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1E4FA8' }}>莫东霖</Text>
+      <Text style={{ fontSize: 17, color: '#8B97A8', marginTop: 6 }}>桥隧灾害评估方法</Text>
+      <Box style={{ height: 1, background: '#E5E7EB', marginTop: 14, marginBottom: 14 }} />
+      <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.6 }}>
+        地震作用下桥梁、隧道易损性分析<br /><br />
+        泥石流发生倾向预测与桥墩易损性<br /><br />
+        泥石流作用下明洞（隧道）损伤分析
+      </Text>
+    </Box>
+    <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 18 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1E4FA8' }}>周星羽</Text>
+      <Text style={{ fontSize: 17, color: '#8B97A8', marginTop: 6 }}>路网韧性评价方法</Text>
+      <Box style={{ height: 1, background: '#E5E7EB', marginTop: 14, marginBottom: 14 }} />
+      <Text style={{ fontSize: 18, color: '#1A2230', lineHeight: 1.6 }}>
+        路网建模与交通流量分配<br /><br />
+        灾前能力、灾后演化与恢复过程评价<br /><br />
+        关键桥隧识别与桥隧风险分级
+      </Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>支撑：李海涛（日常负责）· 赵宇（技术负责）· 刘张浩（工程博士，已交接重车资料）· 刘怀林（甲方桥梁院）</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>08 / 18</Text>
+  </Box>
+</Slide>

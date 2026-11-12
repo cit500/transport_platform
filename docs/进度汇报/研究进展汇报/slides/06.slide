@@ -1,0 +1,62 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>平台总体架构</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>01 · Architecture</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 24 }}>
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>技术分层</Text>
+    <Box style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 14, height: 124 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A2230' }}>前端</Text>
+        <Text style={{ fontSize: 17, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>Vue 3 + JavaScript<br />业务界面、参数配置、成果展示</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 14, height: 124 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A2230' }}>后端</Text>
+        <Text style={{ fontSize: 17, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>Java 业务服务为主<br />Python 辅助计算（按合同要求补齐）</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 14, height: 124 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1A2230' }}>数据与服务</Text>
+        <Text style={{ fontSize: 17, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>MySQL 九张核心表<br />Bigemap 离线地图服务</Text>
+      </Box>
+    </Box>
+
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8', marginTop: 26 }}>业务构成：一个首页 + 三个专项模块 + 一个数据管理中心</Text>
+    <Box style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 12, height: 132 }}>
+        <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>综合首页</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>区域总体状态、风险分布、通行与韧性指标的集中展示</Text>
+      </Box>
+      <Box style={{ flex: 2, background: '#F7F9FC', border: '1px solid #D6DCE5', padding: 12, height: 132, flexDirection: 'row', gap: 10 }}>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', background: '#FFFFFF', padding: 10 }}>
+          <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1A2230' }}>重载通行评估</Text>
+          <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>车辆参数核查 · 通行判定 · 绕行路径</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', background: '#FFFFFF', padding: 10 }}>
+          <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1A2230' }}>灾害风险评估</Text>
+          <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>地震 / 泥石流下桥隧损伤与通行能力</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', background: '#FFFFFF', padding: 10 }}>
+          <Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1A2230' }}>路网韧性评估</Text>
+          <Text style={{ fontSize: 15, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>灾前能力 · 灾后演化 · 关键道路识别</Text>
+        </Box>
+      </Box>
+      <Box style={{ flex: 1, background: '#E8EFF8', border: '1px solid #1E4FA8', padding: 12, height: 132 }}>
+        <Text style={{ fontSize: 21, fontWeight: 'bold', color: '#1E4FA8' }}>数据管理中心</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>路网、桥隧、行政区档案与评估任务的统一管理</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 14, paddingBottom: 14, paddingLeft: 20, marginTop: 20 }}>
+      <Text style={{ fontSize: 19, color: '#1A2230' }}>架构与数据底座已定型，当前重点是把三个专项模块的专业模型真正接进来</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>06 / 18</Text>
+  </Box>
+</Slide>

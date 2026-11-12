@@ -12,6 +12,7 @@ const props = defineProps({
     roadResults: { type: Array, default: () => [] },
     epicenter: { type: Object, default: null },
     pickMode: { type: String, default: '' },
+    routeEndpoints: { type: Array, default: () => [] },
     selectedAssetId: { type: [Number, String], default: null },
     interactiveRegions: { type: Boolean, default: true },
     defaultLayerVisibility: {
@@ -37,6 +38,9 @@ let regionLabelEntries = [];
 let roadLayer;
 let assetLayer;
 let routeLayer;
+let endpointLayer;
+let routesVisible = true;
+let resizeObserver;
 let epicenterLayer;
 let baseLayer;
 let satellite;
@@ -180,11 +184,15 @@ function renderRegions() {
     });
     if (layerVisibility.regions) {
         regionLayer.addTo(map);
-        regionLabelLayer?.addTo(map);
         if (props.decoratedRegions && !initialRegionFit && regionLayer.getBounds().isValid()) {
             fitRegions();
             initialRegionFit = true;
         }
+        requestAnimationFrame(refreshRegionLabels);
+    }
+    // 区县名称独立于行政边界开关；首页仍随行政底图一起显示。
+    if (props.showRegionLabels && (!props.decoratedRegions || layerVisibility.regions)) {
+        regionLabelLayer?.addTo(map);
         requestAnimationFrame(refreshRegionLabels);
     }
 }
@@ -221,7 +229,10 @@ function renderAssets() {
             iconSize: [19, 19], iconAnchor: [10, 10]
         });
         const marker = L.marker([Number(asset.latitude), Number(asset.longitude)], { icon }).addTo(assetLayer);
-        marker.bindTooltip(String(asset.assetName || asset.name || '交通设施'));
+        const name = escapeHtml(asset.assetName || asset.name || '交通设施');
+        marker.bindTooltip(asset.statusLabel
+            ? name + '<br>' + escapeHtml(asset.statusLabel) + ' · ' + escapeHtml(asset.assessmentSourceLabel || '')
+            : name, { permanent: Boolean(asset.statusLabel), direction: 'top', className: asset.statusLabel ? 'heavy-passability-tooltip' : '' });
         marker.on('click', () => emit('asset-click', asset));
     });
     if (layerVisibility.assets && !map.hasLayer(assetLayer)) assetLayer.addTo(map);
@@ -269,6 +280,10 @@ onMounted(() => {
     assetLayer = L.layerGroup();
     if (layerVisibility.assets) assetLayer.addTo(map);
     routeLayer = L.layerGroup().addTo(map);
+    map.createPane('routePane');
+    map.getPane('routePane').style.zIndex = 450;
+    map.getPane('routePane').style.pointerEvents = 'none';
+    renderRouteEndpoints();
     renderRegions(); renderRoads(); renderAssets(); renderEpicenter();
     map.on('click', (event) => emit('map-click', { latitude: event.latlng.lat, longitude: event.latlng.lng }));
     map.on('zoomend moveend', refreshRegionLabels);
@@ -278,8 +293,10 @@ onMounted(() => {
         }
         refreshRegionLabels();
     });
+    resizeObserver = new ResizeObserver(() => map?.invalidateSize({ pan: false }));
+    resizeObserver.observe(element.value);
 });
-onBeforeUnmount(() => { map?.remove(); map = null; });
+onBeforeUnmount(() => { resizeObserver?.disconnect(); map?.remove(); map = null; });
 watch(() => props.regions, renderRegions, { deep: true });
 watch(() => props.regionDetails, renderRegions, { deep: true });
 watch(() => props.showRegionLabels, renderRegions);
@@ -288,6 +305,7 @@ watch(() => [props.roads, props.roadResults], renderRoads, { deep: true });
 watch(() => props.assets, renderAssets, { deep: true });
 watch(() => props.selectedAssetId, renderAssets, { deep: true });
 watch(() => props.epicenter, renderEpicenter, { deep: true });
+watch(() => props.routeEndpoints, renderRouteEndpoints, { deep: true });
 watch(() => props.pickMode, (mode) => {
     element.value?.classList.toggle('is-picking', Boolean(mode));
 });
@@ -300,12 +318,35 @@ function setBase(type) {
     if (next) { next.addTo(map); baseLayer = next; }
 }
 function drawRoutes(paths = []) {
+    if (!map || !routeLayer) return;
     routeLayer.clearLayers();
-    paths.forEach((item) => L.polyline(item.points, item.style).addTo(routeLayer));
+    paths.forEach((item) => L.polyline(item.points, { pane: 'routePane', interactive: false, ...item.style }).addTo(routeLayer));
+    if (!routesVisible) routeLayer.remove();
     const points = paths.flatMap((item) => item.points || []);
     if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 13 });
 }
+function renderRouteEndpoints() {
+    if (!map) return;
+    endpointLayer?.remove();
+    endpointLayer = L.layerGroup().addTo(map);
+    props.routeEndpoints.forEach((point) => {
+        const color = point.role === 'origin' ? '#45e4ff' : '#f6c85f';
+        L.circleMarker([point.latitude, point.longitude], { radius: 7, color: '#fff', weight: 2,
+            fillColor: color, fillOpacity: 1 }).addTo(endpointLayer).bindTooltip(point.role === 'origin' ? '输入起点' : '输入终点');
+        if (point.node) {
+            const node = [point.node.latitude, point.node.longitude];
+            L.polyline([[point.latitude, point.longitude], node], { color, weight: 2, dashArray: '5 6', interactive: false }).addTo(endpointLayer);
+            L.circleMarker(node, { radius: 5, color, weight: 2, fillColor: '#03101e', fillOpacity: 1 })
+                .addTo(endpointLayer).bindTooltip('匹配节点 #' + point.node.id);
+        }
+    });
+}
 function focus(lat, lng, zoom = 13) { map?.flyTo([Number(lat), Number(lng)], zoom, { duration: .5 }); }
+function focusGently(lat, lng) {
+    if (!map) return;
+    const zoom = map.getZoom();
+    map.flyTo([Number(lat), Number(lng)], Math.max(zoom, Math.min(zoom + 1, 10)), { duration: .5 });
+}
 function reset() {
     if (props.decoratedRegions && layerVisibility.regions) fitRegions();
     else map?.setView(props.center, props.zoom);
@@ -316,11 +357,16 @@ function selectRegion(name) {
     if (!name) map?.closePopup();
 }
 function toggleLayer(name, show) {
+    if (name === 'route') {
+        routesVisible = show;
+        if (routeLayer && map) { if (show) routeLayer.addTo(map); else routeLayer.remove(); }
+        return;
+    }
+    layerVisibility[name] = show;
     const layer = { regions: regionLayer, roads: roadLayer, assets: assetLayer }[name];
     if (!layer) return;
-    layerVisibility[name] = show;
     if (show) layer.addTo(map); else map.removeLayer(layer);
-    if (name === 'regions' && regionLabelLayer) {
+    if (name === 'regions' && regionLabelLayer && props.decoratedRegions) {
         if (show) { regionLabelLayer.addTo(map); requestAnimationFrame(refreshRegionLabels); }
         else map.removeLayer(regionLabelLayer);
     }
@@ -329,7 +375,8 @@ function toggleLayer(name, show) {
         initialRegionFit = true;
     }
 }
-defineExpose({ zoomIn: () => map?.zoomIn(), zoomOut: () => map?.zoomOut(), reset, setBase, drawRoutes, focus, toggleLayer, selectRegion });
+defineExpose({ zoomIn: () => map?.zoomIn(), zoomOut: () => map?.zoomOut(), reset, setBase, drawRoutes, focus, focusGently, toggleLayer, selectRegion,
+    resize: () => map?.invalidateSize({ pan: false }) });
 </script>
 
 <template><div ref="element" :class="className"></div></template>

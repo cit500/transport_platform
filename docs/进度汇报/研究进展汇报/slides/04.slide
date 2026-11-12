@@ -1,0 +1,64 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>研究背景与项目目标</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>01 · Project Overview</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 24 }}>
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8' }}>研究背景：三个现实问题</Text>
+    <Box style={{ flexDirection: 'row', gap: 16, marginTop: 14 }}>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 14, height: 126 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1A2230' }}>风险在上升</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>桥隧密集、地质脆弱、灾害频发，叠加常态化重载运输</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 14, height: 126 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1A2230' }}>能力是割裂的</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>现有系统多为单一业务监测，缺一体化联动能力</Text>
+      </Box>
+      <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 14, height: 126 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1A2230' }}>决策靠经验</Text>
+        <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>重载审批与灾害应急依赖人工研判，缺标准化支撑</Text>
+      </Box>
+    </Box>
+
+    <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1E4FA8', marginTop: 26 }}>项目目标：建成一体化、可视化、可扩展的决策平台</Text>
+    <Box style={{ flexDirection: 'row', gap: 16, marginTop: 14 }}>
+      <Box style={{ flex: 1 }}>
+        <Box style={{ border: '1px solid #D6DCE5', padding: 14, height: 110 }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>① 一体化管理载体</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>整合桥隧约束、韧性评估与路径规划，统一管理数据与成果</Text>
+        </Box>
+      </Box>
+      <Box style={{ flex: 1 }}>
+        <Box style={{ border: '1px solid #D6DCE5', padding: 14, height: 110 }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>② 可视化空间表达</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>GIS 呈现风险分布、设施状态与通行保障方案</Text>
+        </Box>
+      </Box>
+      <Box style={{ flex: 1 }}>
+        <Box style={{ border: '1px solid #D6DCE5', padding: 14, height: 110 }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>③ 标准化决策响应</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>固化分析流程，自动计算、快速分析、标准输出</Text>
+        </Box>
+      </Box>
+      <Box style={{ flex: 1 }}>
+        <Box style={{ border: '1px solid #D6DCE5', padding: 14, height: 110 }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>④ 可扩展工程平台</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 8 }}>模块化架构，适配模型迭代与系统对接</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 14, paddingBottom: 14, paddingLeft: 20, marginTop: 22 }}>
+      <Text style={{ fontSize: 19, color: '#1A2230' }}>项目目标：把分散的业务能力整合为可交付、可扩展的一体化决策平台</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>04 / 18</Text>
+  </Box>
+</Slide>

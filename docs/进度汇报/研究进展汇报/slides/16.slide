@@ -1,0 +1,53 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>待完成工作</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>04 · Next Steps</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 24, flexDirection: 'row', gap: 20 }}>
+    <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 16 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>李应聪 · 平台</Text>
+      <Box style={{ marginTop: 14 }}>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>1　重车路径规划算法在真实路网跑通，完成功能界面</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>2　对接灾害、韧性两个模块的界面与输入输出</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>3　补齐 Python 辅助计算服务与用户权限管理</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>4　成果导出、异步任务调度与运行监控</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55 }}>5　五本技术文档与典型区域示范材料包</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 16 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>莫东霖 · 灾害</Text>
+      <Box style={{ marginTop: 14 }}>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>1　完善桥墩损伤判据，补充剪切及弯剪破坏模式</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>2　深化桥梁易损性分析，计入参数不确定性</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>3　拓展不同桥型、桥墩参数与区域泥石流场景</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>4　完善明洞钢筋与基础模型，开展动力冲击分析</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55 }}>5　建立 DS0—DS4 损伤判据，统一 JSON 输出</Text>
+      </Box>
+    </Box>
+
+    <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderTop: '3px solid #1E4FA8', padding: 16 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8' }}>周星羽 · 韧性</Text>
+      <Box style={{ marginTop: 14 }}>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>1　拓展结构、冗余、运营三维指标并分层赋权</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>2　统一灾前基准，固定 OD 需求与评价权重</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>3　双图建模识别关键桥隧并形成排序</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55, marginBottom: 12 }}>4　逐桥隧风险分级，输出等级与空间分布</Text>
+        <Text style={{ fontSize: 16, color: '#1A2230', lineHeight: 1.55 }}>5　与平台对齐指标口径与展示方式</Text>
+      </Box>
+    </Box>
+  </Box>
+
+  <Box style={{ background: '#E8EFF8', paddingTop: 13, paddingBottom: 13, paddingLeft: 20 }}>
+    <Text style={{ fontSize: 18, color: '#1A2230' }}>三条线的共同前提：先定接口与口径，再各自推进，避免平台先行固化导致返工</Text>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>16 / 18</Text>
+  </Box>
+</Slide>

@@ -1,0 +1,94 @@
+<Slide style={{ background: '#FFFFFF', padding: 60, justifyContent: 'space-between' }}>
+  <Box>
+    <Box style={{ height: 68, background: '#1E4FA8', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 24, paddingRight: 24 }}>
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: '#FFFFFF' }}>进展时间轴</Text>
+      <Text style={{ fontSize: 16, color: '#B9CCEC' }}>02 · Timeline</Text>
+    </Box>
+    <Box style={{ height: 1, background: '#D6DCE5' }} />
+  </Box>
+
+  <Box style={{ flex: 1, paddingTop: 22 }}>
+    <Text style={{ fontSize: 20, color: '#1A2230', marginBottom: 18 }}>三条线并行推进，7 月启动至今已完成两轮阶段性节点</Text>
+
+    <Box style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
+      <Box style={{ width: 138 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1.4 }}>平台<br />李应聪</Text>
+      </Box>
+      <Box style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>07-09</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>项目启动<br />分工与节奏明确</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>08-12</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>架构确立<br />一个首页 + 三模块</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>10-16</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>云端部署完成<br />公网可直接访问</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>10-28</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>灾害模块<br />专业化重构完成</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
+      <Box style={{ width: 138 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1.4 }}>灾害<br />莫东霖</Text>
+      </Box>
+      <Box style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>08-06</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>地震易损性<br />分析框架建立</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>09-23</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>桥梁易损性<br />计算流程跑通</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>10-20</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>泥石流改为<br />发生倾向预测</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>11-03</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>桥梁隧道地震<br />阶段成果完成</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ flexDirection: 'row', gap: 16 }}>
+      <Box style={{ width: 138 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1E4FA8', lineHeight: 1.4 }}>韧性<br />周星羽</Text>
+      </Box>
+      <Box style={{ flex: 1, flexDirection: 'row', gap: 12 }}>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>08-06</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>抵抗力·恢复力<br />冗余度三维思路</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>09-23</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>重庆路网与<br />桥隧数据整理</Text>
+        </Box>
+        <Box style={{ flex: 1, border: '1px solid #D6DCE5', borderLeft: '3px solid #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>10-20</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>初步模拟完成<br />得到恢复曲线</Text>
+        </Box>
+        <Box style={{ flex: 1, background: '#F7F9FC', border: '1px dashed #1E4FA8', padding: 12, height: 106 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1E4FA8' }}>下一步</Text>
+          <Text style={{ fontSize: 16, color: '#4A5568', lineHeight: 1.5, marginTop: 6 }}>拓展三维指标<br />识别关键桥隧</Text>
+        </Box>
+      </Box>
+    </Box>
+
+    <Box style={{ background: '#E8EFF8', paddingTop: 13, paddingBottom: 13, paddingLeft: 20, marginTop: 16 }}>
+      <Text style={{ fontSize: 19, color: '#1A2230' }}>节奏一致：三条线均在 9 月底至 10 月由调研设计转入程序落实</Text>
+    </Box>
+  </Box>
+
+  <Box style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>交通网络多灾韧性评价可视化平台 · 研究进展汇报</Text>
+    <Text style={{ fontSize: 14, color: '#8B97A8' }}>09 / 18</Text>
+  </Box>
+</Slide>
