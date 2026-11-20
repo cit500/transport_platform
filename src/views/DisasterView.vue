@@ -10,6 +10,7 @@ import HazardSourcePanel from '../components/disaster/HazardSourcePanel.vue';
 import AssetEvaluatePanel from '../components/disaster/AssetEvaluatePanel.vue';
 import RiskDetailPanel from '../components/disaster/RiskDetailPanel.vue';
 import AssetDetailModal from '../components/disaster/AssetDetailModal.vue';
+import AssetInfoModal from '../components/disaster/AssetInfoModal.vue';
 import FragilityCurveChart from '../components/disaster/FragilityCurveChart.vue';
 import { api } from '../services/api.js';
 import { usePlatformStore, useUiStore } from '../stores/platform.js';
@@ -38,6 +39,7 @@ const tunnelLoading = ref(false);
 
 const selectedAssetId = ref(null);
 const detailAsset = ref(null);
+const infoAssetId = ref(null);
 const curves = ref([]);
 const curveModel = ref(null);
 const bottom = ref('result');
@@ -89,6 +91,24 @@ const primaryResult = computed(() => {
 const selectedAsset = computed(() =>
     mergedAssets.value.find((a) => Number(a.assetId) === Number(selectedAssetId.value)) || null);
 const currentIm = computed(() => selectedAsset.value?.imValue ?? null);
+
+// ------------------------------------------------------------------ 设施信息弹窗
+const infoAssetResult = computed(() =>
+    mergedAssets.value.find((a) => Number(a.assetId) === Number(infoAssetId.value)) || null);
+const infoModelHint = computed(() => {
+    const assetType = infoAssetResult.value?.assetType
+        || (bootstrap.assets || []).find((a) => Number(a.assetId) === Number(infoAssetId.value))?.assetType;
+    const list = bootstrap.models?.[mode.value] || [];
+    const hit = list.find((m) => m.asset_type === assetType) || list[0];
+    if (!hit) return '';
+    return `${hit.asset_name || hit.model_id}（${hit.model_id} · ${hit.model_version}，${
+        hit.status === 'PLATFORM_DEFAULT' ? '平台预设待标定' : hit.status}）`;
+});
+
+function inspectAsset(id) {
+    if (id == null) return;
+    infoAssetId.value = Number(id);
+}
 
 const mergedSummary = computed(() => {
     const assets = mergedAssets.value;
@@ -224,6 +244,8 @@ function onAssetClick(asset) {
     if (mergedAssets.value.some((a) => Number(a.assetId) === Number(asset.assetId ?? asset.id))) {
         selectedAssetId.value = Number(asset.assetId ?? asset.id);
     }
+    // 地图上点击设施图标：选中并弹出设施信息（基础信息 + 本次评估所用模型）
+    inspectAsset(asset.assetId ?? asset.id);
 }
 
 function selectFromPanel(id) {
@@ -372,6 +394,7 @@ function resetWorkspace() {
     tunnelResult.value = null;
     selectedAssetId.value = null;
     detailAsset.value = null;
+    infoAssetId.value = null;
     curves.value = [];
     curveModel.value = null;
     pickMode.value = '';
@@ -422,7 +445,8 @@ onMounted(async () => {
                                 @update:allow-research="allowResearch.BRIDGE = $event"
                                 @pick="pickMode = pickMode === 'asset-BRIDGE' ? '' : 'asset-BRIDGE'"
                                 @run="runEvaluate('BRIDGE')"
-                                @select="selectFromPanel" />
+                                @select="selectFromPanel"
+                                @inspect="inspectAsset" />
 
             <AssetEvaluatePanel asset-type="TUNNEL" :candidates="candidates('TUNNEL')"
                                 :selected-ids="tunnelSelected" :result="tunnelResult"
@@ -432,7 +456,8 @@ onMounted(async () => {
                                 @update:allow-research="allowResearch.TUNNEL = $event"
                                 @pick="pickMode = pickMode === 'asset-TUNNEL' ? '' : 'asset-TUNNEL'"
                                 @run="runEvaluate('TUNNEL')"
-                                @select="selectFromPanel" />
+                                @select="selectFromPanel"
+                                @inspect="inspectAsset" />
         </aside>
 
         <section ref="centerCol" class="heavy-center-column">
@@ -556,6 +581,9 @@ onMounted(async () => {
     </main>
 
     <AssetDetailModal :asset="detailAsset" :hazard-label="hazardLabel" @close="detailAsset = null" />
+
+    <AssetInfoModal :asset-id="infoAssetId" :result="infoAssetResult" :hazard-label="hazardLabel"
+                    :model-hint="infoModelHint" @close="infoAssetId = null" />
 
     <Teleport to="body">
         <div v-if="saveDialog.open" class="save-task-overlay" @click.self="closeSave">

@@ -109,7 +109,7 @@ async function fetchContext() {
     </div>
 
     <template v-if="mode === 'EARTHQUAKE'">
-        <div class="field-row field-row-3">
+        <div class="hazard-coord-row">
             <label class="field-label">震中经度
                 <input type="number" step="0.0001" :value="longitude"
                        @input="emit('update:longitude', Number($event.target.value))" />
@@ -144,7 +144,7 @@ async function fetchContext() {
     </template>
 
     <template v-else>
-        <div class="field-row field-row-3">
+        <div class="hazard-coord-row">
             <label class="field-label">灾害源经度
                 <input type="number" step="0.0001" :value="longitude"
                        @input="emit('update:longitude', Number($event.target.value))" />

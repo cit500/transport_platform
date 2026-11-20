@@ -297,14 +297,19 @@
 
 /* ============ 2026-10-28 重构：评估面板 / 震中圆环 / DS 图例 / 保存弹窗 ============ */
 
-/* 参数面板：灾害类型切换 */
+/* 参数面板：灾害类型切换（2026-11-20 放大字号，作为页面主入口） */
 .hazard-type-row { display:flex; gap:6px; margin-bottom:10px; }
 .hazard-type-row button {
-    flex:1 1 0; padding:6px 8px; border:1px solid var(--v2-line); background:rgba(5,36,61,.6);
-    color:var(--v2-text-muted); font-size:11px; cursor:pointer;
+    flex:1 1 0; padding:9px 8px; border:1px solid var(--v2-line); background:rgba(5,36,61,.6);
+    color:var(--v2-text-muted); font-size:13px; font-weight:600; letter-spacing:.02em; cursor:pointer;
 }
 .hazard-type-row button:hover { color:var(--v2-cyan); border-color:var(--v2-line-bright); }
 .hazard-type-row button.is-active { color:var(--v2-cyan); border-color:var(--v2-cyan); background:rgba(11,64,102,.7); }
+
+/* 参数面板：灾害源坐标与地图点选同一行 */
+.hazard-coord-row { display:flex; gap:6px; align-items:flex-end; }
+.hazard-coord-row .field-label { flex:1 1 0; min-width:0; }
+.hazard-coord-row .map-pick-button { flex:none; padding:6px 8px; }
 
 /* 参数面板：同行多控件 */
 .field-row-3 { display:grid; grid-template-columns:1fr 1fr auto; gap:6px; align-items:end; }
@@ -488,3 +493,36 @@
 .disaster-map-panel .heavy-layer-popover label.is-locked { opacity:.55; cursor:not-allowed; }
 .disaster-map-panel .heavy-layer-popover input[type='checkbox'] { accent-color:#42cfff; flex:none; }
 
+
+/* ============ 2026-11-20：数据库添加弹窗 / 设施信息弹窗 ============ */
+.asset-picker-overlay {
+    position:fixed; inset:0; z-index:1200; display:grid; place-items:center;
+    background:rgba(1,8,16,.66); backdrop-filter:blur(2px);
+}
+.asset-picker-modal {
+    width:min(460px, calc(100vw - 48px)); max-height:70vh; display:flex; flex-direction:column;
+    border:1px solid var(--v2-line-bright); background:#03141f;
+    box-shadow:0 0 34px rgba(20,117,174,.35), inset 0 0 24px rgba(30,178,249,.07);
+}
+.asset-picker-head {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 14px; border-bottom:1px solid var(--v2-line); background:rgba(6,40,66,.6);
+}
+.asset-picker-head > div { display:flex; align-items:baseline; gap:9px; }
+.asset-picker-head strong { color:#e0f6ff; font-size:14px; font-weight:500; }
+.asset-picker-head small { color:var(--v2-text-muted); font-size:10px; }
+.asset-picker-search {
+    margin:10px 14px 6px; padding:7px 9px; border:1px solid var(--v2-line);
+    background:rgba(5,36,61,.65); color:var(--v2-text-soft); font-size:12px;
+}
+.asset-picker-search:focus { outline:none; border-color:var(--v2-line-bright); }
+.asset-picker-list { flex:1 1 auto; overflow-y:auto; padding:2px 8px 10px; }
+.asset-picker-option {
+    display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%;
+    padding:8px 10px; border:none; border-bottom:1px dashed var(--v2-line);
+    background:none; color:var(--v2-text-soft); font-size:12px; text-align:left; cursor:pointer;
+}
+.asset-picker-option:hover { background:rgba(11,64,102,.7); color:var(--v2-cyan); }
+.asset-picker-option small { color:var(--v2-text-muted); font-size:10px; }
+.asset-info-modal { width:min(620px, 90vw); }
+.model-badge.tunnel { background:var(--v2-orange); color:#04131f; }
