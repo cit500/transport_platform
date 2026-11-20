@@ -54,33 +54,26 @@ public class DebrisFlowService {
     }
 
     private static final String SYSTEM_PROMPT = """
-            你是交通灾害风险评估的数据助手。用户会给出中国重庆市的某个区县和位置，
-            你需要给出该地用于泥石流危险性估算的环境参数。
+            你是交通灾害风险评估的数据助手。根据用户给出的重庆市区县和位置，
+            输出该地用于泥石流危险性估算的环境参数。
 
             严格要求：
-            1. 只输出一个 JSON 对象，不要任何解释文字，不要 markdown 代码围栏；
-            2. 数值必须是数字（不是字符串）；无法获取的字段填 null；
-            3. 枚举字段只能取给定取值之一；
-            4. 单位固定：降雨 mm、雨强 mm/h、面积 km²、坡度 度、长度 km、高差 m；
-            5. confidence 是 0~1 的自评置信度；sources 列出你参考的信息类型（如"公开气象预报""区域地形常识"）。
+            1. 只输出一个单行紧凑 JSON 对象：无解释文字、无 markdown 围栏、无空格换行；
+            2. 数值字段必须是数字（不是字符串），缺失时按重庆山区常识给出保守估计值，不用 null；
+            3. 枚举字段只能取给定取值之一；confidence 是 0~1 的自评置信度，估计值较多时调低；
+            4. 键名固定，不得增删改；单位固定：降雨 mm、雨强 mm/h、面积 km²、坡度 度、长度 km、高差 m。
 
             输出结构：
-            {
-              "rainfall": { "last6hMm": 0, "last24hMm": 0, "intensityMmH": 0, "antecedentMm": 0 },
-              "terrain":  { "catchmentAreaKm2": 0, "averageSlopeDegree": 0, "channelLengthKm": 0, "reliefM": 0 },
-              "material": { "looseMaterialLevel": "较少|中等|丰富", "soilMoistureLevel": "干燥|潮湿|饱和", "channelCondition": "沟道不发育|沟道一般|沟道发育" },
-              "confidence": 0.0,
-              "sources": ["..."],
-              "notes": "..."
-            }
+            {"last6hMm":0,"last24hMm":0,"intensityMmH":0,"antecedentMm":0,"catchmentAreaKm2":0,"averageSlopeDegree":0,"channelLengthKm":0,"reliefM":0,"looseMaterialLevel":"较少|中等|丰富","soilMoistureLevel":"干燥|潮湿|饱和","channelCondition":"沟道不发育|沟道一般|沟道发育","confidence":0.0}
             """;
 
     /**
-     * 单次请求的 max_tokens。调用走 {@link LlmClient#completeStructured}，会显式关闭
-     * 思考模式，该额度全部用于正文 JSON（实测正文 300~500 token），2000 足够且不浪费。
-     * 若哪天退回普通思考调用，需注意 Kimi 的推理 token 也计入此上限，取值过小会导致正文为空。
+     * 单次请求的 max_tokens。调用走 {@link LlmClient#completeStructured}，显式关闭思考模式，
+     * 该额度全部用于正文 JSON。2026-11-20 提示词瘦身为扁平紧凑 JSON 后实测正文约 90~120
+     * token，512 足够且迫使模型短输出（生成时间随 token 数线性下降，实测 12s→3s 级）。
+     * 若退回嵌套旧格式或思考调用，需重新评估此上限（旧嵌套格式实测 200~500 token）。
      */
-    private static final int MAX_TOKENS = 2048;
+    private static final int MAX_TOKENS = 512;
 
     public DebrisFlowService(LlmClient llm) { this.llm = llm; }
 
@@ -100,7 +93,7 @@ public class DebrisFlowService {
                 + (longitude != null && latitude != null ? String.format("（约 %.4f, %.4f）", longitude, latitude) : "")
                 + " 用于泥石流危险性估算的环境参数：最近 " + (hours > 0 ? hours : 6) + " 小时降雨量、最近 24 小时累计降雨量、"
                 + "短历时雨强、前期降雨量，以及地形（流域面积、平均坡度、沟道长度、相对高差）与松散物源、土体含水、沟道条件。"
-                + "无法确切获取时给出该区域该季节的合理估计值，并把 confidence 调低、在 notes 中说明。";
+                + "无法确切获取时按该区域该季节的常识给出合理保守估计，并相应调低 confidence。";
 
         if (!llm.configured()) {
             out.put("source", "FALLBACK");
@@ -142,26 +135,31 @@ public class DebrisFlowService {
             JsonNode root = llm.mapper().readTree(text);
             // 模型有时会自造中文键名，此时所有字段都会取默认值，必须明确判为失败，
             // 否则会把"默认参数"伪装成"大模型给出的参数"。
-            if (!root.has("rainfall") && !root.has("terrain") && !root.has("material")) {
-                throw new IllegalStateException("返回的 JSON 缺少约定字段 rainfall/terrain/material");
+            boolean nested = root.has("rainfall") || root.has("terrain") || root.has("material");
+            boolean flat = root.has("last6hMm") || root.has("catchmentAreaKm2");
+            if (!nested && !flat) {
+                throw new IllegalStateException("返回的 JSON 缺少约定字段（扁平键或 rainfall/terrain/material 分组）");
             }
-            data.put("last6hMm", clamp(node(root, "rainfall", "last6hMm"), 0, 800, fallback("last6hMm")));
-            data.put("last24hMm", clamp(node(root, "rainfall", "last24hMm"), 0, 1500, fallback("last24hMm")));
-            data.put("intensityMmH", clamp(node(root, "rainfall", "intensityMmH"), 0, 300, fallback("intensityMmH")));
-            data.put("antecedentMm", clamp(node(root, "rainfall", "antecedentMm"), 0, 1000, fallback("antecedentMm")));
-            data.put("catchmentAreaKm2", clamp(node(root, "terrain", "catchmentAreaKm2"), 0.1, 500, fallback("catchmentAreaKm2")));
-            data.put("averageSlopeDegree", clamp(node(root, "terrain", "averageSlopeDegree"), 1, 60, fallback("averageSlopeDegree")));
-            data.put("channelLengthKm", clamp(node(root, "terrain", "channelLengthKm"), 0.1, 100, fallback("channelLengthKm")));
-            data.put("reliefM", clamp(node(root, "terrain", "reliefM"), 10, 3000, fallback("reliefM")));
-            data.put("looseMaterialLevel", pick(nodeText(root, "material", "looseMaterialLevel"),
+            data.put("last6hMm", clamp(nodeAny(root, "last6hMm", "rainfall", "last6hMm"), 0, 800, fallback("last6hMm")));
+            data.put("last24hMm", clamp(nodeAny(root, "last24hMm", "rainfall", "last24hMm"), 0, 1500, fallback("last24hMm")));
+            data.put("intensityMmH", clamp(nodeAny(root, "intensityMmH", "rainfall", "intensityMmH"), 0, 300, fallback("intensityMmH")));
+            data.put("antecedentMm", clamp(nodeAny(root, "antecedentMm", "rainfall", "antecedentMm"), 0, 1000, fallback("antecedentMm")));
+            data.put("catchmentAreaKm2", clamp(nodeAny(root, "catchmentAreaKm2", "terrain", "catchmentAreaKm2"), 0.1, 500, fallback("catchmentAreaKm2")));
+            data.put("averageSlopeDegree", clamp(nodeAny(root, "averageSlopeDegree", "terrain", "averageSlopeDegree"), 1, 60, fallback("averageSlopeDegree")));
+            data.put("channelLengthKm", clamp(nodeAny(root, "channelLengthKm", "terrain", "channelLengthKm"), 0.1, 100, fallback("channelLengthKm")));
+            data.put("reliefM", clamp(nodeAny(root, "reliefM", "terrain", "reliefM"), 10, 3000, fallback("reliefM")));
+            data.put("looseMaterialLevel", pick(textAny(root, "looseMaterialLevel", "material", "looseMaterialLevel"),
                     List.of("较少", "中等", "丰富"), fallback("looseMaterialLevel").toString()));
-            data.put("soilMoistureLevel", pick(nodeText(root, "material", "soilMoistureLevel"),
+            data.put("soilMoistureLevel", pick(textAny(root, "soilMoistureLevel", "material", "soilMoistureLevel"),
                     List.of("干燥", "潮湿", "饱和"), fallback("soilMoistureLevel").toString()));
-            data.put("channelCondition", pick(nodeText(root, "material", "channelCondition"),
+            data.put("channelCondition", pick(textAny(root, "channelCondition", "material", "channelCondition"),
                     List.of("沟道不发育", "沟道一般", "沟道发育"), fallback("channelCondition").toString()));
             data.put("confidence", clamp(node(root, "confidence"), 0, 1, 0.0));
-            data.put("notes", nodeText(root, "notes"));
-            data.put("sources", sources(root));
+            String notes = nodeText(root, "notes");
+            data.put("notes", notes != null && !notes.isBlank()
+                    ? notes : "大模型按区域常识估算，请人工核对后使用");
+            List<String> src = sources(root);
+            data.put("sources", src.isEmpty() ? List.of("区域地形与气象常识（大模型估算）") : src);
         } catch (Exception e) {
             log.warn("泥石流参数 JSON 解析失败，回退默认值：{}", e.getMessage());
             // 抛出而不是静默返回默认值：调用方据此把 source 标为 FALLBACK 并给出原因，
@@ -252,6 +250,20 @@ public class DebrisFlowService {
             current = current.path(key);
         }
         return current == null || current.isMissingNode() || !current.isNumber() ? null : current;
+    }
+
+    /** 取数值字段：先查顶层扁平键（瘦身提示词格式），再回退分组嵌套键（旧格式兼容）。 */
+    private static JsonNode nodeAny(JsonNode root, String flatKey, String... nestedPath) {
+        JsonNode flat = root.path(flatKey);
+        if (!flat.isMissingNode() && flat.isNumber()) return flat;
+        return node(root, nestedPath);
+    }
+
+    /** 取文本字段：先查顶层扁平键（瘦身提示词格式），再回退分组嵌套键（旧格式兼容）。 */
+    private static String textAny(JsonNode root, String flatKey, String... nestedPath) {
+        JsonNode flat = root.path(flatKey);
+        if (!flat.isMissingNode() && flat.isTextual()) return flat.asText();
+        return nodeText(root, nestedPath);
     }
 
     private static String nodeText(JsonNode root, String... path) {

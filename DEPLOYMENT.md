@@ -181,10 +181,10 @@ User=root
 Environment=PLANT_DB_URL=jdbc:mysql://localhost:3306/transport_platform?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
 Environment=PLANT_DB_USERNAME=plant
 Environment="PLANT_DB_PASSWORD=<数据库密码>"
-Environment=PLANT_LLM_API_KEY=<Moonshot API 密钥>
-Environment=PLANT_LLM_PROVIDER=moonshot
-Environment=PLANT_LLM_BASE_URL=https://api.moonshot.cn/v1
-Environment=PLANT_LLM_MODEL=kimi-k2.6
+Environment=PLANT_LLM_API_KEY=<智谱 API 密钥>
+Environment=PLANT_LLM_PROVIDER=zhipu
+Environment=PLANT_LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+Environment=PLANT_LLM_MODEL=glm-4-flash-250414
 ExecStart=/usr/bin/java -jar /opt/app/transport-resilience-backend-1.0.0.jar --server.port=8080
 Restart=on-failure
 RestartSec=10
@@ -210,11 +210,11 @@ sudo journalctl -u plant-backend -n 50 # 查看日志
 | PLANT_DB_URL | MySQL 连接串 | `jdbc:mysql://localhost:3306/transport_platform?...` |
 | PLANT_DB_USERNAME | 数据库用户名 | `plant` |
 | PLANT_DB_PASSWORD | 数据库密码 | `<数据库密码>` |
-| PLANT_LLM_API_KEY | Moonshot API 密钥（与本地 `.env.llm.local` 同值） | `sk-...` |
-| PLANT_LLM_PROVIDER | LLM 提供商 | `moonshot` |
-| PLANT_LLM_BASE_URL | 接口地址 | `https://api.moonshot.cn/v1` |
-| PLANT_LLM_MODEL | 模型名称 | `kimi-k2.6` |
-| PLANT_LLM_TEMPERATURE | 不要设置：kimi-k2.6 思考模式只接受 1、非思考模式只接受 0.6，留空由代码按模式自动取值 | — |
+| PLANT_LLM_API_KEY | 智谱 API 密钥（与本地 `.env.llm.local` 同值，2026-11-20 起切换智谱） | `xxxx.xxxx` |
+| PLANT_LLM_PROVIDER | LLM 提供商 | `zhipu` |
+| PLANT_LLM_BASE_URL | 接口地址 | `https://open.bigmodel.cn/api/paas/v4` |
+| PLANT_LLM_MODEL | 模型名称 | `glm-4-flash-250414` |
+| PLANT_LLM_TEMPERATURE | 不要设置：留空由代码按 provider 自动取值（moonshot=1，zhipu=0.7） | — |
 
 > **Kimi 思考模式的两条硬约束**（2026-11-03 实测，踩过坑）：
 > 1. **思考模式的推理 token 计入 `max_tokens`**。`kimi-k2.6` 处理同一个泥石流取数提示词，推理长度在 1727~4096 token 之间波动；`max_tokens` 给小了推理会吃满配额，返回 `finish_reason=length` 且 `content` 为空字符串，单次耗时还会涨到 56~108 秒。
